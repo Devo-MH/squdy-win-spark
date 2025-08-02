@@ -40,34 +40,42 @@ const HeroSection = () => {
           </div>
 
           {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-16 max-w-4xl mx-auto">
-            <Card className="bg-gradient-card border-primary/20 hover:border-primary/40 transition-all duration-300">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mt-16 max-w-4xl mx-auto">
+            <Card className="bg-muted/50 border-border/50 hover:bg-muted/70 hover:scale-105 transition-all duration-300 rounded-lg animate-slide-up">
               <CardContent className="p-6 text-center">
-                <Target className="w-8 h-8 text-primary mx-auto mb-2" />
+                <div className="p-3 bg-campaign-primary/20 rounded-lg w-fit mx-auto mb-3">
+                  <Target className="w-8 h-8 text-campaign-primary" />
+                </div>
                 <div className="text-2xl font-bold text-foreground">12</div>
                 <div className="text-sm text-muted-foreground">Active Campaigns</div>
               </CardContent>
             </Card>
             
-            <Card className="bg-gradient-card border-primary/20 hover:border-primary/40 transition-all duration-300">
+            <Card className="bg-muted/50 border-border/50 hover:bg-muted/70 hover:scale-105 transition-all duration-300 rounded-lg animate-slide-up">
               <CardContent className="p-6 text-center">
-                <Users className="w-8 h-8 text-neon-blue mx-auto mb-2" />
+                <div className="p-3 bg-campaign-info/20 rounded-lg w-fit mx-auto mb-3">
+                  <Users className="w-8 h-8 text-campaign-info" />
+                </div>
                 <div className="text-2xl font-bold text-foreground">2.5K+</div>
                 <div className="text-sm text-muted-foreground">Participants</div>
               </CardContent>
             </Card>
             
-            <Card className="bg-gradient-card border-primary/20 hover:border-primary/40 transition-all duration-300">
+            <Card className="bg-muted/50 border-border/50 hover:bg-muted/70 hover:scale-105 transition-all duration-300 rounded-lg animate-slide-up">
               <CardContent className="p-6 text-center">
-                <Flame className="w-8 h-8 text-destructive mx-auto mb-2" />
+                <div className="p-3 bg-campaign-warning/20 rounded-lg w-fit mx-auto mb-3">
+                  <Flame className="w-8 h-8 text-campaign-warning" />
+                </div>
                 <div className="text-2xl font-bold text-foreground">15M+</div>
                 <div className="text-sm text-muted-foreground">SQUDY Burned</div>
               </CardContent>
             </Card>
             
-            <Card className="bg-gradient-card border-primary/20 hover:border-primary/40 transition-all duration-300">
+            <Card className="bg-muted/50 border-border/50 hover:bg-muted/70 hover:scale-105 transition-all duration-300 rounded-lg animate-slide-up">
               <CardContent className="p-6 text-center">
-                <Trophy className="w-8 h-8 text-neon-green mx-auto mb-2" />
+                <div className="p-3 bg-campaign-success/20 rounded-lg w-fit mx-auto mb-3">
+                  <Trophy className="w-8 h-8 text-campaign-success" />
+                </div>
                 <div className="text-2xl font-bold text-foreground">$50K+</div>
                 <div className="text-sm text-muted-foreground">Prizes Awarded</div>
               </CardContent>

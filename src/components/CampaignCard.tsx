@@ -49,9 +49,9 @@ const CampaignCard = ({ campaign }: CampaignCardProps) => {
   }, [campaign]);
 
   return (
-    <Card className="bg-gradient-card border-primary/20 hover:border-primary/40 transition-all duration-300 hover:shadow-neon group">
-      <CardHeader className="pb-4">
-        <div className="aspect-video bg-secondary/30 rounded-lg mb-4 overflow-hidden relative">
+    <Card className="bg-muted/50 border-border/50 hover:bg-muted/70 hover:scale-105 transition-all duration-300 hover:shadow-neon group rounded-lg">
+      <CardHeader className="pb-3">
+        <div className="aspect-video bg-campaign-primary/20 rounded-lg mb-4 overflow-hidden relative">
           <img 
             src={localCampaign.imageUrl} 
             alt={localCampaign.name}
@@ -63,32 +63,32 @@ const CampaignCard = ({ campaign }: CampaignCardProps) => {
           />
           <Badge 
             variant={getCampaignStatusBadge(localCampaign.status)}
-            className="absolute top-2 right-2 capitalize"
+            className="absolute top-2 right-2 capitalize animate-pulse-glow"
           >
             {localCampaign.status}
           </Badge>
           {localCampaign.status === 'burned' && (
             <Badge 
               variant="destructive"
-              className="absolute top-2 left-2 bg-red-500 text-white"
+              className="absolute top-2 left-2 bg-campaign-warning text-white animate-pulse-glow"
             >
               <Flame className="w-3 h-3 mr-1" />
               Burned
             </Badge>
           )}
         </div>
-        <CardTitle className="text-xl font-bold text-foreground group-hover:text-primary transition-colors">
+        <CardTitle className="text-2xl font-bold text-foreground group-hover:text-campaign-primary transition-colors">
           {localCampaign.name}
         </CardTitle>
-        <p className="text-muted-foreground text-sm line-clamp-2">
+        <p className="text-sm text-muted-foreground line-clamp-2">
           {localCampaign.description}
         </p>
       </CardHeader>
 
-      <CardContent className="space-y-4">
+      <CardContent className="p-6 space-y-6">
         {/* Progress */}
         <div className="space-y-2">
-          <div className="flex justify-between text-sm">
+          <div className="flex items-center justify-between text-sm">
             <span className="text-muted-foreground">Progress</span>
             <span className="text-foreground font-medium">
               {Number(localCampaign.currentAmount).toLocaleString()} / {Number(localCampaign.hardCap).toLocaleString()} SQUDY
@@ -101,41 +101,47 @@ const CampaignCard = ({ campaign }: CampaignCardProps) => {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-2 gap-4 text-sm">
-          <div className="flex items-center gap-2">
-            <Target className="w-4 h-4 text-primary" />
+        <div className="grid grid-cols-2 gap-3 text-sm">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-campaign-primary/20 rounded-lg">
+              <Target className="w-4 h-4 text-campaign-primary" />
+            </div>
             <div>
-              <p className="text-muted-foreground">Ticket Price</p>
-              <p className="font-medium">{Number(localCampaign.ticketAmount).toLocaleString()} SQUDY</p>
+              <p className="text-sm text-muted-foreground">Ticket Price</p>
+              <p className="text-2xl font-bold">{Number(localCampaign.ticketAmount).toLocaleString()} SQUDY</p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Users className="w-4 h-4 text-primary" />
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-campaign-info/20 rounded-lg">
+              <Users className="w-4 h-4 text-campaign-info" />
+            </div>
             <div>
-              <p className="text-muted-foreground">Participants</p>
-              <p className="font-medium">{localCampaign.participantCount}</p>
+              <p className="text-sm text-muted-foreground">Participants</p>
+              <p className="text-2xl font-bold">{localCampaign.participantCount}</p>
             </div>
           </div>
         </div>
 
         {/* Prizes */}
         <div className="space-y-2">
-          <div className="flex items-center gap-2">
-            <Trophy className="w-4 h-4 text-primary" />
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-campaign-success/20 rounded-lg">
+              <Trophy className="w-4 h-4 text-campaign-success" />
+            </div>
             <p className="text-sm font-medium text-foreground">Prize Pool</p>
           </div>
           <div className="flex flex-wrap gap-1">
             {localCampaign.prizes?.slice(0, 2).map((prize, index) => (
-              <Badge key={index} variant="outline" className="text-xs">
+              <Badge key={index} variant="outline" className="text-xs border-campaign-success/30 text-campaign-success">
                 {prize.value.toLocaleString()} {prize.currency}
               </Badge>
             )) || (
-              <Badge variant="outline" className="text-xs">
+              <Badge variant="outline" className="text-xs border-campaign-info/30 text-campaign-info">
                 Prizes to be announced
               </Badge>
             )}
             {localCampaign.prizes && localCampaign.prizes.length > 2 && (
-              <Badge variant="outline" className="text-xs">
+              <Badge variant="outline" className="text-xs border-campaign-info/30 text-campaign-info">
                 +{localCampaign.prizes.length - 2} more
               </Badge>
             )}
@@ -144,22 +150,20 @@ const CampaignCard = ({ campaign }: CampaignCardProps) => {
 
         {/* Time */}
         <div className="flex items-center justify-between text-sm">
-          <div className="flex items-center gap-2">
-            {isActive ? (
-              <>
-                <Clock className="w-4 h-4 text-primary" />
-                <span className="text-neon-green font-medium">
-                  {timeLeft}
-                </span>
-              </>
-            ) : (
-              <>
-                <Calendar className="w-4 h-4 text-primary" />
-                <span className="text-muted-foreground">
-                  Ended {new Date(localCampaign.endDate).toLocaleDateString()}
-                </span>
-              </>
-            )}
+          <div className="flex items-center gap-3">
+            <div className={`p-2 rounded-lg ${isActive ? 'bg-campaign-success/20' : 'bg-muted/50'}`}>
+              {isActive ? (
+                <Clock className="w-4 h-4 text-campaign-success" />
+              ) : (
+                <Calendar className="w-4 h-4 text-muted-foreground" />
+              )}
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">{isActive ? 'Time Left' : 'End Date'}</p>
+              <p className={`text-sm font-bold ${isActive ? 'text-campaign-success' : 'text-muted-foreground'}`}>
+                {isActive ? timeLeft : new Date(localCampaign.endDate).toLocaleDateString()}
+              </p>
+            </div>
           </div>
           {localCampaign.bscScanUrl && (
             <Button
@@ -210,4 +214,5 @@ const CampaignCard = ({ campaign }: CampaignCardProps) => {
   );
 };
 
+export default CampaignCard;
 export default CampaignCard;

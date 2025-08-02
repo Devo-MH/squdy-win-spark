@@ -3,8 +3,9 @@ import Footer from "@/components/Footer";
 import HeroSection from "@/components/HeroSection";
 import CampaignCard from "@/components/CampaignCard";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowRight, ExternalLink, TrendingUp, Users, Flame, Trophy, AlertCircle } from "lucide-react";
+import { ArrowRight, ExternalLink, TrendingUp, Users, Flame, Trophy, AlertCircle, DollarSign } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useCampaigns } from "@/hooks/useCampaigns";
 import { useSocket } from "@/services/socket";
@@ -131,30 +132,50 @@ const HomePage = () => {
             
             {/* Token Stats */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-8">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-primary mb-2">
-                  {tokenInfo.burnedAmount.toLocaleString()}
-                </div>
-                <div className="text-sm text-muted-foreground">Tokens Burned</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-primary mb-2">
-                  ${tokenInfo.priceUSD?.toFixed(4)}
-                </div>
-                <div className="text-sm text-muted-foreground">Current Price</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-primary mb-2">
-                  {campaignStats.totalBurned.toLocaleString()}
-                </div>
-                <div className="text-sm text-muted-foreground">Campaign Burns</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-primary mb-2">
-                  {campaignStats.totalParticipants.toLocaleString()}
-                </div>
-                <div className="text-sm text-muted-foreground">Total Participants</div>
-              </div>
+              <Card className="bg-muted/50 border-border/50 hover:bg-muted/70 hover:scale-105 transition-all duration-300 rounded-lg">
+                <CardContent className="p-6 text-center">
+                  <div className="p-3 bg-campaign-warning/20 rounded-lg w-fit mx-auto mb-3">
+                    <Flame className="w-6 h-6 text-campaign-warning" />
+                  </div>
+                  <div className="text-2xl font-bold text-foreground">
+                    {tokenInfo.burnedAmount.toLocaleString()}
+                  </div>
+                  <div className="text-sm text-muted-foreground">Tokens Burned</div>
+                </CardContent>
+              </Card>
+              <Card className="bg-muted/50 border-border/50 hover:bg-muted/70 hover:scale-105 transition-all duration-300 rounded-lg">
+                <CardContent className="p-6 text-center">
+                  <div className="p-3 bg-campaign-success/20 rounded-lg w-fit mx-auto mb-3">
+                    <DollarSign className="w-6 h-6 text-campaign-success" />
+                  </div>
+                  <div className="text-2xl font-bold text-foreground">
+                    ${tokenInfo.priceUSD?.toFixed(4)}
+                  </div>
+                  <div className="text-sm text-muted-foreground">Current Price</div>
+                </CardContent>
+              </Card>
+              <Card className="bg-muted/50 border-border/50 hover:bg-muted/70 hover:scale-105 transition-all duration-300 rounded-lg">
+                <CardContent className="p-6 text-center">
+                  <div className="p-3 bg-campaign-info/20 rounded-lg w-fit mx-auto mb-3">
+                    <TrendingUp className="w-6 h-6 text-campaign-info" />
+                  </div>
+                  <div className="text-2xl font-bold text-foreground">
+                    {campaignStats.totalBurned.toLocaleString()}
+                  </div>
+                  <div className="text-sm text-muted-foreground">Campaign Burns</div>
+                </CardContent>
+              </Card>
+              <Card className="bg-muted/50 border-border/50 hover:bg-muted/70 hover:scale-105 transition-all duration-300 rounded-lg">
+                <CardContent className="p-6 text-center">
+                  <div className="p-3 bg-campaign-primary/20 rounded-lg w-fit mx-auto mb-3">
+                    <Users className="w-6 h-6 text-campaign-primary" />
+                  </div>
+                  <div className="text-2xl font-bold text-foreground">
+                    {campaignStats.totalParticipants.toLocaleString()}
+                  </div>
+                  <div className="text-sm text-muted-foreground">Total Participants</div>
+                </CardContent>
+              </Card>
             </div>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
