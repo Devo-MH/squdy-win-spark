@@ -42,13 +42,13 @@ export const CONTRACT_ADDRESSES = {
 
 // Contract service class
 export class ContractService {
-  private provider: ethers.BrowserProvider;
+  private provider: ethers.providers.Web3Provider;
   private signer: ethers.Signer;
   private squdyTokenContract: ethers.Contract | null = null;
   private campaignManagerContract: ethers.Contract;
   private useMockToken: boolean;
 
-  constructor(provider: ethers.BrowserProvider, signer: ethers.Signer) {
+  constructor(provider: ethers.providers.Web3Provider, signer: ethers.Signer) {
     this.provider = provider;
     this.signer = signer;
     
@@ -421,7 +421,7 @@ export class ContractService {
 }
 
 // Hook for contract service
-export const useContracts = (provider: ethers.BrowserProvider | null, signer: ethers.Signer | null) => {
+export const useContracts = (provider: ethers.providers.Web3Provider | null, signer: ethers.Signer | null) => {
   if (!provider || !signer) {
     return null;
   }
