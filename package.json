@@ -23,7 +23,19 @@
     "test:all": "npm run test && npm run test:enhanced && npm run test:backend && npm run test:e2e",
     "audit:security": "node security/security-audit.js",
     "audit:deps": "npm audit && cd backend && npm audit",
-    "audit:full": "npm run audit:deps && npm run audit:security"
+    "audit:full": "npm run audit:deps && npm run audit:security",
+    "test:ui": "vitest",
+    "test:ui:run": "vitest run",
+    "test:ui:coverage": "vitest run --coverage",
+    "test:ui:watch": "vitest --ui",
+    "test:ui:dev": "vitest --reporter=verbose --ui",
+    "test:playwright": "playwright test",
+    "test:playwright:ui": "playwright test --ui",
+    "test:playwright:debug": "playwright test --debug",
+    "test:playwright:report": "playwright show-report",
+    "test:a11y": "vitest run --config vitest.a11y.config.ts",
+    "test:integration": "vitest run --config vitest.integration.config.ts",
+    "test:all:ui": "npm run test:ui:coverage && npm run test:playwright && npm run test:a11y"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",
@@ -115,6 +127,19 @@
     "typechain": "^8.2.0",
     "typescript": "^5.5.3",
     "typescript-eslint": "^8.0.1",
-    "vite": "^5.4.1"
+    "vite": "^5.4.1",
+    "@playwright/test": "^1.40.0",
+    "@testing-library/jest-dom": "^6.1.5",
+    "@testing-library/react": "^14.1.2",
+    "@testing-library/user-event": "^14.5.1",
+    "@vitest/coverage-v8": "^1.0.4",
+    "@vitest/ui": "^1.0.4",
+    "axe-core": "^4.8.3",
+    "history": "^5.3.0",
+    "jsdom": "^23.0.1",
+    "msw": "^2.0.11",
+    "resize-observer-polyfill": "^1.5.1",
+    "vitest": "^1.0.4",
+    "vitest-axe": "^0.1.0"
   }
 }

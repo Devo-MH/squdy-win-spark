@@ -86,7 +86,9 @@ export const Web3Provider: React.FC<Web3ProviderProps> = ({ children }) => {
           const accounts = await web3Provider.listAccounts();
           if (accounts.length > 0) {
             const network = await web3Provider.getNetwork();
-            setAccount(accounts[0]);
+            // In ethers v6, accounts[0] might be an object, so we need to extract the address
+            const accountAddress = typeof accounts[0] === 'string' ? accounts[0] : accounts[0].address;
+            setAccount(accountAddress);
             setChainId(Number(network.chainId));
             setSigner(await web3Provider.getSigner());
             setIsConnected(true);
@@ -107,7 +109,9 @@ export const Web3Provider: React.FC<Web3ProviderProps> = ({ children }) => {
         if (accounts.length === 0) {
           disconnect();
         } else {
-          setAccount(accounts[0]);
+          // Ensure we extract the address string properly
+          const accountAddress = typeof accounts[0] === 'string' ? accounts[0] : accounts[0];
+          setAccount(accountAddress);
           if (provider) {
             setSigner(provider.getSigner());
           }
@@ -160,7 +164,9 @@ export const Web3Provider: React.FC<Web3ProviderProps> = ({ children }) => {
       }
 
       setProvider(web3Provider);
-      setAccount(accounts[0]);
+      // In ethers v6, accounts[0] might be an object, so we need to extract the address
+      const accountAddress = typeof accounts[0] === 'string' ? accounts[0] : accounts[0].address;
+      setAccount(accountAddress);
       setChainId(Number(network.chainId));
       setSigner(await web3Provider.getSigner());
       setIsConnected(true);
