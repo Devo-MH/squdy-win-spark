@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { useWeb3 } from '@/contexts/Web3Context';
@@ -10,7 +10,24 @@ interface MockTokenBannerProps {
 }
 
 export const MockTokenBanner: React.FC<MockTokenBannerProps> = ({ contractService }) => {
-  const { isConnected } = useWeb3();
+  const { isConnected, account } = useWeb3();
+  const [balance, setBalance] = useState<string>('0');
+
+  // Load balance when connected and contract service is available
+  useEffect(() => {
+    const loadBalance = async () => {
+      if (!account || !contractService?.isUsingMockToken()) return;
+
+      try {
+        const currentBalance = await contractService.getTokenBalance(account);
+        setBalance(currentBalance);
+      } catch (error) {
+        console.error('Error loading mock token balance:', error);
+      }
+    };
+
+    loadBalance();
+  }, [account, contractService]);
 
   const handleRequestTokens = async () => {
     if (!contractService) {
@@ -20,6 +37,11 @@ export const MockTokenBanner: React.FC<MockTokenBannerProps> = ({ contractServic
 
     try {
       await contractService.requestTestTokens('1000');
+      // Refresh balance after requesting tokens
+      if (account) {
+        const newBalance = await contractService.getTokenBalance(account);
+        setBalance(newBalance);
+      }
     } catch (error) {
       console.error('Error requesting test tokens:', error);
       toast.error('Failed to request test tokens');
@@ -65,7 +87,7 @@ export const MockTokenBanner: React.FC<MockTokenBannerProps> = ({ contractServic
               Mock SQUDY Token Mode
             </h3>
             <p className="text-sm text-orange-600">
-              You're using test tokens. This is for development purposes only.
+              You have {Number(balance).toLocaleString()} mSQUDY tokens. This is for development purposes only.
             </p>
           </div>
         </div>
