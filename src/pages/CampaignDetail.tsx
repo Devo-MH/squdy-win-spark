@@ -353,11 +353,6 @@ const CampaignDetail = () => {
   const userStatus = statusData?.status;
   const isParticipating = statusData?.isParticipating || false;
   
-  // Participation flow states
-  const canJoinCampaign = hasStaked && allRequiredTasksCompleted && !isParticipating;
-  const showTasksSection = hasStaked && !isParticipating;
-  const showJoinButton = canJoinCampaign;
-
   // Campaign tasks from admin configuration
   const campaignTasks: Task[] = localCampaign?.offchainTasks || [];
 
@@ -365,6 +360,11 @@ const CampaignDetail = () => {
   const allRequiredTasksCompleted = requiredTasks.every(task => 
     completedTasks.includes(task.id)
   );
+
+  // Participation flow states
+  const canJoinCampaign = hasStaked && allRequiredTasksCompleted && !isParticipating;
+  const showTasksSection = hasStaked && !isParticipating;
+  const showJoinButton = canJoinCampaign;
 
   // Task handlers
   const handleTaskChange = (taskId: string, completed: boolean, value?: string) => {
