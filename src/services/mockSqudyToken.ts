@@ -3,12 +3,12 @@ import { toast } from 'sonner';
 
 // Mock SQUDY Token implementation for testing
 export class MockSqudyToken {
-  private userBalances: Map<string, bigint> = new Map();
-  private userAllowances: Map<string, Map<string, bigint>> = new Map();
-  private decimals = 18n;
+  private userBalances: Map<string, ethers.BigNumber> = new Map();
+  private userAllowances: Map<string, Map<string, ethers.BigNumber>> = new Map();
+  private decimals = 18;
   private name = 'Mock SQUDY Token';
   private symbol = 'mSQUDY';
-  private totalSupply = ethers.parseUnits('1000000', 18); // 1M tokens
+  private totalSupply = ethers.utils.parseUnits('1000000', 18); // 1M tokens
 
   constructor() {
     // Initialize with some default balances for testing
@@ -17,7 +17,7 @@ export class MockSqudyToken {
 
   private initializeTestBalances() {
     // Give all connected wallets some test tokens
-    const defaultBalance = ethers.parseUnits('10000', 18); // 10k tokens per wallet
+    const defaultBalance = ethers.utils.parseUnits('10000', 18); // 10k tokens per wallet
     
     // We'll add balances when wallets connect
     console.log('Mock SQUDY Token initialized with default test balances');
@@ -26,9 +26,9 @@ export class MockSqudyToken {
   // Ensure user has test tokens
   private ensureUserHasTokens(address: string) {
     if (!this.userBalances.has(address.toLowerCase())) {
-      const testBalance = ethers.parseUnits('10000', 18); // 10k tokens
+      const testBalance = ethers.utils.parseUnits('10000', 18); // 10k tokens
       this.userBalances.set(address.toLowerCase(), testBalance);
-      console.log(`🎁 Gifted ${ethers.formatUnits(testBalance, 18)} mSQUDY tokens to ${address}`);
+      console.log(`🎁 Gifted ${ethers.utils.formatUnits(testBalance, 18)} mSQUDY tokens to ${address}`);
       toast.success(`🎁 You received 10,000 mock SQUDY tokens for testing!`);
     }
   }
@@ -42,27 +42,27 @@ export class MockSqudyToken {
     return this.symbol;
   }
 
-  async decimals(): Promise<bigint> {
+  async decimals(): Promise<number> {
     return this.decimals;
   }
 
-  async totalSupply(): Promise<bigint> {
+  async totalSupply(): Promise<ethers.BigNumber> {
     return this.totalSupply;
   }
 
-  async balanceOf(address: string): Promise<bigint> {
+  async balanceOf(address: string): Promise<ethers.BigNumber> {
     this.ensureUserHasTokens(address);
-    return this.userBalances.get(address.toLowerCase()) || 0n;
+    return this.userBalances.get(address.toLowerCase()) || ethers.constants.Zero;
   }
 
-  async allowance(owner: string, spender: string): Promise<bigint> {
+  async allowance(owner: string, spender: string): Promise<ethers.BigNumber> {
     this.ensureUserHasTokens(owner);
     const ownerAllowances = this.userAllowances.get(owner.toLowerCase());
-    if (!ownerAllowances) return 0n;
-    return ownerAllowances.get(spender.toLowerCase()) || 0n;
+    if (!ownerAllowances) return ethers.constants.Zero;
+    return ownerAllowances.get(spender.toLowerCase()) || ethers.constants.Zero;
   }
 
-  async approve(owner: string, spender: string, amount: bigint): Promise<boolean> {
+  async approve(owner: string, spender: string, amount: ethers.BigNumber): Promise<boolean> {
     this.ensureUserHasTokens(owner);
     
     if (!this.userAllowances.has(owner.toLowerCase())) {
@@ -72,36 +72,36 @@ export class MockSqudyToken {
     const ownerAllowances = this.userAllowances.get(owner.toLowerCase())!;
     ownerAllowances.set(spender.toLowerCase(), amount);
     
-    console.log(`✅ Approved ${ethers.formatUnits(amount, 18)} mSQUDY from ${owner} to ${spender}`);
-    toast.success(`Approved ${ethers.formatUnits(amount, 18)} mSQUDY tokens`);
+    console.log(`✅ Approved ${ethers.utils.formatUnits(amount, 18)} mSQUDY from ${owner} to ${spender}`);
+    toast.success(`Approved ${ethers.utils.formatUnits(amount, 18)} mSQUDY tokens`);
     
     return true;
   }
 
-  async transfer(from: string, to: string, amount: bigint): Promise<boolean> {
+  async transfer(from: string, to: string, amount: ethers.BigNumber): Promise<boolean> {
     this.ensureUserHasTokens(from);
     
-    const fromBalance = this.userBalances.get(from.toLowerCase()) || 0n;
-    if (fromBalance < amount) {
+    const fromBalance = this.userBalances.get(from.toLowerCase()) || ethers.constants.Zero;
+    if (fromBalance.lt(amount)) {
       throw new Error('Insufficient balance for transfer');
     }
 
     // Update balances
-    this.userBalances.set(from.toLowerCase(), fromBalance - amount);
+    this.userBalances.set(from.toLowerCase(), fromBalance.sub(amount));
     
-    const toBalance = this.userBalances.get(to.toLowerCase()) || 0n;
-    this.userBalances.set(to.toLowerCase(), toBalance + amount);
+    const toBalance = this.userBalances.get(to.toLowerCase()) || ethers.constants.Zero;
+    this.userBalances.set(to.toLowerCase(), toBalance.add(amount));
     
-    console.log(`💸 Transferred ${ethers.formatUnits(amount, 18)} mSQUDY from ${from} to ${to}`);
+    console.log(`💸 Transferred ${ethers.utils.formatUnits(amount, 18)} mSQUDY from ${from} to ${to}`);
     
     return true;
   }
 
   // Helper method to add more tokens for testing
   mintTokens(address: string, amount: string) {
-    const amountBN = ethers.parseUnits(amount, 18);
-    const currentBalance = this.userBalances.get(address.toLowerCase()) || 0n;
-    this.userBalances.set(address.toLowerCase(), currentBalance + amountBN);
+    const amountBN = ethers.utils.parseUnits(amount, 18);
+    const currentBalance = this.userBalances.get(address.toLowerCase()) || ethers.constants.Zero;
+    this.userBalances.set(address.toLowerCase(), currentBalance.add(amountBN));
     console.log(`🏭 Minted ${amount} mSQUDY tokens to ${address}`);
     toast.success(`🏭 Minted ${amount} mock SQUDY tokens for testing!`);
   }
