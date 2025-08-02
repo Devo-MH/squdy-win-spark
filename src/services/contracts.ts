@@ -426,11 +426,7 @@ export const useContracts = (provider: ethers.BrowserProvider | null, signer: et
     return null;
   }
   
-  if (!CONTRACT_ADDRESSES.SQUDY_TOKEN || !CONTRACT_ADDRESSES.CAMPAIGN_MANAGER) {
-    console.warn('Contract addresses not configured');
-    return null;
-  }
-  
+  // Always create the service - it will automatically use mock tokens if no addresses are configured
   return new ContractService(provider, signer);
 };
 

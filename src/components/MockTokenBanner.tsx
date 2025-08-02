@@ -26,7 +26,31 @@ export const MockTokenBanner: React.FC<MockTokenBannerProps> = ({ contractServic
     }
   };
 
-  // Only show if connected and using mock tokens
+  // Debug information
+  console.log('MockTokenBanner - isConnected:', isConnected);
+  console.log('MockTokenBanner - contractService:', !!contractService);
+  console.log('MockTokenBanner - isUsingMockToken:', contractService?.isUsingMockToken());
+
+  // Show debug info if connected but not using mock tokens
+  if (isConnected && (!contractService || !contractService.isUsingMockToken())) {
+    return (
+      <Card className="border-blue-200 bg-blue-50 p-4 mb-4">
+        <div className="flex items-center gap-2">
+          <span className="text-2xl">🔧</span>
+          <div>
+            <h3 className="font-semibold text-blue-800">Debug Info</h3>
+            <p className="text-sm text-blue-600">
+              Connected: {isConnected ? 'Yes' : 'No'} | 
+              Contract Service: {contractService ? 'Available' : 'Not Available'} | 
+              Using Mock: {contractService?.isUsingMockToken() ? 'Yes' : 'No'}
+            </p>
+          </div>
+        </div>
+      </Card>
+    );
+  }
+
+  // Only show main banner if connected and using mock tokens
   if (!isConnected || !contractService?.isUsingMockToken()) {
     return null;
   }
