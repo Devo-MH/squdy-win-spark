@@ -169,7 +169,7 @@ export class ContractService {
       const allowance = await this.getTokenAllowance(userAddress, CONTRACT_ADDRESSES.CAMPAIGN_MANAGER);
       const allowanceBN = ethers.parseUnits(allowance, decimals);
       
-      if (allowanceBN.lt(amountBN)) {
+      if (allowanceBN < amountBN) {
         throw new Error('Insufficient token allowance. Please approve tokens first.');
       }
       
