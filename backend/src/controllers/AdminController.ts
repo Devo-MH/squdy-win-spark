@@ -91,7 +91,7 @@ class AdminController {
         contractId,
         name,
         description,
-        imageUrl: req.body.imageUrl || 'https://example.com/placeholder.jpg',
+        imageUrl: req.body.imageUrl || 'https://images.unsplash.com/photo-1640340434855-6084b1f4901c?w=400&h=300&fit=crop',
         softCap,
         hardCap,
         ticketAmount,
