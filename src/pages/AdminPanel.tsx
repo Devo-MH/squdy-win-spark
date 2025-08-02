@@ -34,7 +34,8 @@ import {
   Zap,
   Lock,
   Unlock,
-  X
+  X,
+  MessageCircle
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
