@@ -48,10 +48,7 @@ export const MockTokenBanner: React.FC<MockTokenBannerProps> = ({ contractServic
     }
   };
 
-  // Debug information
-  console.log('MockTokenBanner - isConnected:', isConnected);
-  console.log('MockTokenBanner - contractService:', !!contractService);
-  console.log('MockTokenBanner - isUsingMockToken:', contractService?.isUsingMockToken());
+
 
   // Show debug info if connected but not using mock tokens
   if (isConnected && (!contractService || !contractService.isUsingMockToken())) {

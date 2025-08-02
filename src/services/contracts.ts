@@ -53,11 +53,7 @@ export class ContractService {
     this.signer = signer;
     
     // Use mock token if no real contract address is provided
-    console.log('🔍 CONTRACT_ADDRESSES.SQUDY_TOKEN:', CONTRACT_ADDRESSES.SQUDY_TOKEN);
-    console.log('🔍 Type:', typeof CONTRACT_ADDRESSES.SQUDY_TOKEN);
-    console.log('🔍 Length:', CONTRACT_ADDRESSES.SQUDY_TOKEN?.length);
     this.useMockToken = !CONTRACT_ADDRESSES.SQUDY_TOKEN || CONTRACT_ADDRESSES.SQUDY_TOKEN === '';
-    console.log('🔍 useMockToken decision:', this.useMockToken);
     
     if (!this.useMockToken) {
       this.squdyTokenContract = new ethers.Contract(
