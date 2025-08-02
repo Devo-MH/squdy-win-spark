@@ -215,4 +215,3 @@ const CampaignCard = ({ campaign }: CampaignCardProps) => {
 };
 
 export default CampaignCard;
-export default CampaignCard;
