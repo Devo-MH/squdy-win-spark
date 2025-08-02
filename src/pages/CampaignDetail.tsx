@@ -45,6 +45,8 @@ import {
 import { useContracts } from "@/services/contracts";
 import { useSocket } from "@/services/socket";
 import { MockTokenBanner } from "@/components/MockTokenBanner";
+import { TaskChecklist } from "@/components/offchain-verifier";
+import { Task } from "@/components/offchain-verifier/types";
 import { toast } from "sonner";
 
 const CampaignDetail = () => {
@@ -82,6 +84,7 @@ const CampaignDetail = () => {
   const [isStaking, setIsStaking] = useState(false);
   const [squdyBalance, setSqudyBalance] = useState('0');
   const [allowance, setAllowance] = useState('0');
+  const [completedTasks, setCompletedTasks] = useState<string[]>([]);
   const [localCampaign, setLocalCampaign] = useState(campaignData?.campaign || null);
 
   // Update local campaign when data changes
@@ -318,6 +321,53 @@ const CampaignDetail = () => {
   const userStatus = statusData?.status;
   const isParticipating = statusData?.isParticipating || false;
 
+  // Campaign tasks (demo tasks for now)
+  const campaignTasks: Task[] = [
+    {
+      id: 'twitter-follow',
+      type: 'twitter_follow',
+      label: 'Follow @SqudyOfficial',
+      description: 'Follow our official Twitter account',
+      targetAccount: 'SqudyOfficial',
+      required: true,
+      url: 'https://twitter.com/SqudyOfficial'
+    },
+    {
+      id: 'twitter-like',
+      type: 'twitter_like',
+      label: 'Like our announcement',
+      description: 'Like our campaign announcement tweet',
+      tweetId: '1234567890',
+      required: true,
+      url: 'https://twitter.com/SqudyOfficial/status/1234567890'
+    },
+    {
+      id: 'telegram-join',
+      type: 'join_telegram',
+      label: 'Join Telegram Community',
+      description: 'Join our Telegram channel for updates',
+      value: 'SqudyCommunity',
+      required: false,
+      url: 'https://t.me/SqudyCommunity'
+    }
+  ];
+
+  const requiredTasks = campaignTasks.filter(task => task.required);
+  const allRequiredTasksCompleted = requiredTasks.every(task => 
+    completedTasks.includes(task.id)
+  );
+
+  // Task handlers
+  const handleTaskChange = (taskId: string, completed: boolean, value?: string) => {
+    console.log('Task change:', { taskId, completed, value });
+    
+    if (completed) {
+      setCompletedTasks(prev => [...prev.filter(id => id !== taskId), taskId]);
+    } else {
+      setCompletedTasks(prev => prev.filter(id => id !== taskId));
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
@@ -503,6 +553,43 @@ const CampaignDetail = () => {
                         </div>
                       </div>
                       
+                      {/* Offchain Tasks Section */}
+                      {campaignTasks.length > 0 && (
+                        <div className="space-y-4">
+                          <div className="border-t pt-4">
+                            <h3 className="text-lg font-semibold mb-2 flex items-center gap-2">
+                              <CheckCircle className="w-5 h-5 text-primary" />
+                              Complete Required Tasks
+                            </h3>
+                            <p className="text-sm text-muted-foreground mb-4">
+                              Complete the following tasks to participate in this campaign
+                            </p>
+                            
+                            <div className="bg-secondary/30 rounded-lg p-4">
+                              <TaskChecklist
+                                tasks={campaignTasks}
+                                completedTasks={completedTasks}
+                                onTaskChange={handleTaskChange}
+                                campaignName={localCampaign.name}
+                                campaignId={localCampaign.id?.toString()}
+                                enableSimulation={true}
+                                highlightFirstIncompleteTask={true}
+                              />
+                            </div>
+                            
+                            {/* Task completion status */}
+                            <div className="mt-3 flex items-center justify-between text-sm">
+                              <span className="text-muted-foreground">
+                                Progress: {completedTasks.length} / {campaignTasks.length} tasks completed
+                              </span>
+                              <span className={`font-medium ${allRequiredTasksCompleted ? 'text-green-600' : 'text-orange-600'}`}>
+                                {allRequiredTasksCompleted ? 'All required tasks completed ✓' : `${requiredTasks.length - completedTasks.filter(id => requiredTasks.some(t => t.id === id)).length} required tasks remaining`}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                      
                       {/* Approval and Staking */}
                       <div className="space-y-2">
                         {!hasAllowance && stakeAmount && (
@@ -533,7 +620,8 @@ const CampaignDetail = () => {
                             !stakeAmount || 
                             ticketsFromStake < 1 || 
                             !hasAllowance ||
-                            parseFloat(stakeAmount) > parseFloat(squdyBalance)
+                            parseFloat(stakeAmount) > parseFloat(squdyBalance) ||
+                            !allRequiredTasksCompleted
                           }
                           className="w-full"
                         >
@@ -549,6 +637,16 @@ const CampaignDetail = () => {
                             </>
                           )}
                         </Button>
+                        
+                        {/* Task completion requirement message */}
+                        {!allRequiredTasksCompleted && (
+                          <div className="flex items-center gap-2 p-3 bg-orange-50 border border-orange-200 rounded-lg">
+                            <AlertTriangle className="w-4 h-4 text-orange-600 flex-shrink-0" />
+                            <p className="text-sm text-orange-700">
+                              Complete all required tasks above before staking
+                            </p>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </CardContent>

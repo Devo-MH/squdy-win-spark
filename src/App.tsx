@@ -7,6 +7,7 @@ import { Web3Provider } from "@/contexts/Web3Context";
 import HomePage from "./pages/HomePage";
 import CampaignDetail from "./pages/CampaignDetail";
 import AdminPanel from "./pages/AdminPanel";
+import TasksDemo from "./pages/TasksDemo";
 import TermsPage from "./pages/TermsPage";
 import PrivacyPage from "./pages/PrivacyPage";
 import NotFound from "./pages/NotFound";
@@ -33,6 +34,7 @@ const App = () => (
             <Route path="/campaigns" element={<HomePage />} />
             <Route path="/campaigns/:id" element={<CampaignDetail />} />
             <Route path="/admin" element={<AdminPanel />} />
+            <Route path="/tasks-demo" element={<TasksDemo />} />
             <Route path="/terms" element={<TermsPage />} />
             <Route path="/privacy" element={<PrivacyPage />} />
             <Route path="/conditions" element={<TermsPage />} />

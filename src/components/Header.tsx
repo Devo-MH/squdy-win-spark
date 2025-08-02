@@ -151,6 +151,12 @@ const Header = () => {
               Admin
             </Link>
             <Link 
+              to="/tasks-demo" 
+              className="text-foreground hover:text-primary transition-colors"
+            >
+              Tasks Demo
+            </Link>
+            <Link 
               to="/terms" 
               className="text-foreground hover:text-primary transition-colors"
             >
@@ -199,6 +205,13 @@ const Header = () => {
                 onClick={() => setIsMenuOpen(false)}
               >
                 Admin
+              </Link>
+              <Link 
+                to="/tasks-demo" 
+                className="text-foreground hover:text-primary transition-colors"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Tasks Demo
               </Link>
               <Link 
                 to="/terms" 
