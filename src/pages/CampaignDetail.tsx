@@ -85,6 +85,8 @@ const CampaignDetail = () => {
   const [squdyBalance, setSqudyBalance] = useState('0');
   const [allowance, setAllowance] = useState('0');
   const [completedTasks, setCompletedTasks] = useState<string[]>([]);
+  const [hasStaked, setHasStaked] = useState(false);
+  const [isJoiningCampaign, setIsJoiningCampaign] = useState(false);
   const [localCampaign, setLocalCampaign] = useState(campaignData?.campaign || null);
 
   // Update local campaign when data changes
@@ -206,21 +208,18 @@ const CampaignDetail = () => {
     try {
       const tx = await contractService.stakeTokens(localCampaign.contractId, stakeAmount);
       
-      // Wait for confirmation and then call backend
+      // Wait for confirmation
       await tx.wait();
       
-      await participateMutation.mutateAsync({
-        campaignId: localCampaign.contractId,
-        stakeAmount: amount,
-        stakeTxHash: tx.hash,
-      });
-      
+      // Mark as staked but don't join campaign yet
+      setHasStaked(true);
       setStakeAmount('');
-      refetchStatus();
       
       // Refresh wallet data
       const newBalance = await contractService.getTokenBalance(account!);
       setSqudyBalance(newBalance);
+      
+      toast.success(`Successfully staked ${amount} SQUDY! Now complete the required tasks to join the campaign.`);
       
     } catch (error: any) {
       console.error("Staking failed:", error);
@@ -229,6 +228,39 @@ const CampaignDetail = () => {
       }
     } finally {
       setIsStaking(false);
+    }
+  };
+
+  const handleJoinCampaign = async () => {
+    if (!contractService || !localCampaign || !hasStaked || !allRequiredTasksCompleted) return;
+    
+    const auth = await requireAuth();
+    if (!auth) return;
+
+    setIsJoiningCampaign(true);
+    try {
+      // Call backend to register campaign participation
+      await participateMutation.mutateAsync({
+        campaignId: localCampaign.contractId,
+        stakeAmount: 0, // Already staked
+        stakeTxHash: 'staked', // Placeholder since already staked
+        socialTasks: completedTasks.reduce((acc, taskId) => {
+          const task = campaignTasks.find(t => t.id === taskId);
+          if (task) {
+            acc[taskId] = { completed: true, type: task.type };
+          }
+          return acc;
+        }, {} as Record<string, any>),
+      });
+      
+      refetchStatus();
+      toast.success("🎉 Successfully joined the campaign! Good luck!");
+      
+    } catch (error: any) {
+      console.error("Joining campaign failed:", error);
+      toast.error("Failed to join campaign. Please try again.");
+    } finally {
+      setIsJoiningCampaign(false);
     }
   };
 
@@ -320,6 +352,11 @@ const CampaignDetail = () => {
   const hasAllowance = parseFloat(allowance) >= parseFloat(stakeAmount || '0');
   const userStatus = statusData?.status;
   const isParticipating = statusData?.isParticipating || false;
+  
+  // Participation flow states
+  const canJoinCampaign = hasStaked && allRequiredTasksCompleted && !isParticipating;
+  const showTasksSection = hasStaked && !isParticipating;
+  const showJoinButton = canJoinCampaign;
 
   // Campaign tasks (demo tasks for now)
   const campaignTasks: Task[] = [
@@ -515,10 +552,13 @@ const CampaignDetail = () => {
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <Flame className="w-5 h-5 text-primary" />
-                      Stake SQUDY Tokens
+                      {hasStaked ? 'Campaign Participation' : 'Step 1: Stake SQUDY Tokens'}
                     </CardTitle>
                     <p className="text-sm text-muted-foreground">
-                      Stake your SQUDY tokens to participate in this campaign
+                      {hasStaked 
+                        ? 'Follow the steps below to complete your campaign participation'
+                        : 'First, stake your SQUDY tokens. Then complete required tasks to join the campaign.'
+                      }
                     </p>
                   </CardHeader>
                   <CardContent className="space-y-6">
@@ -554,15 +594,15 @@ const CampaignDetail = () => {
                       </div>
                       
                       {/* Offchain Tasks Section */}
-                      {campaignTasks.length > 0 && (
+                      {campaignTasks.length > 0 && showTasksSection && (
                         <div className="space-y-4">
                           <div className="border-t pt-4">
                             <h3 className="text-lg font-semibold mb-2 flex items-center gap-2">
                               <CheckCircle className="w-5 h-5 text-primary" />
-                              Complete Required Tasks
+                              Step 2: Complete Required Tasks
                             </h3>
                             <p className="text-sm text-muted-foreground mb-4">
-                              Complete the following tasks to participate in this campaign
+                              Complete the following social media tasks before joining the campaign
                             </p>
                             
                             <div className="bg-secondary/30 rounded-lg p-4">
@@ -585,6 +625,50 @@ const CampaignDetail = () => {
                               <span className={`font-medium ${allRequiredTasksCompleted ? 'text-green-600' : 'text-orange-600'}`}>
                                 {allRequiredTasksCompleted ? 'All required tasks completed ✓' : `${requiredTasks.length - completedTasks.filter(id => requiredTasks.some(t => t.id === id)).length} required tasks remaining`}
                               </span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                      
+                      {/* Join Campaign Button */}
+                      {showJoinButton && (
+                        <div className="space-y-4">
+                          <div className="border-t pt-4">
+                            <h3 className="text-lg font-semibold mb-2 flex items-center gap-2">
+                              <Trophy className="w-5 h-5 text-primary" />
+                              Step 3: Join Campaign
+                            </h3>
+                            <p className="text-sm text-muted-foreground mb-4">
+                              All requirements completed! Click below to officially join the campaign.
+                            </p>
+                            
+                            <Button 
+                              onClick={handleJoinCampaign}
+                              disabled={isJoiningCampaign || !canJoinCampaign}
+                              className="w-full"
+                              variant="default"
+                              size="lg"
+                            >
+                              {isJoiningCampaign ? (
+                                <>
+                                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                  Joining Campaign...
+                                </>
+                              ) : (
+                                <>
+                                  <Trophy className="w-4 h-4 mr-2" />
+                                  🎉 Join Campaign
+                                </>
+                              )}
+                            </Button>
+                            
+                            <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                              <div className="flex items-center gap-2">
+                                <CheckCircle className="w-4 h-4 text-blue-600 flex-shrink-0" />
+                                <p className="text-sm text-blue-700">
+                                  <strong>Ready to join!</strong> You have staked tokens and completed all required tasks.
+                                </p>
+                              </div>
                             </div>
                           </div>
                         </div>
@@ -621,7 +705,7 @@ const CampaignDetail = () => {
                             ticketsFromStake < 1 || 
                             !hasAllowance ||
                             parseFloat(stakeAmount) > parseFloat(squdyBalance) ||
-                            !allRequiredTasksCompleted
+                            hasStaked
                           }
                           className="w-full"
                         >
@@ -629,6 +713,11 @@ const CampaignDetail = () => {
                             <>
                               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                               Staking...
+                            </>
+                          ) : hasStaked ? (
+                            <>
+                              <CheckCircle className="w-4 h-4 mr-2" />
+                              ✓ Staked Successfully
                             </>
                           ) : (
                             <>
@@ -638,12 +727,12 @@ const CampaignDetail = () => {
                           )}
                         </Button>
                         
-                        {/* Task completion requirement message */}
-                        {!allRequiredTasksCompleted && (
-                          <div className="flex items-center gap-2 p-3 bg-orange-50 border border-orange-200 rounded-lg">
-                            <AlertTriangle className="w-4 h-4 text-orange-600 flex-shrink-0" />
-                            <p className="text-sm text-orange-700">
-                              Complete all required tasks above before staking
+                        {/* Staking success message */}
+                        {hasStaked && !isParticipating && (
+                          <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-lg">
+                            <CheckCircle className="w-4 h-4 text-green-600 flex-shrink-0" />
+                            <p className="text-sm text-green-700">
+                              ✓ Step 1 Complete: Tokens staked successfully! Now complete the required tasks below.
                             </p>
                           </div>
                         )}
