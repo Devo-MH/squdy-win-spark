@@ -1,0 +1,74 @@
+{
+  "campaign": {
+    "contractId": 1,
+    "name": "Lunar Prize Pool",
+    "description": "Join our exciting lunar-themed campaign with amazing prizes! This campaign features multiple tiers of rewards and requires completion of social media tasks to be eligible for the lottery. All staked tokens will be burned at the end of the campaign, contributing to the deflationary mechanism of SQUDY token.",
+    "imageUrl": "https://example.com/lunar-campaign.jpg",
+    "softCap": 10000,
+    "hardCap": 100000,
+    "currentAmount": 25000,
+    "ticketAmount": 100,
+    "participantCount": 250,
+    "startDate": "2024-01-01T00:00:00.000Z",
+    "endDate": "2024-01-31T23:59:59.000Z",
+    "status": "active",
+    "prizes": [
+      {
+        "name": "Grand Prize",
+        "description": "Main prize for the winner - includes cash and exclusive NFT",
+        "value": 10000,
+        "currency": "USD",
+        "quantity": 1
+      },
+      {
+        "name": "Runner-up Prize",
+        "description": "Second place prize with cash reward",
+        "value": 5000,
+        "currency": "USD",
+        "quantity": 1
+      },
+      {
+        "name": "Third Place Prize",
+        "description": "Bronze medal prize",
+        "value": 2500,
+        "currency": "USD",
+        "quantity": 1
+      },
+      {
+        "name": "Participation Rewards",
+        "description": "Special NFTs for all participants",
+        "value": 100,
+        "currency": "USD",
+        "quantity": 10
+      }
+    ],
+    "socialRequirements": {
+      "twitter": {
+        "followAccount": "@SqudyToken",
+        "likePostId": "123456789",
+        "retweetPostId": "123456789"
+      },
+      "discord": {
+        "serverId": "987654321",
+        "inviteLink": "discord.gg/squdy"
+      },
+      "telegram": {
+        "groupId": "123456789",
+        "inviteLink": "t.me/squdy"
+      },
+      "medium": {
+        "profileUrl": "medium.com/@squdy"
+      },
+      "newsletter": {
+        "endpoint": "squdy.com/newsletter"
+      }
+    },
+    "winners": [],
+    "totalBurned": 0,
+    "bscScanUrl": null,
+    "winnerSelectionTx": null,
+    "burnTx": null,
+    "createdAt": "2023-12-01T00:00:00.000Z",
+    "updatedAt": "2024-01-15T12:00:00.000Z"
+  }
+}

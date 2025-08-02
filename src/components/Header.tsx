@@ -1,10 +1,120 @@
 import { Button } from "@/components/ui/button";
-import { Wallet, Menu, X } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Wallet, Menu, X, ChevronDown, ExternalLink, Power, AlertTriangle } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { useWeb3 } from "@/contexts/Web3Context";
+import { toast } from "sonner";
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { 
+    account, 
+    isConnected, 
+    isConnecting, 
+    isCorrectNetwork, 
+    networkName, 
+    connect, 
+    disconnect,
+    switchToChain 
+  } = useWeb3();
+
+  const formatAddress = (address: string | null | undefined) => {
+    if (!address || typeof address !== 'string') {
+      return 'Unknown';
+    }
+    return `${address.slice(0, 6)}...${address.slice(-4)}`;
+  };
+
+  const handleConnectWallet = async () => {
+    try {
+      await connect();
+    } catch (error) {
+      console.error('Failed to connect wallet:', error);
+    }
+  };
+
+  const handleSwitchNetwork = async () => {
+    try {
+      const targetChainId = import.meta.env.MODE === 'production' ? 1 : 11155111; // Ethereum Mainnet : Sepolia
+      await switchToChain(targetChainId);
+    } catch (error) {
+      console.error('Failed to switch network:', error);
+    }
+  };
+
+  const handleBuySQUDY = () => {
+    toast.info('Redirecting to exchange...');
+    // In a real implementation, this would redirect to PancakeSwap or CEX
+    window.open('https://pancakeswap.finance/', '_blank');
+  };
+
+  const WalletButton = () => {
+    if (!isConnected) {
+      return (
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={handleConnectWallet}
+          disabled={isConnecting}
+        >
+          <Wallet className="w-4 h-4" />
+          {isConnecting ? 'Connecting...' : 'Connect Wallet'}
+        </Button>
+      );
+    }
+
+    return (
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="outline" size="sm" className="flex items-center space-x-2">
+            <Wallet className="w-4 h-4" />
+            <span>{formatAddress(account!)}</span>
+            {!isCorrectNetwork && <AlertTriangle className="w-4 h-4 text-yellow-500" />}
+            <ChevronDown className="w-4 h-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-56">
+          <div className="p-2">
+            <div className="text-sm text-muted-foreground">Connected to</div>
+            <div className="font-medium">{formatAddress(account!)}</div>
+            <div className="flex items-center justify-between mt-1">
+              <Badge variant={isCorrectNetwork ? "default" : "destructive"}>
+                {networkName}
+              </Badge>
+              {!isCorrectNetwork && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleSwitchNetwork}
+                  className="text-xs h-6"
+                >
+                  Switch Network
+                </Button>
+              )}
+            </div>
+          </div>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={() => window.open(`https://sepolia.etherscan.io/address/${account}`, '_blank')}>
+            <ExternalLink className="w-4 h-4 mr-2" />
+            View on Etherscan
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={disconnect} className="text-red-600">
+            <Power className="w-4 h-4 mr-2" />
+            Disconnect
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    );
+  };
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-primary/20">
@@ -50,11 +160,8 @@ const Header = () => {
 
           {/* Desktop Actions */}
           <div className="hidden md:flex items-center space-x-4">
-            <Button variant="outline" size="sm">
-              <Wallet className="w-4 h-4" />
-              Connect Wallet
-            </Button>
-            <Button variant="neon" size="sm">
+            <WalletButton />
+            <Button variant="neon" size="sm" onClick={handleBuySQUDY}>
               Buy SQUDY
             </Button>
           </div>
@@ -101,11 +208,8 @@ const Header = () => {
                 Terms
               </Link>
               <div className="flex flex-col space-y-2 pt-4">
-                <Button variant="outline" size="sm">
-                  <Wallet className="w-4 h-4" />
-                  Connect Wallet
-                </Button>
-                <Button variant="neon" size="sm">
+                <WalletButton />
+                <Button variant="neon" size="sm" onClick={handleBuySQUDY}>
                   Buy SQUDY
                 </Button>
               </div>

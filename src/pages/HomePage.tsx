@@ -3,64 +3,58 @@ import Footer from "@/components/Footer";
 import HeroSection from "@/components/HeroSection";
 import CampaignCard from "@/components/CampaignCard";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, ExternalLink } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { ArrowRight, ExternalLink, TrendingUp, Users, Flame, Trophy, AlertCircle } from "lucide-react";
 import { Link } from "react-router-dom";
-import campaignPlaceholder from "@/assets/campaign-placeholder.jpg";
-
-// Mock data for campaigns
-const mockCampaigns = [
-  {
-    id: "1",
-    name: "Lunar Prize Pool",
-    description: "A massive campaign with multiple prize tiers including exclusive NFTs and cash rewards.",
-    image: campaignPlaceholder,
-    status: "active" as const,
-    softCap: 100000,
-    hardCap: 500000,
-    currentAmount: 350000,
-    ticketAmount: 100,
-    participants: 1250,
-    prizes: ["$10,000 Cash", "Exclusive NFTs", "SQUDY Tokens"],
-    startDate: "2024-01-15",
-    endDate: "2024-02-15",
-    daysLeft: 12,
-  },
-  {
-    id: "2",
-    name: "DeFi Champions",
-    description: "Compete with other DeFi enthusiasts for amazing rewards and recognition.",
-    image: campaignPlaceholder,
-    status: "active" as const,
-    softCap: 50000,
-    hardCap: 200000,
-    currentAmount: 180000,
-    ticketAmount: 50,
-    participants: 890,
-    prizes: ["$5,000 Cash", "Gaming Gear", "Merchandise"],
-    startDate: "2024-01-20",
-    endDate: "2024-02-20",
-    daysLeft: 18,
-  },
-  {
-    id: "3",
-    name: "Genesis Burn",
-    description: "The first ever SQUDY burn campaign that started it all.",
-    image: campaignPlaceholder,
-    status: "finished" as const,
-    softCap: 75000,
-    hardCap: 300000,
-    currentAmount: 300000,
-    ticketAmount: 75,
-    participants: 2100,
-    prizes: ["$15,000 Cash", "Hardware Wallets", "Premium Memberships"],
-    startDate: "2023-12-01",
-    endDate: "2023-12-31",
-  },
-];
+import { useCampaigns } from "@/hooks/useCampaigns";
+import { useSocket } from "@/services/socket";
+import { useEffect } from "react";
+import { toast } from "sonner";
+import { tokenInfo, campaignStats } from "@/services/mockData";
 
 const HomePage = () => {
-  const activeCampaigns = mockCampaigns.filter(c => c.status === "active");
-  const finishedCampaigns = mockCampaigns.filter(c => c.status === "finished");
+  const socket = useSocket();
+  const { 
+    data: campaignsData, 
+    isLoading, 
+    error,
+    refetch 
+  } = useCampaigns({ limit: 6 });
+
+  const campaigns = campaignsData?.campaigns || [];
+  const activeCampaigns = campaigns.filter(c => c.status === "active");
+  const finishedCampaigns = campaigns.filter(c => c.status === "finished");
+
+  // Listen for real-time campaign updates
+  useEffect(() => {
+    if (!socket.isConnected()) return;
+
+    const handleCampaignCreated = (data: any) => {
+      toast.success(`New campaign "${data.name}" has been created!`);
+      refetch();
+    };
+
+    socket.onCampaignCreated(handleCampaignCreated);
+
+    return () => {
+      socket.off('campaign:created', handleCampaignCreated);
+    };
+  }, [socket, refetch]);
+
+  // Campaign cards loading skeleton
+  const CampaignSkeleton = () => (
+    <div className="space-y-4">
+      <Skeleton className="aspect-video w-full" />
+      <Skeleton className="h-6 w-3/4" />
+      <Skeleton className="h-4 w-full" />
+      <Skeleton className="h-4 w-2/3" />
+      <div className="grid grid-cols-2 gap-4">
+        <Skeleton className="h-12" />
+        <Skeleton className="h-12" />
+      </div>
+      <Skeleton className="h-10 w-full" />
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-background">
@@ -81,9 +75,34 @@ const HomePage = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-8">
-            {activeCampaigns.map((campaign) => (
-              <CampaignCard key={campaign.id} campaign={campaign} />
-            ))}
+            {isLoading ? (
+              // Loading skeletons
+              Array.from({ length: 3 }).map((_, index) => (
+                <CampaignSkeleton key={index} />
+              ))
+            ) : error ? (
+              // Error state
+              <div className="col-span-full text-center py-12">
+                <AlertCircle className="w-12 h-12 text-destructive mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-foreground mb-2">Failed to load campaigns</h3>
+                <p className="text-muted-foreground mb-4">There was an error loading the campaign data.</p>
+                <Button onClick={() => refetch()} variant="outline">
+                  Try Again
+                </Button>
+              </div>
+            ) : activeCampaigns.length === 0 ? (
+              // No active campaigns
+              <div className="col-span-full text-center py-12">
+                <Flame className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-foreground mb-2">No Active Campaigns</h3>
+                <p className="text-muted-foreground">Check back soon for new burn-to-win campaigns!</p>
+              </div>
+            ) : (
+              // Active campaigns
+              activeCampaigns.map((campaign) => (
+                <CampaignCard key={campaign.id || campaign.contractId} campaign={campaign} />
+              ))
+            )}
           </div>
 
           <div className="text-center">
@@ -110,10 +129,40 @@ const HomePage = () => {
               Our platform combines the excitement of lottery-style competitions with the economic benefits of token burning mechanisms.
             </p>
             
+            {/* Token Stats */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-8">
+              <div className="text-center">
+                <div className="text-2xl font-bold text-primary mb-2">
+                  {tokenInfo.burnedAmount.toLocaleString()}
+                </div>
+                <div className="text-sm text-muted-foreground">Tokens Burned</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-primary mb-2">
+                  ${tokenInfo.priceUSD?.toFixed(4)}
+                </div>
+                <div className="text-sm text-muted-foreground">Current Price</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-primary mb-2">
+                  {campaignStats.totalBurned.toLocaleString()}
+                </div>
+                <div className="text-sm text-muted-foreground">Campaign Burns</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-primary mb-2">
+                  {campaignStats.totalParticipants.toLocaleString()}
+                </div>
+                <div className="text-sm text-muted-foreground">Total Participants</div>
+              </div>
+            </div>
+            
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button variant="neon" size="lg">
-                <ExternalLink className="w-5 h-5" />
-                Buy on PancakeSwap
+              <Button variant="neon" size="lg" asChild>
+                <a href={tokenInfo.pancakeSwapUrl} target="_blank" rel="noopener noreferrer">
+                  <ExternalLink className="w-5 h-5" />
+                  Buy on PancakeSwap
+                </a>
               </Button>
               <Button variant="outline" size="lg">
                 View Tokenomics
@@ -137,7 +186,7 @@ const HomePage = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {finishedCampaigns.map((campaign) => (
-              <CampaignCard key={campaign.id} campaign={campaign} />
+              <CampaignCard key={campaign.id || campaign.contractId} campaign={campaign} />
             ))}
           </div>
         </div>

@@ -1,0 +1,99 @@
+{
+  "campaigns": [
+    {
+      "contractId": 1,
+      "name": "Lunar Prize Pool",
+      "description": "Join our exciting lunar-themed campaign with amazing prizes!",
+      "imageUrl": "https://example.com/lunar-campaign.jpg",
+      "softCap": 10000,
+      "hardCap": 100000,
+      "currentAmount": 25000,
+      "ticketAmount": 100,
+      "participantCount": 250,
+      "startDate": "2024-01-01T00:00:00.000Z",
+      "endDate": "2024-01-31T23:59:59.000Z",
+      "status": "active",
+      "prizes": [
+        {
+          "name": "Grand Prize",
+          "description": "Main prize for the winner",
+          "value": 10000,
+          "currency": "USD",
+          "quantity": 1
+        },
+        {
+          "name": "Runner-up Prize",
+          "description": "Second place prize",
+          "value": 5000,
+          "currency": "USD",
+          "quantity": 1
+        }
+      ],
+      "socialRequirements": {
+        "twitter": {
+          "followAccount": "@SqudyToken",
+          "likePostId": "123456789",
+          "retweetPostId": "123456789"
+        },
+        "discord": {
+          "serverId": "987654321",
+          "inviteLink": "discord.gg/squdy"
+        },
+        "telegram": {
+          "groupId": "123456789",
+          "inviteLink": "t.me/squdy"
+        },
+        "medium": {
+          "profileUrl": "medium.com/@squdy"
+        },
+        "newsletter": {
+          "endpoint": "squdy.com/newsletter"
+        }
+      },
+      "winners": [],
+      "totalBurned": 0,
+      "createdAt": "2023-12-01T00:00:00.000Z",
+      "updatedAt": "2024-01-15T12:00:00.000Z"
+    },
+    {
+      "contractId": 2,
+      "name": "Solar Flare Contest",
+      "description": "High-energy campaign with solar-themed rewards",
+      "imageUrl": "https://example.com/solar-campaign.jpg",
+      "softCap": 5000,
+      "hardCap": 50000,
+      "currentAmount": 12500,
+      "ticketAmount": 50,
+      "participantCount": 125,
+      "startDate": "2024-02-01T00:00:00.000Z",
+      "endDate": "2024-02-28T23:59:59.000Z",
+      "status": "active",
+      "prizes": [
+        {
+          "name": "Solar Prize",
+          "description": "Main solar-themed prize",
+          "value": 7500,
+          "currency": "USD",
+          "quantity": 1
+        }
+      ],
+      "socialRequirements": {
+        "twitter": {
+          "followAccount": "@SqudyToken",
+          "likePostId": "987654321",
+          "retweetPostId": "987654321"
+        }
+      },
+      "winners": [],
+      "totalBurned": 0,
+      "createdAt": "2024-01-15T00:00:00.000Z",
+      "updatedAt": "2024-02-01T12:00:00.000Z"
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "limit": 10,
+    "total": 2,
+    "totalPages": 1
+  }
+}

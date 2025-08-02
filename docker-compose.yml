@@ -1,0 +1,66 @@
+version: '3.8'
+
+services:
+  # Frontend Service
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    ports:
+      - "8080:80"
+    networks:
+      - squdy-network
+    restart: unless-stopped
+
+  # Backend Service
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=development
+      - PORT=3001
+      - MONGO_URI=mongodb://mongodb:27017/squdy-platform
+      - REDIS_URL=redis://redis:6379
+      - JWT_SECRET=your-jwt-secret
+      - BSC_RPC_URL=https://bsc-dataseed.binance.org/
+      - ADMIN_WALLETS=0xYourAdminWalletAddress
+      - SQUDY_TOKEN_ADDRESS=0xYourTokenAddress
+      - CAMPAIGN_MANAGER_ADDRESS=0xYourCampaignManagerAddress
+      - LOG_LEVEL=debug
+    depends_on:
+      - mongodb
+      - redis
+    networks:
+      - squdy-network
+    restart: unless-stopped
+
+  # MongoDB Service
+  mongodb:
+    image: mongo:7-jammy
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+      - ./backend/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+    networks:
+      - squdy-network
+    restart: unless-stopped
+
+  # Redis Service
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    networks:
+      - squdy-network
+    restart: unless-stopped
+
+volumes:
+  mongodb_data:
+
+networks:
+  squdy-network:
+    driver: bridge
