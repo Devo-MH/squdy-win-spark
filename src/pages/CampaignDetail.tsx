@@ -405,7 +405,7 @@ const CampaignDetail = () => {
                   className="w-full aspect-video object-cover rounded-xl border border-primary/20"
                   onError={(e) => {
                     const target = e.target as HTMLImageElement;
-                    target.src = "/placeholder.svg";
+                    target.src = "https://images.unsplash.com/photo-1640340434855-6084b1f4901c?w=400&h=300&fit=crop";
                   }}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent rounded-xl" />

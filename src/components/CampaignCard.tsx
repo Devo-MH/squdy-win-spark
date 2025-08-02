@@ -58,7 +58,7 @@ const CampaignCard = ({ campaign }: CampaignCardProps) => {
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
             onError={(e) => {
               const target = e.target as HTMLImageElement;
-              target.src = "/placeholder.svg";
+              target.src = "https://images.unsplash.com/photo-1640340434855-6084b1f4901c?w=400&h=300&fit=crop";
             }}
           />
           <Badge 

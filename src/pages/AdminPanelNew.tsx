@@ -510,7 +510,7 @@ const AdminPanel = () => {
                               className="w-12 h-12 rounded object-cover"
                               onError={(e) => {
                                 const target = e.target as HTMLImageElement;
-                                target.src = "/placeholder.svg";
+                                target.src = "https://images.unsplash.com/photo-1640340434855-6084b1f4901c?w=400&h=300&fit=crop";
                               }}
                             />
                             <div>

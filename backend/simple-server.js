@@ -65,6 +65,133 @@ app.get('/api/campaigns', (req, res) => {
   });
 });
 
+// Staking endpoint
+app.post('/api/campaigns/:id/stake', (req, res) => {
+  const campaignId = parseInt(req.params.id);
+  const { walletAddress, stakeAmount, socialTasks } = req.body;
+  
+  // Find the campaign
+  const campaign = campaigns.find(c => c.contractId === campaignId || c.id === campaignId);
+  if (!campaign) {
+    return res.status(404).json({
+      error: {
+        message: 'Campaign not found',
+        statusCode: 404,
+      },
+    });
+  }
+  
+  // Validate campaign is active
+  if (campaign.status !== 'active') {
+    return res.status(400).json({
+      error: {
+        message: 'Campaign is not active for staking',
+        statusCode: 400,
+      },
+    });
+  }
+  
+  // Validate minimum stake amount
+  if (stakeAmount < campaign.ticketAmount) {
+    return res.status(400).json({
+      error: {
+        message: `Minimum stake amount is ${campaign.ticketAmount} SQUDY`,
+        statusCode: 400,
+      },
+    });
+  }
+  
+  // Initialize participants array if it doesn't exist
+  if (!campaign.participants) {
+    campaign.participants = [];
+  }
+  
+  // Check if user already staked
+  const existingParticipant = campaign.participants.find(p => p.walletAddress === walletAddress);
+  if (existingParticipant) {
+    return res.status(400).json({
+      error: {
+        message: 'Wallet has already staked in this campaign',
+        statusCode: 400,
+      },
+    });
+  }
+  
+  // Calculate tickets based on stake amount
+  const ticketCount = Math.floor(stakeAmount / campaign.ticketAmount);
+  
+  // Create participant record
+  const participant = {
+    walletAddress,
+    stakeAmount,
+    ticketCount,
+    socialTasks: socialTasks || {},
+    stakedAt: new Date().toISOString(),
+    txHash: '0x' + Math.random().toString(16).substring(2),
+  };
+  
+  // Add participant to campaign
+  campaign.participants.push(participant);
+  campaign.participantCount = campaign.participants.length;
+  campaign.currentAmount = campaign.participants.reduce((sum, p) => sum + p.stakeAmount, 0);
+  campaign.updatedAt = new Date().toISOString();
+  
+  console.log(`💰 Stake recorded: ${walletAddress.slice(0, 10)}... staked ${stakeAmount} SQUDY in campaign ${campaign.name}`);
+  console.log(`🎫 Tickets earned: ${ticketCount}`);
+  
+  res.json({
+    success: true,
+    message: 'Tokens staked successfully!',
+    participant,
+    campaign: {
+      id: campaign.id,
+      contractId: campaign.contractId,
+      name: campaign.name,
+      currentAmount: campaign.currentAmount,
+      participantCount: campaign.participantCount,
+      status: campaign.status,
+    },
+  });
+});
+
+// Get campaign participants
+app.get('/api/campaigns/:id/participants', (req, res) => {
+  const campaignId = parseInt(req.params.id);
+  const { page = 1, limit = 50 } = req.query;
+  
+  const campaign = campaigns.find(c => c.contractId === campaignId || c.id === campaignId);
+  if (!campaign) {
+    return res.status(404).json({
+      error: {
+        message: 'Campaign not found',
+        statusCode: 404,
+      },
+    });
+  }
+  
+  const participants = campaign.participants || [];
+  const total = participants.length;
+  const totalPages = Math.ceil(total / limit);
+  const startIdx = (page - 1) * limit;
+  const endIdx = startIdx + parseInt(limit);
+  const paginatedParticipants = participants.slice(startIdx, endIdx);
+  
+  res.json({
+    participants: paginatedParticipants,
+    pagination: {
+      page: parseInt(page),
+      limit: parseInt(limit),
+      total,
+      totalPages
+    },
+    summary: {
+      totalStaked: participants.reduce((sum, p) => sum + p.stakeAmount, 0),
+      totalTickets: participants.reduce((sum, p) => sum + p.ticketCount, 0),
+      averageStake: participants.length > 0 ? Math.round(participants.reduce((sum, p) => sum + p.stakeAmount, 0) / participants.length) : 0,
+    }
+  });
+});
+
 // Dynamic campaign detail endpoint
 app.get('/api/campaigns/:id', (req, res) => {
   const campaignId = parseInt(req.params.id);
@@ -293,7 +420,7 @@ app.post('/api/admin/campaigns/:id/close', (req, res) => {
     return res.status(404).json({ error: 'Campaign not found' });
   }
   
-  campaigns[campaignIndex].status = 'closed';
+  campaigns[campaignIndex].status = 'finished';
   campaigns[campaignIndex].updatedAt = new Date().toISOString();
   
   res.json({
@@ -314,29 +441,9 @@ app.post('/api/admin/campaigns/:id/upload-image', (req, res) => {
   });
 });
 
-app.post('/api/admin/campaigns/:id/select-winners', (req, res) => {
-  const { id } = req.params;
-  
-  res.json({
-    success: true,
-    winners: [
-      { walletAddress: '0x1234...', prizeIndex: 0, prizeName: 'First Prize' },
-      { walletAddress: '0x5678...', prizeIndex: 1, prizeName: 'Second Prize' }
-    ],
-    message: `Winners selected for campaign ${id}`
-  });
-});
+// Removed duplicate select-winners endpoint - using the proper one below
 
-app.post('/api/admin/campaigns/:id/burn-tokens', (req, res) => {
-  const { id } = req.params;
-  
-  res.json({
-    success: true,
-    burnedAmount: 2500,
-    txHash: '0xburn123...',
-    message: `Tokens burned successfully for campaign ${id}`
-  });
-});
+// Removed duplicate burn-tokens endpoint - using the proper one below
 
 // Participant API endpoints for testing
 app.get('/api/participants/my-participations', (req, res) => {
@@ -458,6 +565,104 @@ app.post('/api/campaigns/:id/verify-social', (req, res) => {
     success: true,
     taskCompleted: true,
     message: `${taskType} task verified successfully`
+  });
+});
+
+// Admin campaign actions
+app.post('/api/admin/campaigns/:id/select-winners', (req, res) => {
+  const { id } = req.params;
+  
+  // Find the campaign
+  const campaign = campaigns.find(c => c.contractId === parseInt(id));
+  if (!campaign) {
+    return res.status(404).json({
+      error: {
+        message: 'Campaign not found',
+        statusCode: 404,
+      },
+    });
+  }
+
+  // Check if campaign is finished
+  if (campaign.status !== 'finished') {
+    return res.status(400).json({
+      error: {
+        message: 'Campaign must be finished to select winners',
+        statusCode: 400,
+      },
+    });
+  }
+
+  // Mock winner selection - update status immediately
+  console.log(`🔍 Before update - Campaign ${campaign.name} status: ${campaign.status}`);
+  campaign.status = 'winners_selected';
+  campaign.winners = [
+    {
+      walletAddress: '0x1234567890123456789012345678901234567890',
+      prizeIndex: 0,
+      prizeName: campaign.prizes[0]?.name || 'First Prize'
+    }
+  ];
+  campaign.updatedAt = new Date().toISOString();
+  console.log(`✅ After update - Campaign ${campaign.name} status: ${campaign.status}`);
+  
+  console.log(`🏆 Winners selected for campaign: ${campaign.name}`);
+
+  res.json({
+    success: true,
+    message: 'Winners selected successfully!',
+    txHash: '0x' + Math.random().toString(16).substring(2),
+    campaign: campaign
+  });
+});
+
+app.post('/api/admin/campaigns/:id/burn-tokens', (req, res) => {
+  const { id } = req.params;
+  
+  // Find the campaign
+  const campaign = campaigns.find(c => c.contractId === parseInt(id));
+  if (!campaign) {
+    return res.status(404).json({
+      error: {
+        message: 'Campaign not found',
+        statusCode: 404,
+      },
+    });
+  }
+
+  // Check if campaign has winners selected
+  if (campaign.status !== 'winners_selected') {
+    return res.status(400).json({
+      error: {
+        message: 'Winners must be selected before burning tokens',
+        statusCode: 400,
+      },
+    });
+  }
+
+  // Check if tokens are already burned
+  if (campaign.status === 'burned') {
+    return res.status(400).json({
+      error: {
+        message: 'Tokens have already been burned for this campaign',
+        statusCode: 400,
+      },
+    });
+  }
+
+  // Mock token burning - update status immediately
+  campaign.status = 'burned';
+  campaign.totalBurned = campaign.currentAmount;
+  campaign.updatedAt = new Date().toISOString();
+  
+  console.log(`🔥 Tokens burned for campaign: ${campaign.name} (${campaign.totalBurned} tokens)`);
+
+  res.json({
+    success: true,
+    message: 'All staked tokens have been burned successfully!',
+    totalBurned: campaign.currentAmount,
+    txHash: '0x' + Math.random().toString(16).substring(2),
+    campaign: campaign
   });
 });
 

@@ -112,6 +112,23 @@ export class MockSqudyToken {
     this.userAllowances.clear();
     console.log('🔄 Reset all mock token balances');
   }
+
+  // Campaign token burning simulation
+  burnCampaignTokens(campaignId: number) {
+    // In a real implementation, this would burn the actual staked tokens
+    // For mock purposes, we'll simulate by reducing the total supply
+    const burnAmount = ethers.utils.parseUnits('1000', this._decimals); // Simulate burning 1000 tokens
+    
+    if (this._totalSupply.gte(burnAmount)) {
+      this._totalSupply = this._totalSupply.sub(burnAmount);
+      console.log(`🔥 Mock: Burned ${ethers.utils.formatUnits(burnAmount, this._decimals)} tokens for campaign ${campaignId}`);
+      console.log(`📊 New total supply: ${ethers.utils.formatUnits(this._totalSupply, this._decimals)} mSQUDY`);
+      toast.success(`🔥 Burned ${ethers.utils.formatUnits(burnAmount, this._decimals)} tokens from total supply`);
+    } else {
+      console.log('⚠️ Mock: Not enough tokens in supply to burn');
+      toast.error('Not enough tokens in supply to burn');
+    }
+  }
 }
 
 // Singleton instance for the app

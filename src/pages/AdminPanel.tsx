@@ -40,9 +40,11 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useWeb3 } from "@/contexts/Web3Context";
 import { useAuth } from "@/hooks/useAuth";
-import { useCampaigns, getCampaignStatusBadge } from "@/hooks/useCampaigns";
+import { useCampaigns, getCampaignStatusBadge, campaignKeys } from "@/hooks/useCampaigns";
+import { useQueryClient } from '@tanstack/react-query';
 import { adminAPI, Campaign } from "@/services/api";
 import { useSocket } from "@/services/socket";
+import { useContracts } from "@/services/contracts";
 import { toast } from "sonner";
 
 const AdminPanel = () => {
@@ -50,8 +52,10 @@ const AdminPanel = () => {
   const socket = useSocket();
   
   // Web3 and Auth
-  const { account, isConnected } = useWeb3();
+  const { account, isConnected, provider, signer } = useWeb3();
   const { isAuthenticated, requireAuth } = useAuth();
+  const contractService = useContracts(provider, signer);
+  const queryClient = useQueryClient();
   
   // API queries
   const { 
@@ -280,16 +284,39 @@ const AdminPanel = () => {
           toast.success("Campaign closed successfully!");
           break;
         case 'select-winners':
-          await adminAPI.selectWinners(campaignId);
-          toast.success("Winner selection initiated!");
+          // Call smart contract first, then update backend
+          if (contractService) {
+            console.log('🎯 Calling smart contract selectWinners...');
+            const tx = await contractService.selectWinners(campaignId);
+            await tx.wait();
+            console.log('✅ Smart contract call completed');
+          }
+          console.log('📡 Calling backend API selectWinners...');
+          const response = await adminAPI.selectWinners(campaignId);
+          console.log('📝 Backend response:', response);
+          toast.success("🏆 Winners selected successfully!");
           break;
         case 'burn':
+          // Call smart contract first, then update backend
+          if (contractService) {
+            const tx = await contractService.burnAllTokens(campaignId);
+            await tx.wait();
+          }
           await adminAPI.burnTokens(campaignId);
-          toast.success("Token burning completed!");
+          toast.success("🔥 All staked tokens have been burned!");
           break;
       }
       
-      refetchCampaigns();
+      // Force refresh the campaigns list
+      console.log('🔄 Refreshing campaigns after action:', action);
+      queryClient.invalidateQueries({ queryKey: campaignKeys.all });
+      const refetchResult = await refetchCampaigns();
+      console.log('🔍 Refetch result:', refetchResult?.data);
+      console.log('📊 Campaign statuses after refetch:', 
+        refetchResult?.data?.campaigns?.map(c => `${c.name}: ${c.status}`) || 'No campaigns');
+      
+      // Also log the current campaigns state
+      console.log('📋 Current campaigns state:', campaignsData);
     } catch (error: any) {
       console.error(`Failed to ${action} campaign:`, error);
       toast.error(error.response?.data?.error?.message || `Failed to ${action} campaign`);
@@ -319,6 +346,30 @@ const AdminPanel = () => {
         i === index ? { ...prize, [field]: value } : prize
       )
     }));
+  };
+
+  const loadTestData = () => {
+    const now = new Date();
+    const startDate = new Date(now.getTime() + 24 * 60 * 60 * 1000); // Tomorrow
+    const endDate = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000); // Next week
+    
+    setFormData({
+      name: 'Test Campaign ' + Math.floor(Math.random() * 1000),
+      description: 'This is a test campaign created for testing purposes. Participants can stake SQUDY tokens to win amazing prizes!',
+      imageUrl: 'https://images.unsplash.com/photo-1640340434855-6084b1f4901c?w=800&h=400&fit=crop',
+      softCap: '5000',
+      hardCap: '50000',
+      ticketAmount: '100',
+      startDate: startDate.toISOString().slice(0, 16), // Format for datetime-local
+      endDate: endDate.toISOString().slice(0, 16),
+      prizes: [
+        { name: 'First Prize', description: 'Winner takes all', value: '10000', currency: 'USD', quantity: 1 },
+        { name: 'Second Prize', description: 'Runner up reward', value: '5000', currency: 'USD', quantity: 1 },
+        { name: 'Third Prize', description: 'Bronze medal', value: '2500', currency: 'USD', quantity: 1 }
+      ]
+    });
+    
+    toast.success('🧪 Test data loaded successfully!');
   };
 
   // Loading state for non-authenticated users
@@ -510,7 +561,7 @@ const AdminPanel = () => {
                               className="w-12 h-12 rounded object-cover"
                               onError={(e) => {
                                 const target = e.target as HTMLImageElement;
-                                target.src = "/placeholder.svg";
+                                target.src = "https://images.unsplash.com/photo-1640340434855-6084b1f4901c?w=400&h=300&fit=crop";
                               }}
                             />
                             <div>
@@ -597,35 +648,48 @@ const AdminPanel = () => {
                               </Button>
                             )}
                             
-                            {campaign.status === 'finished' && (
-                              <>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => handleCampaignAction(campaign.contractId, 'select-winners')}
-                                  disabled={getActionLoading(campaign.contractId, 'select-winners')}
-                                >
-                                  {getActionLoading(campaign.contractId, 'select-winners') ? (
-                                    <Loader2 className="w-4 h-4 mr-1 animate-spin" />
-                                  ) : (
-                                    <Crown className="w-4 h-4 mr-1" />
-                                  )}
-                                  Winners
-                                </Button>
-                                <Button
-                                  variant="destructive"
-                                  size="sm"
-                                  onClick={() => handleCampaignAction(campaign.contractId, 'burn')}
-                                  disabled={getActionLoading(campaign.contractId, 'burn')}
-                                >
-                                  {getActionLoading(campaign.contractId, 'burn') ? (
-                                    <Loader2 className="w-4 h-4 mr-1 animate-spin" />
-                                  ) : (
-                                    <Flame className="w-4 h-4 mr-1" />
-                                  )}
-                                  Burn
-                                </Button>
-                              </>
+                            {/* Select Winners Button - Show for finished/closed campaigns without winners */}
+                            {(campaign.status === 'finished' || campaign.status === 'closed') && 
+                             campaign.status !== 'winners_selected' && 
+                             campaign.status !== 'burned' && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleCampaignAction(campaign.contractId, 'select-winners')}
+                                disabled={getActionLoading(campaign.contractId, 'select-winners')}
+                              >
+                                {getActionLoading(campaign.contractId, 'select-winners') ? (
+                                  <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                                ) : (
+                                  <Crown className="w-4 h-4 mr-1" />
+                                )}
+                                Winners
+                              </Button>
+                            )}
+                            
+                            {/* Burn Tokens Button - Show only after winners are selected */}
+                            {campaign.status === 'winners_selected' && (
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={() => handleCampaignAction(campaign.contractId, 'burn')}
+                                disabled={getActionLoading(campaign.contractId, 'burn')}
+                              >
+                                {getActionLoading(campaign.contractId, 'burn') ? (
+                                  <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                                ) : (
+                                  <Flame className="w-4 h-4 mr-1" />
+                                )}
+                                Burn Tokens
+                              </Button>
+                            )}
+                            
+                            {/* Burned Status Indicator */}
+                            {campaign.status === 'burned' && (
+                              <Badge variant="destructive" className="px-3 py-1">
+                                <Flame className="w-3 h-3 mr-1" />
+                                Tokens Burned
+                              </Badge>
                             )}
                           </div>
                         </div>
@@ -640,10 +704,22 @@ const AdminPanel = () => {
             <TabsContent value="create" className="space-y-6">
               <Card>
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Plus className="w-5 h-5" />
-                    Create New Campaign
-                  </CardTitle>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="flex items-center gap-2">
+                      <Plus className="w-5 h-5" />
+                      Create New Campaign
+                    </CardTitle>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={loadTestData}
+                      className="flex items-center gap-2"
+                    >
+                      <Zap className="w-4 h-4" />
+                      Load Test Data
+                    </Button>
+                  </div>
                 </CardHeader>
                 <CardContent className="space-y-6">
                   {/* Basic Information */}
@@ -719,24 +795,94 @@ const AdminPanel = () => {
                   {/* Dates */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="startDate">Start Date *</Label>
+                      <Label htmlFor="startDate" className="flex items-center gap-2">
+                        <Calendar className="w-4 h-4" />
+                        Start Date *
+                      </Label>
                       <Input
                         id="startDate"
                         type="datetime-local"
                         value={formData.startDate}
                         onChange={(e) => setFormData(prev => ({ ...prev, startDate: e.target.value }))}
+                        className="text-sm"
                       />
+                      <p className="text-xs text-muted-foreground">
+                        Campaign will start at this date and time
+                      </p>
                     </div>
                     
                     <div className="space-y-2">
-                      <Label htmlFor="endDate">End Date *</Label>
+                      <Label htmlFor="endDate" className="flex items-center gap-2">
+                        <Calendar className="w-4 h-4" />
+                        End Date *
+                      </Label>
                       <Input
                         id="endDate"
                         type="datetime-local"
                         value={formData.endDate}
                         onChange={(e) => setFormData(prev => ({ ...prev, endDate: e.target.value }))}
+                        className="text-sm"
                       />
+                      <p className="text-xs text-muted-foreground">
+                        Campaign will end at this date and time
+                      </p>
                     </div>
+                  </div>
+
+                  {/* Date Presets */}
+                  <div className="flex flex-wrap gap-2 p-4 bg-muted/50 rounded-lg">
+                    <p className="text-sm text-muted-foreground w-full mb-2">Quick date presets:</p>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        const now = new Date();
+                        const start = new Date(now.getTime() + 60 * 60 * 1000); // 1 hour from now
+                        const end = new Date(now.getTime() + 24 * 60 * 60 * 1000); // 24 hours from now
+                        setFormData(prev => ({
+                          ...prev,
+                          startDate: start.toISOString().slice(0, 16),
+                          endDate: end.toISOString().slice(0, 16)
+                        }));
+                      }}
+                    >
+                      1 Day
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        const now = new Date();
+                        const start = new Date(now.getTime() + 60 * 60 * 1000); // 1 hour from now
+                        const end = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000); // 7 days from now
+                        setFormData(prev => ({
+                          ...prev,
+                          startDate: start.toISOString().slice(0, 16),
+                          endDate: end.toISOString().slice(0, 16)
+                        }));
+                      }}
+                    >
+                      1 Week
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        const now = new Date();
+                        const start = new Date(now.getTime() + 60 * 60 * 1000); // 1 hour from now
+                        const end = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000); // 30 days from now
+                        setFormData(prev => ({
+                          ...prev,
+                          startDate: start.toISOString().slice(0, 16),
+                          endDate: end.toISOString().slice(0, 16)
+                        }));
+                      }}
+                    >
+                      1 Month
+                    </Button>
                   </div>
 
                   {/* Prizes */}

@@ -297,6 +297,100 @@ export class ContractService {
     return this.useMockToken;
   }
 
+  // Admin functions for winner selection and token burning
+  async selectWinners(campaignId: number): Promise<any> {
+    try {
+      if (this.useMockToken) {
+        // Mock winner selection - simulate the process
+        console.log(`🎲 Mock: Selecting winners for campaign ${campaignId}`);
+        toast.info('Selecting winners using mock randomness...');
+        
+        // Return a mock transaction object
+        return {
+          hash: '0x' + Math.random().toString(16).substring(2),
+          wait: async () => {
+            await new Promise(resolve => setTimeout(resolve, 2000)); // Simulate blockchain delay
+            toast.success('🏆 Winners selected successfully!');
+            return { status: 1 };
+          }
+        };
+      } else {
+        // Real smart contract implementation
+        console.log(`🔗 Real: Selecting winners for campaign ${campaignId}`);
+        toast.info('Submitting transaction to blockchain...');
+        
+        // Gas estimation for better UX
+        const gasEstimate = await this.campaignManagerContract.estimateGas.selectWinners(campaignId);
+        console.log(`⛽ Estimated gas: ${gasEstimate.toString()}`);
+        
+        // Add 20% buffer to gas estimate
+        const gasLimit = gasEstimate.mul(120).div(100);
+        const tx = await this.campaignManagerContract.selectWinners(campaignId, { gasLimit });
+        toast.info(`Transaction sent: ${tx.hash.slice(0, 10)}... Waiting for confirmation...`);
+        return tx;
+      }
+    } catch (error: any) {
+      console.error('❌ SelectWinners failed:', error);
+      if (error.code === 'INSUFFICIENT_FUNDS') {
+        toast.error('Insufficient funds for gas. Please add ETH to your wallet.');
+      } else if (error.code === 'USER_REJECTED') {
+        toast.error('Transaction rejected by user.');
+      } else if (error.message?.includes('revert')) {
+        toast.error('Smart contract error: ' + error.reason || 'Transaction reverted');
+      } else {
+        toast.error('Failed to select winners: ' + error.message);
+      }
+      throw error;
+    }
+  }
+
+  async burnAllTokens(campaignId: number): Promise<any> {
+    try {
+      if (this.useMockToken) {
+        // Mock token burning - simulate burning all staked tokens
+        console.log(`🔥 Mock: Burning all staked tokens for campaign ${campaignId}`);
+        
+        // In mock mode, we simulate burning by "removing" tokens from circulation
+        // The actual burning would transfer tokens to a burn address or reduce total supply
+        mockSqudyToken.burnCampaignTokens(campaignId);
+        
+        toast.success('🔥 All staked tokens have been burned!');
+        
+        // Return a mock transaction object
+        return {
+          hash: '0x' + Math.random().toString(16).substring(2),
+          wait: async () => ({ status: 1 })
+        };
+      } else {
+        // Real smart contract implementation
+        console.log(`🔗 Real: Burning all staked tokens for campaign ${campaignId}`);
+        toast.info('Submitting burn transaction to blockchain...');
+        
+        // Gas estimation for better UX
+        const gasEstimate = await this.campaignManagerContract.estimateGas.burnAllTokens(campaignId);
+        console.log(`⛽ Estimated gas for burn: ${gasEstimate.toString()}`);
+        
+        // Add 20% buffer to gas estimate
+        const gasLimit = gasEstimate.mul(120).div(100);
+        const tx = await this.campaignManagerContract.burnAllTokens(campaignId, { gasLimit });
+        toast.info(`Burn transaction sent: ${tx.hash.slice(0, 10)}... Waiting for confirmation...`);
+        return tx;
+      }
+    } catch (error: any) {
+      console.error('❌ BurnAllTokens failed:', error);
+      if (error.code === 'INSUFFICIENT_FUNDS') {
+        toast.error('Insufficient funds for gas. Please add ETH to your wallet.');
+      } else if (error.code === 'USER_REJECTED') {
+        toast.error('Transaction rejected by user.');
+      } else if (error.message?.includes('revert')) {
+        toast.error('Smart contract error: ' + error.reason || 'Transaction reverted');
+      } else {
+        toast.error('Failed to burn tokens: ' + error.message);
+      }
+      throw error;
+    }
+  }
+
   async isEligibleForWinning(campaignId: number, userAddress: string): Promise<boolean> {
     try {
       return await this.campaignManagerContract.isEligibleForWinning(campaignId, userAddress);
@@ -323,10 +417,10 @@ export class ContractService {
       name: campaign.name,
       description: campaign.description,
       imageUrl: campaign.imageUrl,
-      softCap: ethers.formatEther(campaign.softCap),
-      hardCap: ethers.formatEther(campaign.hardCap),
-      ticketAmount: ethers.formatEther(campaign.ticketAmount),
-      currentAmount: ethers.formatEther(campaign.currentAmount),
+      softCap: ethers.utils.formatEther(campaign.softCap),
+      hardCap: ethers.utils.formatEther(campaign.hardCap),
+      ticketAmount: ethers.utils.formatEther(campaign.ticketAmount),
+      currentAmount: ethers.utils.formatEther(campaign.currentAmount),
       startDate: new Date(campaign.startDate.toNumber() * 1000),
       endDate: new Date(campaign.endDate.toNumber() * 1000),
       participantCount: campaign.participantCount.toNumber(),
@@ -334,7 +428,7 @@ export class ContractService {
       winners: campaign.winners,
       status: this.getStatusString(campaign.status),
       tokensAreBurned: campaign.tokensAreBurned,
-      totalBurned: ethers.formatEther(campaign.totalBurned),
+      totalBurned: ethers.utils.formatEther(campaign.totalBurned),
       winnerSelectionTxHash: campaign.winnerSelectionTxHash,
       createdAt: new Date(campaign.createdAt.toNumber() * 1000),
       updatedAt: new Date(campaign.updatedAt.toNumber() * 1000),
@@ -343,7 +437,7 @@ export class ContractService {
 
   private parseParticipantData(participant: any): any {
     return {
-      stakedAmount: ethers.formatEther(participant.stakedAmount),
+      stakedAmount: ethers.utils.formatEther(participant.stakedAmount),
       ticketCount: participant.ticketCount.toNumber(),
       hasCompletedSocial: participant.hasCompletedSocial,
       isWinner: participant.isWinner,
@@ -378,7 +472,7 @@ export class ContractService {
           name,
           startDate: new Date(startDate.toNumber() * 1000),
           endDate: new Date(endDate.toNumber() * 1000),
-          ticketAmount: ethers.formatEther(ticketAmount),
+          ticketAmount: ethers.utils.formatEther(ticketAmount),
         });
       });
     }
@@ -388,7 +482,7 @@ export class ContractService {
         callbacks.onUserStaked!({
           campaignId: campaignId.toNumber(),
           user,
-          amount: ethers.formatEther(amount),
+          amount: ethers.utils.formatEther(amount),
           tickets: tickets.toNumber(),
         });
       });
@@ -417,7 +511,7 @@ export class ContractService {
       this.campaignManagerContract.on('TokensBurned', (campaignId, totalBurned) => {
         callbacks.onTokensBurned!({
           campaignId: campaignId.toNumber(),
-          totalBurned: ethers.formatEther(totalBurned),
+          totalBurned: ethers.utils.formatEther(totalBurned),
         });
       });
     }

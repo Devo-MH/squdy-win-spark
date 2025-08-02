@@ -18,6 +18,18 @@ module.exports = {
     hardhat: {
       chainId: 31337,
     },
+    sepolia: {
+      url: process.env.SEPOLIA_RPC_URL || "https://sepolia.infura.io/v3/" + process.env.INFURA_API_KEY,
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
+      chainId: 11155111,
+      gasPrice: 30000000000, // 30 gwei
+    },
+    goerli: {
+      url: process.env.GOERLI_RPC_URL || "https://goerli.infura.io/v3/" + process.env.INFURA_API_KEY,
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
+      chainId: 5,
+      gasPrice: 25000000000, // 25 gwei
+    },
     "bsc-testnet": {
       url: process.env.BSC_TESTNET_RPC_URL || "https://data-seed-prebsc-1-s1.binance.org:8545/",
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
@@ -47,6 +59,8 @@ module.exports = {
   },
   etherscan: {
     apiKey: {
+      sepolia: process.env.ETHERSCAN_API_KEY || "",
+      goerli: process.env.ETHERSCAN_API_KEY || "",
       bscTestnet: process.env.BSCSCAN_API_KEY || "",
       bsc: process.env.BSCSCAN_API_KEY || "",
     },
