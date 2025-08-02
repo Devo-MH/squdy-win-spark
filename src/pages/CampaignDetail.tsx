@@ -280,11 +280,11 @@ const CampaignDetail = () => {
     }
   };
 
-  // Derived values
-  const progress = formatProgress(localCampaign.currentAmount, localCampaign.hardCap);
-  const isActive = localCampaign.status === "active";
-  const isFinished = localCampaign.status === "finished" || localCampaign.status === "burned";
-  const timeLeft = formatTimeLeft(localCampaign.endDate);
+  // Derived values - only calculate if localCampaign exists
+  const progress = localCampaign ? formatProgress(localCampaign.currentAmount, localCampaign.hardCap) : 0;
+  const isActive = localCampaign?.status === "active";
+  const isFinished = localCampaign?.status === "finished" || localCampaign?.status === "burned";
+  const timeLeft = localCampaign ? formatTimeLeft(localCampaign.endDate) : '';
   const ticketsFromStake = calculateTickets(stakeAmount);
   const hasAllowance = parseFloat(allowance) >= parseFloat(stakeAmount || '0');
   const userStatus = statusData?.status;
@@ -338,7 +338,7 @@ const CampaignDetail = () => {
           </div>
 
           {/* Loading State */}
-          {isCampaignLoading && (
+          {(isCampaignLoading || !localCampaign) && (
             <div className="space-y-8">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 <div className="space-y-6">
@@ -368,7 +368,7 @@ const CampaignDetail = () => {
           )}
 
           {/* Main Content */}
-          {localCampaign && !isCampaignLoading && (
+          {localCampaign && !isCampaignLoading && !campaignError && (
             <>
               {/* Campaign Header Section */}
               <div className="mb-12">
