@@ -899,7 +899,6 @@ const CampaignDetail = () => {
                     </div>
                   </CardContent>
                 </Card>
-                </div>
               </div>
             </>
           )}
