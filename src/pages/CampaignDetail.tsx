@@ -48,6 +48,10 @@ import { MockTokenBanner } from "@/components/MockTokenBanner";
 import { TaskChecklist } from "@/components/offchain-verifier";
 import { Task } from "@/components/offchain-verifier/types";
 import { toast } from "sonner";
+import { CampaignHeader } from "@/components/campaign/CampaignHeader";
+import { CampaignStats } from "@/components/campaign/CampaignStats";
+import { PrizePool } from "@/components/campaign/PrizePool";
+import { StakingSection } from "@/components/campaign/StakingSection";
 
 const CampaignDetail = () => {
   const { id } = useParams();
@@ -320,18 +324,6 @@ const CampaignDetail = () => {
       
       <div className="pt-24 pb-20">
         <div className="container mx-auto px-4 max-w-7xl">
-          {/* Back Navigation */}
-          <div className="mb-8">
-            <Button
-              variant="ghost"
-              className="group hover:bg-white/5 transition-all duration-200"
-              onClick={() => navigate(-1)}
-            >
-              <ArrowLeft className="w-4 h-4 mr-2 group-hover:-translate-x-1 transition-transform duration-200" />
-              Back to Campaigns
-            </Button>
-          </div>
-
           {/* Mock Token Banner */}
           <div className="mb-8">
             <MockTokenBanner contractService={contractService} />
@@ -370,95 +362,103 @@ const CampaignDetail = () => {
           {/* Main Content */}
           {localCampaign && !isCampaignLoading && !campaignError && (
             <>
-              {/* Campaign Header Section */}
+              {/* Modern Campaign Header */}
               <div className="mb-12">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
-                  {/* Campaign Info */}
-                  <div className="space-y-8">
-                    {/* Status Badges */}
-                    <div className="flex items-center gap-4 flex-wrap">
-                      <Badge 
-                        variant={getCampaignStatusBadge(localCampaign.status)}
-                        className="text-sm px-4 py-2 capitalize font-medium shadow-sm"
-                      >
-                        {localCampaign.status}
-                      </Badge>
-                      {isActive && (
-                        <Badge variant="outline" className="text-sm px-4 py-2 border-white/20">
-                          <Clock className="w-4 h-4 mr-2" />
-                          {timeLeft}
-                        </Badge>
-                      )}
-                      {localCampaign.status === 'burned' && (
-                        <Badge variant="destructive" className="text-sm px-4 py-2">
-                          <Flame className="w-4 h-4 mr-2" />
-                          Burned
-                        </Badge>
-                      )}
-                    </div>
-                    
-                    {/* Campaign Title */}
-                    <div className="space-y-4">
-                      <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold bg-gradient-to-r from-white via-white to-white/80 bg-clip-text text-transparent leading-tight">
-                        {localCampaign.name}
-                      </h1>
-                      
-                      <p className="text-lg md:text-xl text-muted-foreground leading-relaxed max-w-2xl">
-                        {localCampaign.description}
-                      </p>
-                    </div>
+                <CampaignHeader
+                  title={localCampaign.name}
+                  description={localCampaign.description}
+                  status={localCampaign.status}
+                  timeLeft={timeLeft}
+                  onBack={() => navigate(-1)}
+                  isActive={isActive}
+                />
+              </div>
 
-                    {/* Action Buttons */}
-                    <div className="flex flex-col sm:flex-row gap-4 pt-4">
-                      {!isConnected ? (
-                        <div className="text-center p-6 bg-white/5 border border-white/10 rounded-xl backdrop-blur-sm">
-                          <Wallet className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
-                          <p className="text-sm text-muted-foreground font-medium">Connect your wallet to participate</p>
-                        </div>
-                      ) : isParticipating ? (
-                        <div className="text-center p-6 bg-green-500/10 border border-green-500/20 rounded-xl backdrop-blur-sm">
-                          <CheckCircle2 className="w-10 h-10 text-green-500 mx-auto mb-3" />
-                          <p className="text-sm text-green-400 font-semibold">You're participating!</p>
-                          <p className="text-xs text-muted-foreground mt-2">
-                            {userStatus?.ticketCount} tickets • {userStatus?.stakedAmount} SQUDY staked
-                          </p>
-                        </div>
-                      ) : (
-                        <Button 
-                          variant="outline" 
-                          size="lg" 
-                          className="flex-1 group hover:bg-white/5 transition-all duration-200 border-white/20"
-                          onClick={() => window.open('https://pancakeswap.finance/', '_blank')}
-                        >
-                          <ExternalLink className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform duration-200" />
-                          🪙 Buy SQUDY
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Campaign Image */}
-                  <div className="relative group">
-                    <div className="relative overflow-hidden rounded-2xl border border-white/10 shadow-2xl shadow-purple-600/20">
-                      <img 
-                        src={localCampaign.imageUrl} 
-                        alt={localCampaign.name}
-                        className="w-full aspect-video object-cover transition-transform duration-500 group-hover:scale-105"
-                        onError={(e) => {
-                          const target = e.target as HTMLImageElement;
-                          target.src = "https://images.unsplash.com/photo-1640340434855-6084b1f4901c?w=400&h=300&fit=crop";
-                        }}
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/20 to-transparent" />
-                    </div>
-                  </div>
-                </div>
+              {/* Campaign Statistics */}
+              <div className="mb-12">
+                <CampaignStats
+                  currentAmount={Number(localCampaign.currentAmount)}
+                  hardCap={Number(localCampaign.hardCap)}
+                  softCap={Number(localCampaign.softCap)}
+                  participantCount={localCampaign.participantCount}
+                  timeLeft={timeLeft}
+                  ticketAmount={Number(localCampaign.ticketAmount)}
+                />
               </div>
 
               {/* Main Grid Layout */}
-              <div className="grid grid-cols-1 xl:grid-cols-4 gap-8">
+              <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
                 {/* Main Content Area */}
-                <div className="xl:col-span-3 space-y-8">
+                <div className="xl:col-span-2 space-y-8">
+                  {/* Staking Section */}
+                  {isConnected && !isParticipating && (
+                    <StakingSection
+                      squdyBalance={squdyBalance}
+                      stakeAmount={stakeAmount}
+                      onStakeAmountChange={setStakeAmount}
+                      ticketsFromStake={ticketsFromStake}
+                      ticketAmount={Number(localCampaign.ticketAmount)}
+                      isApproving={isApproving}
+                      isStaking={isStaking}
+                      hasAllowance={hasAllowance}
+                      hasStaked={hasStaked}
+                      onApprove={handleApprove}
+                      onStake={handleStake}
+                    />
+                  )}
+
+                  {/* Connection Status for Non-Connected Users */}
+                  {!isConnected && (
+                    <Card className="gradient-card border border-white/10 slide-up">
+                      <CardContent className="p-8 text-center">
+                        <Wallet className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+                        <h3 className="text-xl font-semibold text-white mb-2">Connect Your Wallet</h3>
+                        <p className="text-muted-foreground mb-6">
+                          Connect your wallet to participate in this campaign and stake SQUDY tokens.
+                        </p>
+                        <Button 
+                          variant="outline" 
+                          size="lg"
+                          className="border-campaign-primary/30 bg-campaign-primary/10 hover:bg-campaign-primary/20 text-campaign-primary"
+                          onClick={() => window.open('https://pancakeswap.finance/', '_blank')}
+                        >
+                          <ExternalLink className="w-5 h-5 mr-2" />
+                          Get SQUDY Tokens
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  {/* Participation Success */}
+                  {isParticipating && (
+                    <Card className="gradient-card border border-campaign-success/20 slide-up">
+                      <CardContent className="p-8 text-center">
+                        <CheckCircle2 className="w-16 h-16 text-campaign-success mx-auto mb-4" />
+                        <h3 className="text-xl font-semibold text-campaign-success mb-2">
+                          🎉 You're Participating!
+                        </h3>
+                        <p className="text-muted-foreground mb-4">
+                          You've successfully joined this campaign. Good luck in the draw!
+                        </p>
+                        <div className="bg-campaign-success/5 border border-campaign-success/20 rounded-xl p-4">
+                          <div className="grid grid-cols-2 gap-4 text-center">
+                            <div>
+                              <p className="text-2xl font-bold text-campaign-success">
+                                {userStatus?.ticketCount}
+                              </p>
+                              <p className="text-sm text-muted-foreground">Tickets</p>
+                            </div>
+                            <div>
+                              <p className="text-2xl font-bold text-campaign-success">
+                                {userStatus?.stakedAmount}
+                              </p>
+                              <p className="text-sm text-muted-foreground">SQUDY Staked</p>
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
                   {/* Campaign Progress Card */}
                   <Card className="bg-white/5 border-white/10 backdrop-blur-sm shadow-lg shadow-purple-600/10">
                     <CardHeader className="pb-6">
@@ -755,56 +755,150 @@ const CampaignDetail = () => {
                   )}
                 </div>
 
-                {/* Sidebar */}
-                <div className="xl:col-span-1 space-y-6">
-                  {/* Campaign Details */}
-                  <Card className="bg-white/5 border-white/10 backdrop-blur-sm shadow-lg shadow-purple-600/10">
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <BookOpen className="w-5 h-5 text-primary" />
-                        Campaign Details
+                {/* Tasks Section */}
+                {campaignTasks.length > 0 && showTasksSection && (
+                  <Card className="gradient-card border border-white/10 slide-up-delay-1">
+                    <CardHeader className="pb-6">
+                      <CardTitle className="flex items-center gap-3 text-xl">
+                        <div className="p-2 bg-campaign-secondary/20 border border-campaign-secondary/30 rounded-lg">
+                          <CheckCircle className="w-6 h-6 text-campaign-secondary" />
+                        </div>
+                        <div>
+                          <span className="text-white">Complete Required Tasks</span>
+                          <p className="text-sm font-normal text-muted-foreground mt-1">
+                            Step 2: Complete social tasks to join
+                          </p>
+                        </div>
                       </CardTitle>
                     </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div className="flex justify-between items-center">
+                    <CardContent>
+                      <TaskChecklist
+                        tasks={campaignTasks}
+                        completedTasks={completedTasks}
+                        onTaskChange={handleTaskChange}
+                        campaignName={localCampaign.name}
+                        campaignId={localCampaign.id?.toString()}
+                        enableSimulation={true}
+                        highlightFirstIncompleteTask={true}
+                      />
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Join Campaign Button */}
+                {showJoinButton && (
+                  <Card className="gradient-card border border-campaign-success/20 slide-up-delay-2">
+                    <CardContent className="p-8 text-center">
+                      <div className="space-y-6">
+                        <div className="inline-flex items-center justify-center w-16 h-16 bg-campaign-success/20 border border-campaign-success/30 rounded-full">
+                          <Trophy className="w-8 h-8 text-campaign-success" />
+                        </div>
+                        
+                        <div>
+                          <h3 className="text-xl font-bold text-campaign-success mb-2">
+                            🎉 Ready to Join!
+                          </h3>
+                          <p className="text-muted-foreground">
+                            You've completed all requirements. Join the campaign now!
+                          </p>
+                        </div>
+                        
+                        <Button 
+                          onClick={handleJoinCampaign}
+                          disabled={isJoiningCampaign || !canJoinCampaign}
+                          className="w-full h-14 bg-gradient-to-r from-campaign-success to-campaign-info hover:scale-105 text-white font-bold shadow-lg hover:shadow-xl transition-all duration-200"
+                          size="lg"
+                        >
+                          {isJoiningCampaign ? (
+                            <>
+                              <Loader2 className="w-6 h-6 mr-2 animate-spin" />
+                              Joining Campaign...
+                            </>
+                          ) : (
+                            <>
+                              <Trophy className="w-6 h-6 mr-2" />
+                              Join Campaign & Compete for Prizes
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+
+              {/* Sidebar */}
+              <div className="xl:col-span-1 space-y-6">
+                {/* Prize Pool */}
+                <PrizePool prizes={localCampaign.prizes} />
+                {/* Campaign Details */}
+                <Card className="gradient-card border border-white/10 slide-up-delay-3">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-3">
+                      <div className="p-2 bg-campaign-info/20 border border-campaign-info/30 rounded-lg">
+                        <BookOpen className="w-5 h-5 text-campaign-info" />
+                      </div>
+                      <span className="text-white">Campaign Details</span>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-4">
+                      <div className="flex justify-between items-center p-3 bg-white/5 rounded-lg">
                         <span className="text-sm text-muted-foreground">Start Date</span>
-                        <span className="text-sm font-medium">{new Date(localCampaign.startDate).toLocaleDateString()}</span>
+                        <span className="text-sm font-medium text-white">{new Date(localCampaign.startDate).toLocaleDateString()}</span>
                       </div>
-                      <div className="flex justify-between items-center">
+                      <div className="flex justify-between items-center p-3 bg-white/5 rounded-lg">
                         <span className="text-sm text-muted-foreground">End Date</span>
-                        <span className="text-sm font-medium">{new Date(localCampaign.endDate).toLocaleDateString()}</span>
+                        <span className="text-sm font-medium text-white">{new Date(localCampaign.endDate).toLocaleDateString()}</span>
                       </div>
-                      <div className="flex justify-between items-center">
+                      <div className="flex justify-between items-center p-3 bg-white/5 rounded-lg">
                         <span className="text-sm text-muted-foreground">Soft Cap</span>
-                        <span className="text-sm font-medium">{Number(localCampaign.softCap).toLocaleString()} SQUDY</span>
+                        <span className="text-sm font-medium text-campaign-info">{Number(localCampaign.softCap).toLocaleString()} SQUDY</span>
                       </div>
-                      <div className="flex justify-between items-center">
+                      <div className="flex justify-between items-center p-3 bg-white/5 rounded-lg">
                         <span className="text-sm text-muted-foreground">Hard Cap</span>
-                        <span className="text-sm font-medium">{Number(localCampaign.hardCap).toLocaleString()} SQUDY</span>
+                        <span className="text-sm font-medium text-campaign-warning">{Number(localCampaign.hardCap).toLocaleString()} SQUDY</span>
                       </div>
-                      <div className="flex justify-between items-center">
+                      <div className="flex justify-between items-center p-3 bg-white/5 rounded-lg">
                         <span className="text-sm text-muted-foreground">Status</span>
-                        <Badge variant={getCampaignStatusBadge(localCampaign.status)} className="text-xs">
+                        <Badge 
+                          className={`text-xs ${
+                            localCampaign.status === 'active' 
+                              ? 'bg-campaign-success/20 text-campaign-success border-campaign-success/30' 
+                              : 'bg-gray-500/20 text-gray-400 border-gray-500/30'
+                          }`}
+                        >
                           {localCampaign.status}
                         </Badge>
                       </div>
-                    </CardContent>
-                  </Card>
+                    </div>
+                  </CardContent>
+                </Card>
 
-                  {/* Token Burn Warning */}
-                  <Card className="bg-orange-500/10 border-orange-500/20 backdrop-blur-sm">
-                    <CardContent className="p-6">
-                      <div className="flex items-start gap-3">
-                        <AlertTriangle className="w-6 h-6 text-orange-500 mt-0.5 flex-shrink-0" />
-                        <div>
-                          <h4 className="font-semibold text-orange-400 mb-2">Token Burn Warning</h4>
-                          <p className="text-sm text-orange-300">
-                            All staked SQUDY tokens will be permanently burned at the end of this campaign, regardless of winning status.
+                {/* Token Burn Warning */}
+                <Card className="gradient-card border border-campaign-warning/20 slide-up-delay-3">
+                  <CardContent className="p-6">
+                    <div className="flex items-start gap-3">
+                      <div className="p-2 bg-campaign-warning/20 border border-campaign-warning/30 rounded-lg flex-shrink-0">
+                        <AlertTriangle className="w-5 h-5 text-campaign-warning" />
+                      </div>
+                      <div>
+                        <h4 className="font-semibold text-campaign-warning mb-2">🔥 Token Burn Mechanism</h4>
+                        <p className="text-sm text-campaign-warning/80 leading-relaxed">
+                          All staked SQUDY tokens will be permanently burned at the end of this campaign, 
+                          regardless of winning status. This burn-to-win mechanism creates scarcity and 
+                          adds value to the ecosystem.
+                        </p>
+                        <div className="mt-3 p-3 bg-campaign-warning/5 border border-campaign-warning/20 rounded-lg">
+                          <p className="text-xs text-campaign-warning/70">
+                            💡 <strong>Why Burn?</strong> Token burning reduces supply, potentially increasing 
+                            value for remaining token holders while funding amazing prizes.
                           </p>
                         </div>
                       </div>
-                    </CardContent>
-                  </Card>
+                    </div>
+                  </CardContent>
+                </Card>
                 </div>
               </div>
             </>

@@ -46,8 +46,20 @@ All colors MUST be HSL.
     --neon-green: 142 76% 46%;
     --electric-purple: 270 91% 65%;
     
-    /* Gradients */
+    /* Campaign Theme Colors */
+    --campaign-primary: 263 70% 50%;
+    --campaign-secondary: 280 100% 70%;
+    --campaign-accent: 230 100% 60%;
+    --campaign-warning: 45 100% 60%;
+    --campaign-success: 142 76% 46%;
+    --campaign-info: 217 91% 60%;
+    
+    /* Campaign Gradients */
     --gradient-primary: linear-gradient(135deg, hsl(270 91% 65%), hsl(217 91% 60%));
+    --gradient-campaign: linear-gradient(135deg, hsl(263 70% 50%), hsl(280 100% 70%));
+    --gradient-hero: linear-gradient(135deg, hsl(263 70% 50%) 0%, hsl(280 100% 70%) 50%, hsl(230 100% 60%) 100%);
+    --gradient-card: linear-gradient(135deg, hsl(240 10% 5%) 0%, hsl(260 20% 8%) 100%);
+    --gradient-stats: linear-gradient(45deg, hsl(263 70% 50% / 0.1), hsl(280 100% 70% / 0.1));
     --gradient-hero: linear-gradient(135deg, hsl(240 10% 3.9%) 0%, hsl(270 91% 15%) 50%, hsl(217 91% 20%) 100%);
     --gradient-card: linear-gradient(135deg, hsl(240 3.7% 15.9% / 0.8), hsl(270 91% 15% / 0.3));
     
@@ -121,5 +133,121 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+/* Campaign Dashboard Animations */
+@layer utilities {
+  .pulse-glow {
+    animation: pulse-glow 2s ease-in-out infinite alternate;
+  }
+
+  .float {
+    animation: float 3s ease-in-out infinite;
+  }
+
+  .slide-up {
+    animation: slide-up 0.5s ease-out;
+  }
+
+  .slide-up-delay-1 {
+    animation: slide-up 0.5s ease-out 0.1s both;
+  }
+
+  .slide-up-delay-2 {
+    animation: slide-up 0.5s ease-out 0.2s both;
+  }
+
+  .slide-up-delay-3 {
+    animation: slide-up 0.5s ease-out 0.3s both;
+  }
+
+  .gradient-campaign {
+    background: var(--gradient-campaign);
+  }
+
+  .gradient-hero {
+    background: var(--gradient-hero);
+  }
+
+  .gradient-card {
+    background: var(--gradient-card);
+  }
+
+  .gradient-stats {
+    background: var(--gradient-stats);
+  }
+
+  .text-campaign-primary {
+    color: hsl(var(--campaign-primary));
+  }
+
+  .text-campaign-secondary {
+    color: hsl(var(--campaign-secondary));
+  }
+
+  .text-campaign-accent {
+    color: hsl(var(--campaign-accent));
+  }
+
+  .text-campaign-warning {
+    color: hsl(var(--campaign-warning));
+  }
+
+  .text-campaign-success {
+    color: hsl(var(--campaign-success));
+  }
+
+  .text-campaign-info {
+    color: hsl(var(--campaign-info));
+  }
+
+  .bg-campaign-primary {
+    background-color: hsl(var(--campaign-primary));
+  }
+
+  .bg-campaign-secondary {
+    background-color: hsl(var(--campaign-secondary));
+  }
+
+  .border-campaign-primary {
+    border-color: hsl(var(--campaign-primary));
+  }
+
+  .glow-campaign {
+    box-shadow: 0 0 20px hsl(var(--campaign-primary) / 0.3);
+  }
+
+  .glow-campaign-lg {
+    box-shadow: 0 0 40px hsl(var(--campaign-primary) / 0.4);
+  }
+}
+
+@keyframes pulse-glow {
+  0% {
+    box-shadow: 0 0 5px hsl(var(--campaign-primary) / 0.5);
+  }
+  100% {
+    box-shadow: 0 0 20px hsl(var(--campaign-primary) / 0.8), 0 0 30px hsl(var(--campaign-secondary) / 0.4);
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes slide-up {
+  0% {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
