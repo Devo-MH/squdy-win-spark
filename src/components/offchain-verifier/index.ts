@@ -1,14 +1,14 @@
 // Main exports for the offchain-verifier component
 
 // Components
-export { TaskChecklist } from './components/TaskChecklist';
-export * from './components/tasks';
+export { TaskChecklist } from './src/components/TaskChecklist';
+export * from './src/components/tasks';
 
 // Types
-export * from './types';
+export * from './src/types';
 
 // Constants
-export * from './constants/taskTypes';
+export * from './src/constants/taskTypes';
 
 // Utilities
 export { TaskVerificationAPI, MockTaskVerificationAPI, createTaskAPI } from './utils/api';
