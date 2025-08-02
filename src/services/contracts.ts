@@ -1,5 +1,12 @@
 import { ethers } from 'ethers';
 import { toast } from 'sonner';
+
+// Extend Window interface for session tracking
+declare global {
+  interface Window {
+    mockTokenToastShown?: boolean;
+  }
+}
 import { mockSqudyToken } from './mockSqudyToken';
 
 // Contract ABIs (simplified for frontend)
@@ -73,8 +80,11 @@ export class ContractService {
     );
     
     if (this.useMockToken) {
-      toast.info('🧪 Using mock SQUDY token for testing purposes');
-      console.log('🧪 ContractService initialized with mock SQUDY token');
+      // Only show toast once per session
+      if (!window.mockTokenToastShown) {
+        toast.info('🧪 Using mock SQUDY token for testing purposes');
+        window.mockTokenToastShown = true;
+      }
     }
   }
 

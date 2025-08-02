@@ -190,7 +190,7 @@ const AdminPanel = () => {
       await adminAPI.createCampaign({
         name: formData.name,
         description: formData.description,
-        imageUrl: formData.imageUrl || 'https://via.placeholder.com/400x300',
+        imageUrl: formData.imageUrl || 'https://images.unsplash.com/photo-1640340434855-6084b1f4901c?w=400&h=300&fit=crop',
         softCap: parseFloat(formData.softCap),
         hardCap: parseFloat(formData.hardCap),
         ticketAmount: parseFloat(formData.ticketAmount),
