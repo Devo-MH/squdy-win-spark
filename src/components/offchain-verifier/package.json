@@ -1,0 +1,57 @@
+{
+  "name": "@engagefi/offchain-verifier",
+  "version": "0.1.0",
+  "description": "Reusable off-chain task verification system for social media engagement campaigns",
+  "main": "dist/index.js",
+  "module": "dist/index.esm.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "src",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsup src/index.ts --format cjs,esm --dts --clean",
+    "dev": "tsup src/index.ts --format cjs,esm --dts --watch",
+    "lint": "eslint src --ext .ts,.tsx",
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": [
+    "web3",
+    "social-media",
+    "task-verification",
+    "twitter",
+    "discord",
+    "telegram",
+    "email",
+    "engagement",
+    "campaigns",
+    "react",
+    "typescript"
+  ],
+  "author": "EngageFi Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/engagefi/offchain-verifier"
+  },
+  "peerDependencies": {
+    "react": ">=16.8.0",
+    "react-dom": ">=16.8.0"
+  },
+  "dependencies": {
+    "qrcode-generator": "^1.4.4"
+  },
+  "devDependencies": {
+    "@types/react": "^18.0.0",
+    "@types/react-dom": "^18.0.0",
+    "typescript": "^5.0.0",
+    "tsup": "^8.0.0",
+    "eslint": "^8.0.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}

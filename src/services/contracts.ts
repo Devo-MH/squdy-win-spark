@@ -1,5 +1,6 @@
 import { ethers } from 'ethers';
 import { toast } from 'sonner';
+import { mockSqudyToken } from './mockSqudyToken';
 
 // Contract ABIs (simplified for frontend)
 const CAMPAIGN_MANAGER_ABI = [
@@ -43,32 +44,52 @@ export const CONTRACT_ADDRESSES = {
 export class ContractService {
   private provider: ethers.BrowserProvider;
   private signer: ethers.Signer;
-  private squdyTokenContract: ethers.Contract;
+  private squdyTokenContract: ethers.Contract | null = null;
   private campaignManagerContract: ethers.Contract;
+  private useMockToken: boolean;
 
   constructor(provider: ethers.BrowserProvider, signer: ethers.Signer) {
     this.provider = provider;
     this.signer = signer;
     
-    this.squdyTokenContract = new ethers.Contract(
-      CONTRACT_ADDRESSES.SQUDY_TOKEN,
-      SQUDY_TOKEN_ABI,
-      signer
-    );
+    // Use mock token if no real contract address is provided
+    this.useMockToken = !CONTRACT_ADDRESSES.SQUDY_TOKEN || CONTRACT_ADDRESSES.SQUDY_TOKEN === '';
     
+    if (!this.useMockToken) {
+      this.squdyTokenContract = new ethers.Contract(
+        CONTRACT_ADDRESSES.SQUDY_TOKEN,
+        SQUDY_TOKEN_ABI,
+        signer
+      );
+    }
+    
+    // For now, we'll use a placeholder for campaign manager in mock mode
+    // In production, this should point to the real contract
+    const campaignAddress = CONTRACT_ADDRESSES.CAMPAIGN_MANAGER || '0x0000000000000000000000000000000000000000';
     this.campaignManagerContract = new ethers.Contract(
-      CONTRACT_ADDRESSES.CAMPAIGN_MANAGER,
+      campaignAddress,
       CAMPAIGN_MANAGER_ABI,
       signer
     );
+    
+    if (this.useMockToken) {
+      toast.info('🧪 Using mock SQUDY token for testing purposes');
+      console.log('🧪 ContractService initialized with mock SQUDY token');
+    }
   }
 
   // SQUDY Token methods
   async getTokenBalance(address: string): Promise<string> {
     try {
-      const balance = await this.squdyTokenContract.balanceOf(address);
-      const decimals = await this.squdyTokenContract.decimals();
-      return ethers.formatUnits(balance, decimals);
+      if (this.useMockToken) {
+        const balance = await mockSqudyToken.balanceOf(address);
+        const decimals = await mockSqudyToken.decimals();
+        return ethers.formatUnits(balance, decimals);
+      } else {
+        const balance = await this.squdyTokenContract!.balanceOf(address);
+        const decimals = await this.squdyTokenContract!.decimals();
+        return ethers.formatUnits(balance, decimals);
+      }
     } catch (error) {
       console.error('Error getting token balance:', error);
       throw error;
@@ -77,24 +98,44 @@ export class ContractService {
 
   async getTokenAllowance(owner: string, spender: string): Promise<string> {
     try {
-      const allowance = await this.squdyTokenContract.allowance(owner, spender);
-      const decimals = await this.squdyTokenContract.decimals();
-      return ethers.formatUnits(allowance, decimals);
+      if (this.useMockToken) {
+        const allowance = await mockSqudyToken.allowance(owner, spender);
+        const decimals = await mockSqudyToken.decimals();
+        return ethers.formatUnits(allowance, decimals);
+      } else {
+        const allowance = await this.squdyTokenContract!.allowance(owner, spender);
+        const decimals = await this.squdyTokenContract!.decimals();
+        return ethers.formatUnits(allowance, decimals);
+      }
     } catch (error) {
       console.error('Error getting token allowance:', error);
       throw error;
     }
   }
 
-  async approveToken(spender: string, amount: string): Promise<ethers.ContractTransaction> {
+  async approveToken(spender: string, amount: string): Promise<ethers.ContractTransaction | any> {
     try {
-      const decimals = await this.squdyTokenContract.decimals();
-      const amountBN = ethers.parseUnits(amount, decimals);
-      
-      const tx = await this.squdyTokenContract.approve(spender, amountBN);
-      toast.info('Approval transaction sent. Please wait for confirmation...');
-      
-      return tx;
+      if (this.useMockToken) {
+        const userAddress = await this.signer.getAddress();
+        const decimals = await mockSqudyToken.decimals();
+        const amountBN = ethers.parseUnits(amount, decimals);
+        
+        await mockSqudyToken.approve(userAddress, spender, amountBN);
+        
+        // Return a mock transaction object
+        return {
+          hash: '0x' + Math.random().toString(16).substring(2),
+          wait: async () => ({ status: 1 })
+        };
+      } else {
+        const decimals = await this.squdyTokenContract!.decimals();
+        const amountBN = ethers.parseUnits(amount, decimals);
+        
+        const tx = await this.squdyTokenContract!.approve(spender, amountBN);
+        toast.info('Approval transaction sent. Please wait for confirmation...');
+        
+        return tx;
+      }
     } catch (error: any) {
       console.error('Error approving token:', error);
       toast.error(error.message || 'Failed to approve tokens');
@@ -109,19 +150,35 @@ export class ContractService {
     totalSupply: string;
   }> {
     try {
-      const [name, symbol, decimals, totalSupply] = await Promise.all([
-        this.squdyTokenContract.name(),
-        this.squdyTokenContract.symbol(),
-        this.squdyTokenContract.decimals(),
-        this.squdyTokenContract.totalSupply(),
-      ]);
+      if (this.useMockToken) {
+        const [name, symbol, decimals, totalSupply] = await Promise.all([
+          mockSqudyToken.name(),
+          mockSqudyToken.symbol(),
+          mockSqudyToken.decimals(),
+          mockSqudyToken.totalSupply(),
+        ]);
 
-      return {
-        name,
-        symbol,
-        decimals: decimals.toNumber(),
-        totalSupply: ethers.formatUnits(totalSupply, decimals),
-      };
+        return {
+          name,
+          symbol,
+          decimals: Number(decimals),
+          totalSupply: ethers.formatUnits(totalSupply, decimals),
+        };
+      } else {
+        const [name, symbol, decimals, totalSupply] = await Promise.all([
+          this.squdyTokenContract!.name(),
+          this.squdyTokenContract!.symbol(),
+          this.squdyTokenContract!.decimals(),
+          this.squdyTokenContract!.totalSupply(),
+        ]);
+
+        return {
+          name,
+          symbol,
+          decimals: Number(decimals),
+          totalSupply: ethers.formatUnits(totalSupply, decimals),
+        };
+      }
     } catch (error) {
       console.error('Error getting token info:', error);
       throw error;
@@ -159,29 +216,75 @@ export class ContractService {
     }
   }
 
-  async stakeTokens(campaignId: number, amount: string): Promise<ethers.ContractTransaction> {
+  async stakeTokens(campaignId: number, amount: string): Promise<ethers.ContractTransaction | any> {
     try {
-      const decimals = await this.squdyTokenContract.decimals();
-      const amountBN = ethers.parseUnits(amount, decimals);
-      
-      // Check allowance first
-      const userAddress = await this.signer.getAddress();
-      const allowance = await this.getTokenAllowance(userAddress, CONTRACT_ADDRESSES.CAMPAIGN_MANAGER);
-      const allowanceBN = ethers.parseUnits(allowance, decimals);
-      
-      if (allowanceBN < amountBN) {
-        throw new Error('Insufficient token allowance. Please approve tokens first.');
+      if (this.useMockToken) {
+        // Mock staking process
+        const userAddress = await this.signer.getAddress();
+        const decimals = await mockSqudyToken.decimals();
+        const amountBN = ethers.parseUnits(amount, decimals);
+        
+        // Check allowance first
+        const allowance = await this.getTokenAllowance(userAddress, CONTRACT_ADDRESSES.CAMPAIGN_MANAGER);
+        const allowanceBN = ethers.parseUnits(allowance, decimals);
+        
+        if (allowanceBN < amountBN) {
+          throw new Error('Insufficient token allowance. Please approve tokens first.');
+        }
+        
+        // Check balance
+        const balance = await mockSqudyToken.balanceOf(userAddress);
+        if (balance < amountBN) {
+          throw new Error('Insufficient token balance for staking.');
+        }
+        
+        // Simulate transfer to campaign manager (burning tokens for staking)
+        await mockSqudyToken.transfer(userAddress, CONTRACT_ADDRESSES.CAMPAIGN_MANAGER || '0x0000000000000000000000000000000000000000', amountBN);
+        
+        toast.success(`🎉 Successfully staked ${amount} mSQUDY tokens in campaign ${campaignId}!`);
+        
+        // Return a mock transaction object
+        return {
+          hash: '0x' + Math.random().toString(16).substring(2),
+          wait: async () => ({ status: 1 })
+        };
+      } else {
+        const decimals = await this.squdyTokenContract!.decimals();
+        const amountBN = ethers.parseUnits(amount, decimals);
+        
+        // Check allowance first
+        const userAddress = await this.signer.getAddress();
+        const allowance = await this.getTokenAllowance(userAddress, CONTRACT_ADDRESSES.CAMPAIGN_MANAGER);
+        const allowanceBN = ethers.parseUnits(allowance, decimals);
+        
+        if (allowanceBN < amountBN) {
+          throw new Error('Insufficient token allowance. Please approve tokens first.');
+        }
+        
+        const tx = await this.campaignManagerContract.stakeSQUDY(campaignId, amountBN);
+        toast.info('Staking transaction sent. Please wait for confirmation...');
+        
+        return tx;
       }
-      
-      const tx = await this.campaignManagerContract.stakeSQUDY(campaignId, amountBN);
-      toast.info('Staking transaction sent. Please wait for confirmation...');
-      
-      return tx;
     } catch (error: any) {
       console.error('Error staking tokens:', error);
       toast.error(error.message || 'Failed to stake tokens');
       throw error;
     }
+  }
+
+  // Mock token utilities
+  async requestTestTokens(amount: string = '1000'): Promise<void> {
+    if (this.useMockToken) {
+      const userAddress = await this.signer.getAddress();
+      mockSqudyToken.mintTokens(userAddress, amount);
+    } else {
+      toast.error('Test tokens are only available in mock mode');
+    }
+  }
+
+  isUsingMockToken(): boolean {
+    return this.useMockToken;
   }
 
   async isEligibleForWinning(campaignId: number, userAddress: string): Promise<boolean> {

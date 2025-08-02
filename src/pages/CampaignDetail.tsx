@@ -44,6 +44,7 @@ import {
 } from "@/hooks/useCampaigns";
 import { useContracts } from "@/services/contracts";
 import { useSocket } from "@/services/socket";
+import { MockTokenBanner } from "@/components/MockTokenBanner";
 import { toast } from "sonner";
 
 const CampaignDetail = () => {
@@ -332,6 +333,9 @@ const CampaignDetail = () => {
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back
           </Button>
+
+          {/* Mock Token Banner */}
+          <MockTokenBanner contractService={contractService} />
 
           {/* Campaign Header */}
           <div className="mb-12">

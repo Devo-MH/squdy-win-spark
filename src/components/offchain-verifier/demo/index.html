@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OffChain Verifier Demo</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .task-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState } = React;
+
+        // Mock components for demo
+        const Button = ({ children, onClick, disabled, variant = 'default', className = '' }) => {
+            const baseClasses = 'px-4 py-2 rounded font-medium transition-colors';
+            const variantClasses = {
+                default: 'bg-blue-500 hover:bg-blue-600 text-white',
+                outline: 'border border-gray-300 hover:bg-gray-50 text-gray-700'
+            };
+            
+            return (
+                <button 
+                    onClick={onClick} 
+                    disabled={disabled}
+                    className={`${baseClasses} ${variantClasses[variant]} ${disabled ? 'opacity-50 cursor-not-allowed' : ''} ${className}`}
+                >
+                    {children}
+                </button>
+            );
+        };
+
+        const Card = ({ children, className = '' }) => (
+            <div className={`border rounded-lg bg-white shadow-sm ${className}`}>
+                {children}
+            </div>
+        );
+
+        const Badge = ({ children, className = '' }) => (
+            <span className={`px-2 py-1 text-xs rounded font-medium ${className}`}>
+                {children}
+            </span>
+        );
+
+        const Input = ({ value, onChange, placeholder, type = 'text', className = '' }) => (
+            <input 
+                type={type}
+                value={value} 
+                onChange={(e) => onChange(e.target.value)} 
+                placeholder={placeholder}
+                className={`w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 ${className}`}
+            />
+        );
+
+        // Simple toast function
+        const toast = {
+            success: (message) => alert(`✅ ${message}`),
+            error: (message) => alert(`❌ ${message}`)
+        };
+
+        // Mock task components (simplified versions)
+        const TwitterFollowTask = ({ task, onStatusChange, enableMockMode }) => {
+            const [status, setStatus] = useState('waiting');
+            const [hasClicked, setHasClicked] = useState(false);
+
+            const handleFollow = () => {
+                window.open(`https://twitter.com/${task.data.username}`, '_blank');
+                setHasClicked(true);
+            };
+
+            const handleVerify = async () => {
+                if (!hasClicked) {
+                    toast.error('Please click Follow first!');
+                    return;
+                }
+                
+                setStatus('verifying');
+                // Simulate API call
+                setTimeout(() => {
+                    setStatus('success');
+                    onStatusChange('success');
+                    toast.success('Twitter follow verified!');
+                }, 2000);
+            };
+
+            return (
+                <Card className="p-4">
+                    <div className="flex items-center justify-between mb-4">
+                        <div>
+                            <h3 className="font-semibold">Follow @{task.data.username}</h3>
+                            <p className="text-sm text-gray-600">Follow this Twitter account</p>
+                        </div>
+                        <Badge className={`
+                            ${status === 'success' ? 'bg-green-100 text-green-800' : ''}
+                            ${status === 'verifying' ? 'bg-blue-100 text-blue-800' : ''}
+                            ${status === 'waiting' ? 'bg-gray-100 text-gray-800' : ''}
+                        `}>
+                            {status === 'success' ? 'Verified ✅' : status === 'verifying' ? 'Verifying...' : 'Pending'}
+                        </Badge>
+                    </div>
+                    
+                    <div className="space-y-3">
+                        <Button 
+                            variant="outline" 
+                            onClick={handleFollow}
+                            className="w-full"
+                        >
+                            🐦 Follow @{task.data.username}
+                        </Button>
+                        
+                        <Button 
+                            onClick={handleVerify}
+                            disabled={status === 'verifying' || status === 'success'}
+                            className="w-full"
+                        >
+                            {status === 'verifying' ? 'Verifying...' : status === 'success' ? 'Verified' : 'Verify Follow'}
+                        </Button>
+                    </div>
+                </Card>
+            );
+        };
+
+        const TelegramTask = ({ task, onStatusChange }) => {
+            const [status, setStatus] = useState('waiting');
+            const [hasClicked, setHasClicked] = useState(false);
+
+            const handleJoin = () => {
+                window.open(task.data.inviteUrl, '_blank');
+                setHasClicked(true);
+            };
+
+            const handleVerify = async () => {
+                if (!hasClicked) {
+                    toast.error('Please click Join first!');
+                    return;
+                }
+                
+                setStatus('verifying');
+                setTimeout(() => {
+                    setStatus('success');
+                    onStatusChange('success');
+                    toast.success('Telegram join verified!');
+                }, 2000);
+            };
+
+            return (
+                <Card className="p-4">
+                    <div className="flex items-center justify-between mb-4">
+                        <div>
+                            <h3 className="font-semibold">Join {task.data.channelName}</h3>
+                            <p className="text-sm text-gray-600">Join our Telegram channel</p>
+                        </div>
+                        <Badge className={`
+                            ${status === 'success' ? 'bg-green-100 text-green-800' : ''}
+                            ${status === 'verifying' ? 'bg-blue-100 text-blue-800' : ''}
+                            ${status === 'waiting' ? 'bg-gray-100 text-gray-800' : ''}
+                        `}>
+                            {status === 'success' ? 'Verified ✅' : status === 'verifying' ? 'Verifying...' : 'Pending'}
+                        </Badge>
+                    </div>
+                    
+                    <div className="space-y-3">
+                        <Button 
+                            variant="outline" 
+                            onClick={handleJoin}
+                            className="w-full"
+                        >
+                            ✈️ Join {task.data.channelName}
+                        </Button>
+                        
+                        <Button 
+                            onClick={handleVerify}
+                            disabled={status === 'verifying' || status === 'success'}
+                            className="w-full"
+                        >
+                            {status === 'verifying' ? 'Verifying...' : status === 'success' ? 'Verified' : 'Verify Join'}
+                        </Button>
+                    </div>
+                </Card>
+            );
+        };
+
+        const EmailTask = ({ task, onStatusChange }) => {
+            const [status, setStatus] = useState('waiting');
+            const [email, setEmail] = useState('');
+
+            const handleVerify = async () => {
+                if (!email || !email.includes('@')) {
+                    toast.error('Please enter a valid email!');
+                    return;
+                }
+                
+                setStatus('verifying');
+                setTimeout(() => {
+                    setStatus('success');
+                    onStatusChange('success');
+                    toast.success('Email verified!');
+                }, 2000);
+            };
+
+            return (
+                <Card className="p-4">
+                    <div className="flex items-center justify-between mb-4">
+                        <div>
+                            <h3 className="font-semibold">Submit Email</h3>
+                            <p className="text-sm text-gray-600">Submit your email address</p>
+                        </div>
+                        <Badge className={`
+                            ${status === 'success' ? 'bg-green-100 text-green-800' : ''}
+                            ${status === 'verifying' ? 'bg-blue-100 text-blue-800' : ''}
+                            ${status === 'waiting' ? 'bg-gray-100 text-gray-800' : ''}
+                        `}>
+                            {status === 'success' ? 'Verified ✅' : status === 'verifying' ? 'Verifying...' : 'Pending'}
+                        </Badge>
+                    </div>
+                    
+                    <div className="space-y-3">
+                        <Input 
+                            type="email"
+                            value={email}
+                            onChange={setEmail}
+                            placeholder="your@email.com"
+                        />
+                        
+                        <Button 
+                            onClick={handleVerify}
+                            disabled={status === 'verifying' || status === 'success' || !email}
+                            className="w-full"
+                        >
+                            {status === 'verifying' ? 'Verifying...' : status === 'success' ? 'Verified' : '📧 Verify Email'}
+                        </Button>
+                    </div>
+                </Card>
+            );
+        };
+
+        // Main Demo App
+        const DemoApp = () => {
+            const [completedTasks, setCompletedTasks] = useState([]);
+
+            const tasks = [
+                {
+                    id: 'twitter-follow',
+                    type: 'twitter_follow',
+                    label: 'Follow @EngageFi',
+                    data: { username: 'EngageFi' },
+                    required: true
+                },
+                {
+                    id: 'telegram-join',
+                    type: 'join_telegram',
+                    label: 'Join Telegram',
+                    data: { 
+                        inviteUrl: 'https://t.me/engagefi',
+                        channelName: 'EngageFi Channel'
+                    },
+                    required: true
+                },
+                {
+                    id: 'email-submit',
+                    type: 'submit_email',
+                    label: 'Submit Email',
+                    data: { requireVerification: true },
+                    required: false
+                }
+            ];
+
+            const handleTaskChange = (taskId, completed) => {
+                if (completed && !completedTasks.includes(taskId)) {
+                    setCompletedTasks([...completedTasks, taskId]);
+                }
+            };
+
+            const requiredTasks = tasks.filter(t => t.required);
+            const completedRequired = requiredTasks.filter(t => completedTasks.includes(t.id)).length;
+            const progress = (completedRequired / requiredTasks.length) * 100;
+            const allComplete = requiredTasks.every(t => completedTasks.includes(t.id));
+
+            const renderTask = (task) => {
+                const onStatusChange = (status) => {
+                    handleTaskChange(task.id, status === 'success');
+                };
+
+                switch (task.type) {
+                    case 'twitter_follow':
+                        return <TwitterFollowTask key={task.id} task={task} onStatusChange={onStatusChange} />;
+                    case 'join_telegram':
+                        return <TelegramTask key={task.id} task={task} onStatusChange={onStatusChange} />;
+                    case 'submit_email':
+                        return <EmailTask key={task.id} task={task} onStatusChange={onStatusChange} />;
+                    default:
+                        return null;
+                }
+            };
+
+            return (
+                <div className="task-container">
+                    <div className="text-center space-y-4 mb-8">
+                        <h1 className="text-3xl font-bold text-gray-900">
+                            🎯 OffChain Verifier Demo
+                        </h1>
+                        <p className="text-gray-600">
+                            Complete tasks to join the demo campaign
+                        </p>
+                        
+                        <div className="space-y-2">
+                            <div className="flex justify-between text-sm text-gray-600">
+                                <span>Progress</span>
+                                <span>{completedRequired}/{requiredTasks.length} completed</span>
+                            </div>
+                            <div className="w-full bg-gray-200 rounded-full h-2">
+                                <div 
+                                    className="bg-blue-500 h-2 rounded-full transition-all duration-300" 
+                                    style={{ width: `${progress}%` }}
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="space-y-4">
+                        {tasks.map(renderTask)}
+                    </div>
+
+                    {allComplete && (
+                        <div className="text-center pt-6">
+                            <Button 
+                                className="px-8 py-3 text-lg font-semibold"
+                                onClick={() => toast.success('🎉 Campaign joined successfully!')}
+                            >
+                                🎉 Join Campaign & Claim Reward
+                            </Button>
+                        </div>
+                    )}
+
+                    <div className="mt-8 p-4 bg-gray-50 rounded-lg">
+                        <h3 className="font-semibold mb-2">Demo Info</h3>
+                        <ul className="text-sm text-gray-600 space-y-1">
+                            <li>• This is a mock demo - no real verification occurs</li>
+                            <li>• Click the action buttons first, then verify</li>
+                            <li>• All tasks simulate 2-second verification delay</li>
+                            <li>• Check the console for detailed logs</li>
+                        </ul>
+                    </div>
+                </div>
+            );
+        };
+
+        ReactDOM.render(<DemoApp />, document.getElementById('root'));
+    </script>
+</body>
+</html>
