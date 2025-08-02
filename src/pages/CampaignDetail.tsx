@@ -165,7 +165,7 @@ const CampaignDetail = () => {
       // Refresh allowance
       const newAllowance = await contractService.getTokenAllowance(
         account!,
-        process.env.VITE_CAMPAIGN_MANAGER_ADDRESS || ''
+        import.meta.env.VITE_CAMPAIGN_MANAGER_ADDRESS || ''
       );
       setAllowance(newAllowance);
       
@@ -370,7 +370,7 @@ const CampaignDetail = () => {
                   {localCampaign.description}
                 </p>
 
-                <div className="flex flex-col sm:flex-row gap-4">
+                  <div className="flex flex-col sm:flex-row gap-4">
                   {!isConnected ? (
                     <div className="text-center p-4 bg-secondary/30 rounded-lg">
                       <Wallet className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
@@ -395,7 +395,7 @@ const CampaignDetail = () => {
                       Buy SQUDY
                     </Button>
                   )}
-                </div>
+                  </div>
               </div>
 
               <div className="relative">
@@ -557,18 +557,18 @@ const CampaignDetail = () => {
 
               {/* Social Tasks */}
               {isConnected && isParticipating && (
-                <Card className="bg-gradient-card border-primary/20">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <CheckCircle className="w-5 h-5 text-primary" />
-                      Required Social Tasks
-                    </CardTitle>
-                    <p className="text-sm text-muted-foreground">
+              <Card className="bg-gradient-card border-primary/20">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <CheckCircle className="w-5 h-5 text-primary" />
+                    Required Social Tasks
+                  </CardTitle>
+                  <p className="text-sm text-muted-foreground">
                       Complete all required tasks to be eligible for the prize draw
-                    </p>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
+                  </p>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
                       {/* Twitter Tasks */}
                       <div className="space-y-3">
                         <h4 className="font-medium text-sm">Twitter Tasks</h4>
@@ -716,7 +716,7 @@ const CampaignDetail = () => {
                         </div>
 
                         <div className="flex items-center justify-between p-4 bg-secondary/20 rounded-lg">
-                          <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-3">
                             <BookOpen className="w-4 h-4 text-primary" />
                             <div>
                               <span className="text-foreground">Follow Medium</span>
@@ -763,8 +763,8 @@ const CampaignDetail = () => {
                                 onClick={() => handleSocialTask('newsletterSubscribed', 'newsletter_subscribe_proof')}
                               >
                                 <ExternalLink className="w-3 h-3 mr-1" />
-                                Complete
-                              </Button>
+                          Complete
+                        </Button>
                             )}
                           </div>
                         </div>
@@ -780,9 +780,9 @@ const CampaignDetail = () => {
                           <Progress value={userStatus.socialCompletionPercentage} className="h-2" />
                         </div>
                       )}
-                    </div>
-                  </CardContent>
-                </Card>
+                  </div>
+                </CardContent>
+              </Card>
               )}
             </div>
 
@@ -800,7 +800,7 @@ const CampaignDetail = () => {
                   <div className="space-y-3">
                     {localCampaign.prizes.length > 0 ? (
                       localCampaign.prizes.map((prize, index) => (
-                        <div key={index} className="p-3 bg-secondary/20 rounded-lg">
+                      <div key={index} className="p-3 bg-secondary/20 rounded-lg">
                           <div className="flex justify-between items-center">
                             <span className="text-sm font-medium text-foreground">{prize.name}</span>
                             <Badge variant="outline" className="text-xs">
