@@ -45,6 +45,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { adminAPI, Campaign } from "@/services/api";
 import { useSocket } from "@/services/socket";
 import { useContracts } from "@/services/contracts";
+import { Task } from "@/components/offchain-verifier/types";
 import { toast } from "sonner";
 
 const AdminPanel = () => {
@@ -82,27 +83,7 @@ const AdminPanel = () => {
     startDate: '',
     endDate: '',
     prizes: [{ name: '', description: '', value: '', currency: 'USD', quantity: 1 }],
-    socialRequirements: {
-      twitter: {
-        followAccount: '@SqudyToken',
-        likePostId: '',
-        retweetPostId: ''
-      },
-      discord: {
-        serverId: '',
-        inviteLink: ''
-      },
-      telegram: {
-        groupId: '',
-        inviteLink: ''
-      },
-      medium: {
-        profileUrl: 'https://medium.com/@squdy'
-      },
-      newsletter: {
-        endpoint: 'https://squdy.com/newsletter'
-      }
-    }
+    offchainTasks: [] as Task[]
   });
   
   const campaigns = campaignsData?.campaigns || [];
@@ -201,7 +182,7 @@ const AdminPanel = () => {
         startDate: formData.startDate,
         endDate: formData.endDate,
         prizes: formData.prizes.filter(p => p.name && p.value),
-        socialRequirements: formData.socialRequirements,
+        offchainTasks: formData.offchainTasks.filter(t => t.label && t.type),
       });
 
       setShowCreateForm(false);
@@ -228,27 +209,7 @@ const AdminPanel = () => {
       startDate: '',
       endDate: '',
       prizes: [{ name: '', description: '', value: '', currency: 'USD', quantity: 1 }],
-      socialRequirements: {
-        twitter: {
-          followAccount: '@SqudyToken',
-          likePostId: '',
-          retweetPostId: ''
-        },
-        discord: {
-          serverId: '',
-          inviteLink: ''
-        },
-        telegram: {
-          groupId: '',
-          inviteLink: ''
-        },
-        medium: {
-          profileUrl: 'https://medium.com/@squdy'
-        },
-        newsletter: {
-          endpoint: 'https://squdy.com/newsletter'
-        }
-      }
+      offchainTasks: [] as Task[]
     });
   };
 
@@ -348,6 +309,40 @@ const AdminPanel = () => {
     }));
   };
 
+  // Task management functions
+  const addTask = () => {
+    const newTask: Task = {
+      id: `task-${Date.now()}`,
+      type: 'twitter_follow',
+      label: '',
+      description: '',
+      required: true,
+      url: '',
+      targetAccount: '',
+    };
+    
+    setFormData(prev => ({
+      ...prev,
+      offchainTasks: [...prev.offchainTasks, newTask]
+    }));
+  };
+
+  const removeTask = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      offchainTasks: prev.offchainTasks.filter((_, i) => i !== index)
+    }));
+  };
+
+  const updateTask = (index: number, field: keyof Task, value: any) => {
+    setFormData(prev => ({
+      ...prev,
+      offchainTasks: prev.offchainTasks.map((task, i) => 
+        i === index ? { ...task, [field]: value } : task
+      )
+    }));
+  };
+
   const loadTestData = () => {
     const now = new Date();
     const startDate = new Date(now.getTime() + 24 * 60 * 60 * 1000); // Tomorrow
@@ -366,7 +361,36 @@ const AdminPanel = () => {
         { name: 'First Prize', description: 'Winner takes all', value: '10000', currency: 'USD', quantity: 1 },
         { name: 'Second Prize', description: 'Runner up reward', value: '5000', currency: 'USD', quantity: 1 },
         { name: 'Third Prize', description: 'Bronze medal', value: '2500', currency: 'USD', quantity: 1 }
-      ]
+      ],
+      offchainTasks: [
+        {
+          id: 'twitter-follow-test',
+          type: 'twitter_follow',
+          label: 'Follow @SqudyOfficial',
+          description: 'Follow our official Twitter account for updates',
+          required: true,
+          url: 'https://twitter.com/SqudyOfficial',
+          targetAccount: 'SqudyOfficial'
+        },
+        {
+          id: 'twitter-like-test',
+          type: 'twitter_like',
+          label: 'Like our announcement',
+          description: 'Like our campaign announcement tweet',
+          required: true,
+          url: 'https://twitter.com/SqudyOfficial/status/1234567890',
+          tweetId: '1234567890'
+        },
+        {
+          id: 'telegram-join-test',
+          type: 'join_telegram',
+          label: 'Join Telegram Community',
+          description: 'Join our Telegram channel for discussions',
+          required: false,
+          url: 'https://t.me/SqudyCommunity',
+          value: 'SqudyCommunity'
+        }
+      ] as Task[]
     });
     
     toast.success('🧪 Test data loaded successfully!');
@@ -955,6 +979,167 @@ const AdminPanel = () => {
                         </div>
                       ))}
                     </div>
+                  </div>
+
+                  {/* Offchain Tasks */}
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <Label className="text-base font-semibold">Offchain Tasks</Label>
+                        <p className="text-sm text-muted-foreground">
+                          Configure social media and engagement tasks that participants must complete
+                        </p>
+                      </div>
+                      <Button type="button" variant="outline" size="sm" onClick={addTask}>
+                        <Plus className="w-4 h-4 mr-1" />
+                        Add Task
+                      </Button>
+                    </div>
+                    
+                    {formData.offchainTasks.length === 0 ? (
+                      <div className="text-center py-8 border-2 border-dashed border-muted-foreground/25 rounded-lg">
+                        <MessageCircle className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+                        <p className="text-sm text-muted-foreground">
+                          No tasks configured. Add tasks to engage participants.
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        {formData.offchainTasks.map((task, index) => (
+                          <div key={index} className="border rounded-lg p-4 space-y-4 bg-secondary/20">
+                            <div className="flex items-center justify-between">
+                              <h4 className="font-medium">Task {index + 1}</h4>
+                              {formData.offchainTasks.length > 1 && (
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => removeTask(index)}
+                                >
+                                  <X className="w-4 h-4" />
+                                </Button>
+                              )}
+                            </div>
+                            
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <div className="space-y-2">
+                                <Label>Task Type *</Label>
+                                <Select 
+                                  value={task.type} 
+                                  onValueChange={(value) => updateTask(index, 'type', value)}
+                                >
+                                  <SelectTrigger>
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="twitter_follow">Twitter Follow</SelectItem>
+                                    <SelectItem value="twitter_like">Twitter Like</SelectItem>
+                                    <SelectItem value="twitter_retweet">Twitter Retweet</SelectItem>
+                                    <SelectItem value="join_telegram">Join Telegram</SelectItem>
+                                    <SelectItem value="discord_join">Join Discord</SelectItem>
+                                    <SelectItem value="submit_email">Email Subscription</SelectItem>
+                                    <SelectItem value="visit_website">Visit Website</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              
+                              <div className="space-y-2">
+                                <Label>Required?</Label>
+                                <Select 
+                                  value={task.required ? 'true' : 'false'} 
+                                  onValueChange={(value) => updateTask(index, 'required', value === 'true')}
+                                >
+                                  <SelectTrigger>
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="true">Required</SelectItem>
+                                    <SelectItem value="false">Optional</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            </div>
+                            
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <div className="space-y-2">
+                                <Label>Label *</Label>
+                                <Input
+                                  placeholder="e.g., Follow @SqudyOfficial"
+                                  value={task.label}
+                                  onChange={(e) => updateTask(index, 'label', e.target.value)}
+                                />
+                              </div>
+                              
+                              <div className="space-y-2">
+                                <Label>URL</Label>
+                                <Input
+                                  placeholder="https://twitter.com/SqudyOfficial"
+                                  value={task.url || ''}
+                                  onChange={(e) => updateTask(index, 'url', e.target.value)}
+                                />
+                              </div>
+                            </div>
+                            
+                            <div className="space-y-2">
+                              <Label>Description</Label>
+                              <Input
+                                placeholder="Brief description of what participants need to do"
+                                value={task.description || ''}
+                                onChange={(e) => updateTask(index, 'description', e.target.value)}
+                              />
+                            </div>
+                            
+                            {/* Task-specific fields */}
+                            {(task.type === 'twitter_follow' || task.type === 'twitter_like' || task.type === 'twitter_retweet') && (
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {task.type === 'twitter_follow' && (
+                                  <div className="space-y-2">
+                                    <Label>Twitter Handle</Label>
+                                    <Input
+                                      placeholder="SqudyOfficial (without @)"
+                                      value={task.targetAccount || ''}
+                                      onChange={(e) => updateTask(index, 'targetAccount', e.target.value)}
+                                    />
+                                  </div>
+                                )}
+                                {(task.type === 'twitter_like' || task.type === 'twitter_retweet') && (
+                                  <div className="space-y-2">
+                                    <Label>Tweet ID</Label>
+                                    <Input
+                                      placeholder="1234567890"
+                                      value={task.tweetId || ''}
+                                      onChange={(e) => updateTask(index, 'tweetId', e.target.value)}
+                                    />
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                            
+                            {task.type === 'join_telegram' && (
+                              <div className="space-y-2">
+                                <Label>Telegram Channel/Group</Label>
+                                <Input
+                                  placeholder="SqudyCommunity (channel name)"
+                                  value={task.value || ''}
+                                  onChange={(e) => updateTask(index, 'value', e.target.value)}
+                                />
+                              </div>
+                            )}
+                            
+                            {task.type === 'discord_join' && (
+                              <div className="space-y-2">
+                                <Label>Discord Invite</Label>
+                                <Input
+                                  placeholder="https://discord.gg/squdy"
+                                  value={task.value || ''}
+                                  onChange={(e) => updateTask(index, 'value', e.target.value)}
+                                />
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
 
                   {/* Action Buttons */}

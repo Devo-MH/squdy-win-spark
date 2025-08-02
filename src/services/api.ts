@@ -1,5 +1,6 @@
 import axios, { AxiosInstance, AxiosResponse } from 'axios';
 import { toast } from 'sonner';
+import { Task } from '@/components/offchain-verifier/types';
 
 // API Configuration
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api';
@@ -47,27 +48,7 @@ export interface Campaign {
   endDate: string;
   status: 'pending' | 'active' | 'paused' | 'finished' | 'burned';
   participantCount: number;
-  socialRequirements: {
-    twitter: {
-      followAccount: string;
-      likePostId: string;
-      retweetPostId: string;
-    };
-    discord: {
-      serverId: string;
-      inviteLink: string;
-    };
-    telegram: {
-      groupId: string;
-      inviteLink: string;
-    };
-    medium: {
-      profileUrl: string;
-    };
-    newsletter: {
-      endpoint: string;
-    };
-  };
+  offchainTasks?: Task[];
   prizes: Array<{
     name: string;
     description: string;

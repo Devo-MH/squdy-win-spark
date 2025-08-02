@@ -358,36 +358,8 @@ const CampaignDetail = () => {
   const showTasksSection = hasStaked && !isParticipating;
   const showJoinButton = canJoinCampaign;
 
-  // Campaign tasks (demo tasks for now)
-  const campaignTasks: Task[] = [
-    {
-      id: 'twitter-follow',
-      type: 'twitter_follow',
-      label: 'Follow @SqudyOfficial',
-      description: 'Follow our official Twitter account',
-      targetAccount: 'SqudyOfficial',
-      required: true,
-      url: 'https://twitter.com/SqudyOfficial'
-    },
-    {
-      id: 'twitter-like',
-      type: 'twitter_like',
-      label: 'Like our announcement',
-      description: 'Like our campaign announcement tweet',
-      tweetId: '1234567890',
-      required: true,
-      url: 'https://twitter.com/SqudyOfficial/status/1234567890'
-    },
-    {
-      id: 'telegram-join',
-      type: 'join_telegram',
-      label: 'Join Telegram Community',
-      description: 'Join our Telegram channel for updates',
-      value: 'SqudyCommunity',
-      required: false,
-      url: 'https://t.me/SqudyCommunity'
-    }
-  ];
+  // Campaign tasks from admin configuration
+  const campaignTasks: Task[] = localCampaign?.offchainTasks || [];
 
   const requiredTasks = campaignTasks.filter(task => task.required);
   const allRequiredTasksCompleted = requiredTasks.every(task => 
