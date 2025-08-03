@@ -3,7 +3,8 @@
 ## 📋 **DEPLOYMENT STATUS**
 - ✅ **Code Ready**: All fixes applied, build successful
 - ✅ **Contracts**: Mock contracts configured for Sepolia
-- ✅ **Backend**: Simple server ready for deployment
+- ✅ **Backend**: MongoDB server ready for deployment
+- ✅ **Database**: MongoDB Atlas free tier configured
 - ✅ **Frontend**: Production build working
 
 ---
@@ -12,12 +13,22 @@
 
 ### **Option A: Railway + Netlify (Recommended)**
 
-#### 1. **Deploy Backend to Railway**
+#### 1. **Setup MongoDB Atlas (Free)**
+```bash
+# 1. Go to https://www.mongodb.com/atlas
+# 2. Create free account
+# 3. Create new cluster (M0 Free tier - 512MB)
+# 4. Create database user
+# 5. Get connection string: mongodb+srv://username:password@cluster.mongodb.net/squdy
+```
+
+#### 2. **Deploy Backend to Railway**
 ```bash
 # Option 1: Railway CLI
 npm install -g @railway/cli
 railway login
 railway init
+railway add MONGODB_URI=your_connection_string
 railway up
 
 # Option 2: GitHub Integration (Easier)
@@ -25,8 +36,9 @@ railway up
 # 2. Sign in with GitHub
 # 3. Import repository: Devo-MH/squdy-win-spark
 # 4. Root directory: /backend
-# 5. Build: npm install
-# 6. Start: npm start
+# 5. Add environment variable: MONGODB_URI=your_connection_string
+# 6. Build: npm install
+# 7. Start: npm start
 ```
 
 #### 2. **Deploy Frontend to Netlify**
