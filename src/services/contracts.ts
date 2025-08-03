@@ -249,9 +249,8 @@ export class ContractService {
         const decimals = await mockSqudyToken.decimals();
         const amountBN = ethers.utils.parseUnits(amount, decimals);
         
-        // Check allowance first
-        const allowance = await this.getTokenAllowance(userAddress, CONTRACT_ADDRESSES.CAMPAIGN_MANAGER);
-        const allowanceBN = ethers.utils.parseUnits(allowance, decimals);
+        // Check allowance first (get raw BigNumber instead of formatted string)
+        const allowanceBN = await mockSqudyToken.allowance(userAddress, CONTRACT_ADDRESSES.CAMPAIGN_MANAGER);
         
         if (allowanceBN.lt(amountBN)) {
           throw new Error('Insufficient token allowance. Please approve tokens first.');
@@ -279,8 +278,7 @@ export class ContractService {
         
         // Check allowance first
         const userAddress = await this.signer.getAddress();
-        const allowance = await this.getTokenAllowance(userAddress, CONTRACT_ADDRESSES.CAMPAIGN_MANAGER);
-        const allowanceBN = ethers.utils.parseUnits(allowance, decimals);
+        const allowanceBN = await this.squdyTokenContract!.allowance(userAddress, CONTRACT_ADDRESSES.CAMPAIGN_MANAGER);
         
         if (allowanceBN.lt(amountBN)) {
           throw new Error('Insufficient token allowance. Please approve tokens first.');
