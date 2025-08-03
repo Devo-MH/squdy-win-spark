@@ -2,7 +2,7 @@
   "name": "squdy-backend",
   "version": "1.0.0",
   "description": "Squdy Campaign Platform Backend",
-  "main": "server.js",
+  "main": "start.js",
   "scripts": {
     "start": "node start.js",
     "dev": "nodemon simple-server.js",
