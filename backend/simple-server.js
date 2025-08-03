@@ -1,7 +1,18 @@
 const express = require('express');
 const cors = require('cors');
 const app = express();
-const port = 3001;
+const port = process.env.PORT || 3001;
+
+console.log('🚀 Squdy Simple Backend Starting...');
+console.log(`📋 Environment: ${process.env.NODE_ENV || 'development'}`);
+console.log(`🔌 Port: ${port}`);
+console.log('💾 Using in-memory storage (no database required)');
+console.log('🎭 Social verification in DEMO MODE');
+
+if (process.env.RAILWAY_ENVIRONMENT) {
+  console.log('🚂 Running on Railway Platform');
+  console.log('✅ Zero-cost deployment mode active');
+}
 
 // Middleware
 app.use(cors());
