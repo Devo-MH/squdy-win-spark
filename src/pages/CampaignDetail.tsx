@@ -91,6 +91,7 @@ const CampaignDetail = () => {
   const [completedTasks, setCompletedTasks] = useState<string[]>([]);
   const [hasStaked, setHasStaked] = useState(false);
   const [isJoiningCampaign, setIsJoiningCampaign] = useState(false);
+  const [hasJoinedLocally, setHasJoinedLocally] = useState(false);
   const [localCampaign, setLocalCampaign] = useState(campaignData?.campaign || null);
 
   // Update local campaign when data changes
@@ -99,6 +100,13 @@ const CampaignDetail = () => {
       setLocalCampaign(campaignData.campaign);
     }
   }, [campaignData]);
+
+  // Reset local participation state when server data is available
+  useEffect(() => {
+    if (statusData?.isParticipating === true) {
+      setHasJoinedLocally(false); // Reset local override since server has updated
+    }
+  }, [statusData?.isParticipating]);
 
   // Load user balance and allowance when account changes
   useEffect(() => {
@@ -257,6 +265,8 @@ const CampaignDetail = () => {
         }, {} as Record<string, any>),
       });
       
+      // Immediately update local state to reflect participation
+      setHasJoinedLocally(true);
       refetchStatus();
       toast.success("🎉 Successfully joined the campaign! Good luck!");
       
@@ -292,7 +302,7 @@ const CampaignDetail = () => {
   const ticketsFromStake = calculateTickets(stakeAmount);
   const hasAllowance = parseFloat(allowance) >= parseFloat(stakeAmount || '0');
   const userStatus = statusData?.status;
-  const isParticipating = statusData?.isParticipating || false;
+  const isParticipating = statusData?.isParticipating || hasJoinedLocally;
   
   // Campaign tasks from admin configuration
   const campaignTasks: Task[] = localCampaign?.offchainTasks || [];
