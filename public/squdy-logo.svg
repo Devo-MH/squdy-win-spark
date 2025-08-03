@@ -1,0 +1,56 @@
+<svg width="400" height="120" viewBox="0 0 400 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Golden circle gradient -->
+    <radialGradient id="goldGradient" cx="50%" cy="30%" r="60%">
+      <stop offset="0%" style="stop-color:#FFD700;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#FFA500;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#FF8C00;stop-opacity:1" />
+    </radialGradient>
+    
+    <!-- Squid body gradient -->
+    <radialGradient id="squidGradient" cx="50%" cy="30%" r="70%">
+      <stop offset="0%" style="stop-color:#4FC3F7;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#29B6F6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0288D1;stop-opacity:1" />
+    </radialGradient>
+    
+    <!-- Text gradient -->
+    <linearGradient id="textGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#87CEEB;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#87CEEB;stop-opacity:0.8" />
+      <stop offset="100%" style="stop-color:#B0E0E6;stop-opacity:0.6" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Golden circle background -->
+  <circle cx="60" cy="60" r="55" fill="url(#goldGradient)" stroke="#E68900" stroke-width="3"/>
+  
+  <!-- Squid body -->
+  <ellipse cx="60" cy="50" rx="25" ry="30" fill="url(#squidGradient)"/>
+  
+  <!-- Squid head bump -->
+  <ellipse cx="60" cy="35" rx="20" ry="15" fill="url(#squidGradient)"/>
+  
+  <!-- Eyes -->
+  <circle cx="52" cy="40" r="6" fill="white"/>
+  <circle cx="68" cy="40" r="6" fill="white"/>
+  <circle cx="52" cy="40" r="3" fill="black"/>
+  <circle cx="68" cy="40" r="3" fill="black"/>
+  
+  <!-- Eye highlights -->
+  <circle cx="53" cy="38" r="1" fill="white"/>
+  <circle cx="69" cy="38" r="1" fill="white"/>
+  
+  <!-- Tentacles -->
+  <path d="M45 75 Q40 85 42 95 Q45 100 48 95" stroke="url(#squidGradient)" stroke-width="4" fill="none" stroke-linecap="round"/>
+  <path d="M55 78 Q50 88 52 98 Q55 103 58 98" stroke="url(#squidGradient)" stroke-width="4" fill="none" stroke-linecap="round"/>
+  <path d="M65 78 Q70 88 68 98 Q65 103 62 98" stroke="url(#squidGradient)" stroke-width="4" fill="none" stroke-linecap="round"/>
+  <path d="M75 75 Q80 85 78 95 Q75 100 72 95" stroke="url(#squidGradient)" stroke-width="4" fill="none" stroke-linecap="round"/>
+  
+  <!-- Dollar sign on squid -->
+  <text x="60" y="55" font-family="Arial, sans-serif" font-size="12" font-weight="bold" text-anchor="middle" fill="#FFD700">$</text>
+  
+  <!-- "Squdy Token" text -->
+  <text x="140" y="45" font-family="Arial, sans-serif" font-size="36" font-weight="300" fill="url(#textGradient)">Squdy</text>
+  <text x="140" y="75" font-family="Arial, sans-serif" font-size="24" font-weight="300" fill="url(#textGradient)">Token</text>
+</svg>
