@@ -4,8 +4,10 @@
   "description": "Squdy Campaign Platform",
   "scripts": {
     "start": "cd backend && node start.js",
+    "build": "echo 'No build step needed for backend'",
     "dev": "cd backend && npm run dev",
-    "install-backend": "cd backend && npm install"
+    "install-backend": "cd backend && npm install",
+    "postinstall": "cd backend && npm install"
   },
   "engines": {
     "node": ">=18.0.0"
