@@ -2,29 +2,18 @@
   "version": 2,
   "builds": [
     {
-      "src": "package.json",
-      "use": "@vercel/static-build",
-      "config": {
-        "distDir": "dist"
-      }
+      "src": "backend/start.js",
+      "use": "@vercel/node"
     }
   ],
   "routes": [
     {
       "src": "/(.*)",
-      "dest": "/index.html"
+      "dest": "backend/start.js"
     }
   ],
   "env": {
-    "VITE_SQUDY_TOKEN_ADDRESS": "0x1234567890123456789012345678901234567890",
-    "VITE_CAMPAIGN_MANAGER_ADDRESS": "0x0987654321098765432109876543210987654321",
-    "VITE_NETWORK_ID": "11155111",
-    "VITE_NETWORK_NAME": "sepolia",
-    "VITE_API_URL": "https://squdy-backend.railway.app/api"
-  },
-  "functions": {
-    "src/main.tsx": {
-      "runtime": "nodejs18.x"
-    }
+    "MONGODB_URI": "mongodb+srv://dinabahnasy:wma8hgj_JWD3jbx1gvk@cluster0.d9mxajj.mongodb.net/dcampaign?retryWrites=true&w=majority",
+    "NODE_ENV": "production"
   }
 }
