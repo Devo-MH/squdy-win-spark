@@ -42,7 +42,7 @@ import {
   formatProgress,
   getCampaignStatusBadge
 } from "@/hooks/useCampaigns";
-import { useContracts } from "@/services/contracts";
+import { useContracts, CONTRACT_ADDRESSES } from "@/services/contracts";
 import { useSocket } from "@/services/socket";
 import { MockTokenBanner } from "@/components/MockTokenBanner";
 import { TaskChecklist } from "@/components/offchain-verifier";
@@ -108,7 +108,7 @@ const CampaignDetail = () => {
       try {
         const [balance, tokenAllowance] = await Promise.all([
           contractService.getTokenBalance(account),
-          contractService.getTokenAllowance(account, import.meta.env.VITE_CAMPAIGN_MANAGER_ADDRESS || ''),
+          contractService.getTokenAllowance(account, CONTRACT_ADDRESSES.CAMPAIGN_MANAGER),
         ]);
         
         setSqudyBalance(balance);
@@ -166,7 +166,7 @@ const CampaignDetail = () => {
     setIsApproving(true);
     try {
       const tx = await contractService.approveToken(
-        import.meta.env.VITE_CAMPAIGN_MANAGER_ADDRESS || '',
+        CONTRACT_ADDRESSES.CAMPAIGN_MANAGER,
         stakeAmount
       );
       await tx.wait();
@@ -174,7 +174,7 @@ const CampaignDetail = () => {
       // Refresh allowance
       const newAllowance = await contractService.getTokenAllowance(
         account!,
-        import.meta.env.VITE_CAMPAIGN_MANAGER_ADDRESS || ''
+        CONTRACT_ADDRESSES.CAMPAIGN_MANAGER
       );
       setAllowance(newAllowance);
       
