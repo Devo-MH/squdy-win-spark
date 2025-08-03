@@ -295,7 +295,7 @@ export function TaskChecklist({
     }
   };
 
-  // Enhanced generic task rendering
+  // Enhanced generic task rendering with consistent sizing
   const renderGenericTask = (task: Task, index: number) => {
     const isCompleted = completedTasks.includes(task.id);
     const taskStatus = verificationStatus[task.id] || (isCompleted ? 'completed' : 'pending');
@@ -305,14 +305,14 @@ export function TaskChecklist({
     return (
       <DefaultCard
         key={task.id}
-        className={`p-6 transition-all duration-300 bg-card border-border/50 ${
+        className={`min-h-[120px] p-6 transition-all duration-300 bg-card border-border/50 ${
           isHighlighted ? 'ring-2 ring-campaign-primary shadow-2xl shadow-campaign-primary/20 scale-105' : ''
         } hover:scale-105 hover:shadow-neon`}
         ref={isHighlighted ? firstIncompleteTaskRef : undefined}
       >
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between h-full">
           {/* Left side: Icon and content */}
-          <div className="flex items-center gap-4 flex-1">
+          <div className="flex items-center gap-4 flex-1 min-w-0">
             {/* Task Icon */}
             <div className={`p-3 rounded-lg ${displayInfo.bgColor} flex-shrink-0`}>
               {displayInfo.icon}
@@ -320,11 +320,11 @@ export function TaskChecklist({
             
             {/* Task Content */}
             <div className="flex-1 min-w-0">
-              <h3 className="font-semibold text-lg text-foreground mb-1">
+              <h3 className="font-semibold text-lg text-foreground mb-2 line-clamp-2">
                 {task.label}
               </h3>
               {task.description && (
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-muted-foreground line-clamp-2">
                   {task.description}
                 </p>
               )}
@@ -332,7 +332,7 @@ export function TaskChecklist({
           </div>
           
           {/* Right side: Status badge, reward amount, and action button */}
-          <div className="flex flex-col items-end gap-2 ml-4 flex-shrink-0">
+          <div className="flex flex-col items-end justify-between gap-3 ml-6 flex-shrink-0 h-full py-1">
             <StatusBadge status={taskStatus} />
             
             {/* Reward amount */}
@@ -419,26 +419,28 @@ export function TaskChecklist({
       </div>
 
       {/* Individual Task Cards */}
-      <div className="p-6 pt-0 space-y-4">
-        {tasks.map((task, index) => {
-          // Check if we have a specialized component for this task type
-          const specializedComponent = renderTaskComponent(task);
-          
-          if (specializedComponent) {
-            return (
-              <div 
-                key={task.id}
-                className={highlightFirstIncompleteTask && task.id === firstIncompleteTaskId ? 'ring-2 ring-campaign-primary rounded-lg shadow-2xl shadow-campaign-primary/20' : ''}
-                ref={highlightFirstIncompleteTask && task.id === firstIncompleteTaskId ? firstIncompleteTaskRef : undefined}
-              >
-                {specializedComponent}
-              </div>
-            );
-          }
-          
-          // Fallback to enhanced generic task rendering
-          return renderGenericTask(task, index);
-        })}
+      <div className="p-6 pt-0">
+        <div className="grid gap-4">
+          {tasks.map((task, index) => {
+            // Check if we have a specialized component for this task type
+            const specializedComponent = renderTaskComponent(task);
+            
+            if (specializedComponent) {
+              return (
+                <div 
+                  key={task.id}
+                  className={`min-h-[120px] ${highlightFirstIncompleteTask && task.id === firstIncompleteTaskId ? 'ring-2 ring-campaign-primary rounded-lg shadow-2xl shadow-campaign-primary/20' : ''}`}
+                  ref={highlightFirstIncompleteTask && task.id === firstIncompleteTaskId ? firstIncompleteTaskRef : undefined}
+                >
+                  {specializedComponent}
+                </div>
+              );
+            }
+            
+            // Fallback to enhanced generic task rendering
+            return renderGenericTask(task, index);
+          })}
+        </div>
       </div>
 
       {/* Success State */}

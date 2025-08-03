@@ -387,9 +387,9 @@ const CampaignDetail = () => {
               </div>
 
               {/* Main Grid Layout */}
-              <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
-                {/* Main Content Area */}
-                <div className="xl:col-span-2 space-y-8">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                {/* Main Content Area - Participation Flow */}
+                <div className="lg:col-span-2 space-y-6">
                   {/* Staking Section */}
                   {isConnected && !isParticipating && (
                     <StakingSection
@@ -407,12 +407,83 @@ const CampaignDetail = () => {
                     />
                   )}
 
+                  {/* Tasks Section - Only show when user has staked */}
+                  {campaignTasks.length > 0 && showTasksSection && (
+                    <Card className="gradient-card border border-border/50 shadow-xl">
+                      <CardHeader className="pb-4">
+                        <CardTitle className="flex items-center gap-3 text-xl">
+                          <div className="p-3 bg-campaign-secondary/20 border border-campaign-secondary/30 rounded-lg">
+                            <CheckCircle className="w-6 h-6 text-campaign-secondary" />
+                          </div>
+                          <div>
+                            <span className="text-foreground">Complete Required Tasks</span>
+                            <p className="text-sm font-normal text-muted-foreground mt-1">
+                              Complete all tasks to join the campaign
+                            </p>
+                          </div>
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="pt-0">
+                        <TaskChecklist
+                          tasks={campaignTasks}
+                          completedTasks={completedTasks}
+                          onTaskChange={handleTaskChange}
+                          campaignName={localCampaign.name}
+                          campaignId={localCampaign.id?.toString()}
+                          enableSimulation={true}
+                          highlightFirstIncompleteTask={true}
+                        />
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  {/* Join Campaign Button */}
+                  {showJoinButton && (
+                    <Card className="gradient-card border border-campaign-success/20 shadow-xl">
+                      <CardContent className="p-8 text-center">
+                        <div className="space-y-6">
+                          <div className="inline-flex items-center justify-center w-16 h-16 bg-campaign-success/20 border border-campaign-success/30 rounded-full">
+                            <Trophy className="w-8 h-8 text-campaign-success" />
+                          </div>
+                          
+                          <div>
+                            <h3 className="text-xl font-bold text-campaign-success mb-2">
+                              🎉 Ready to Join!
+                            </h3>
+                            <p className="text-muted-foreground">
+                              All requirements completed. Join the campaign and compete for amazing prizes!
+                            </p>
+                          </div>
+
+                          <Button 
+                            onClick={handleJoinCampaign}
+                            disabled={isJoiningCampaign || !canJoinCampaign}
+                            className="w-full h-12 bg-gradient-to-r from-campaign-success to-campaign-success/80 hover:from-campaign-success/90 hover:to-campaign-success text-white font-semibold shadow-xl glow-campaign-lg transition-all duration-300"
+                            size="lg"
+                          >
+                            {isJoiningCampaign ? (
+                              <>
+                                <Loader2 className="w-6 h-6 mr-2 animate-spin" />
+                                Joining Campaign...
+                              </>
+                            ) : (
+                              <>
+                                <Trophy className="w-6 h-6 mr-2" />
+                                Join Campaign & Compete for Prizes
+                              </>
+                            )}
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+
                   {/* Connection Status for Non-Connected Users */}
                   {!isConnected && (
-                    <Card className="gradient-card border border-white/10 slide-up">
+                    <Card className="gradient-card border border-border/50 shadow-xl">
                       <CardContent className="p-8 text-center">
                         <Wallet className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-                        <h3 className="text-xl font-semibold text-white mb-2">Connect Your Wallet</h3>
+                        <h3 className="text-xl font-semibold text-foreground mb-2">Connect Your Wallet</h3>
                         <p className="text-muted-foreground mb-6">
                           Connect your wallet to participate in this campaign and stake SQUDY tokens.
                         </p>
@@ -431,7 +502,7 @@ const CampaignDetail = () => {
 
                   {/* Participation Success */}
                   {isParticipating && (
-                    <Card className="gradient-card border border-campaign-success/20 slide-up">
+                    <Card className="gradient-card border border-campaign-success/20 shadow-xl">
                       <CardContent className="p-8 text-center">
                         <CheckCircle2 className="w-16 h-16 text-campaign-success mx-auto mb-4" />
                         <h3 className="text-xl font-semibold text-campaign-success mb-2">
@@ -459,446 +530,83 @@ const CampaignDetail = () => {
                       </CardContent>
                     </Card>
                   )}
-                  {/* Campaign Progress Card */}
-                  <Card className="bg-white/5 border-white/10 backdrop-blur-sm shadow-lg shadow-purple-600/10">
-                    <CardHeader className="pb-6">
-                      <CardTitle className="flex items-center gap-3 text-xl">
-                        <div className="p-2 bg-primary/20 rounded-lg">
-                          <Target className="w-6 h-6 text-primary" />
-                        </div>
-                        Campaign Progress
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-8">
-                      {/* Progress Bar */}
-                      <div className="space-y-4">
-                        <div className="flex justify-between items-center">
-                          <span className="text-sm font-medium text-muted-foreground">Total Staked</span>
-                          <span className="text-lg font-bold">
-                            {Number(localCampaign.currentAmount).toLocaleString()} / {Number(localCampaign.hardCap).toLocaleString()} SQUDY
-                          </span>
-                        </div>
-                        <div className="relative">
-                          <Progress value={progress} className="h-4 bg-white/10" />
-                          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-pulse rounded-full" />
-                        </div>
-                        <div className="flex justify-between text-sm">
-                          <span className="text-muted-foreground">Soft Cap: {Number(localCampaign.softCap).toLocaleString()}</span>
-                          <span className="font-semibold text-primary">{progress.toFixed(1)}% Complete</span>
-                        </div>
-                      </div>
 
-                      {/* Stats Grid */}
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-                        <div className="text-center p-4 bg-white/5 rounded-xl border border-white/10">
-                          <Users className="w-8 h-8 text-primary mx-auto mb-2" />
-                          <div className="text-2xl font-bold">{localCampaign.participantCount}</div>
-                          <div className="text-sm text-muted-foreground">Participants</div>
-                        </div>
-                        <div className="text-center p-4 bg-white/5 rounded-xl border border-white/10">
-                          <Target className="w-8 h-8 text-primary mx-auto mb-2" />
-                          <div className="text-2xl font-bold">{Number(localCampaign.ticketAmount).toLocaleString()}</div>
-                          <div className="text-sm text-muted-foreground">SQUDY per Ticket</div>
-                        </div>
-                        <div className="text-center p-4 bg-white/5 rounded-xl border border-white/10">
-                          <Clock className="w-8 h-8 text-primary mx-auto mb-2" />
-                          <div className="text-2xl font-bold">{timeLeft}</div>
-                          <div className="text-sm text-muted-foreground">Time Remaining</div>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
 
-                  {/* Prize Pool Card */}
-                  <Card className="bg-white/5 border-white/10 backdrop-blur-sm shadow-lg shadow-purple-600/10">
-                    <CardHeader className="pb-6">
-                      <CardTitle className="flex items-center gap-3 text-xl">
-                        <div className="p-2 bg-yellow-500/20 rounded-lg">
-                          <Trophy className="w-6 h-6 text-yellow-500" />
-                        </div>
-                        Prize Pool
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-4">
-                        {localCampaign.prizes.map((prize, index) => (
-                          <div key={index} className="flex items-center justify-between p-4 bg-white/5 rounded-xl border border-white/10 hover:bg-white/10 transition-all duration-200">
-                            <div className="flex items-center gap-4">
-                              <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold ${
-                                index === 0 ? 'bg-gradient-to-r from-yellow-500 to-yellow-600' :
-                                index === 1 ? 'bg-gradient-to-r from-gray-400 to-gray-500' :
-                                'bg-gradient-to-r from-orange-500 to-orange-600'
-                              }`}>
-                                {index + 1}
-                              </div>
-                              <div>
-                                <div className="font-semibold text-lg">{prize.name}</div>
-                                <div className="text-sm text-muted-foreground">{prize.description}</div>
-                              </div>
-                            </div>
-                            <div className="text-right">
-                              <div className="text-xl font-bold text-primary">
-                                {Number(prize.value).toLocaleString()} {prize.currency}
-                              </div>
-                              <div className="text-sm text-muted-foreground">
-                                Quantity: {prize.quantity}
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  {/* Campaign Participation Section */}
-                  {isConnected && !isParticipating && (
-                    <Card className="bg-white/5 border-white/10 backdrop-blur-sm shadow-lg shadow-purple-600/10">
-                      <CardHeader className="pb-6">
-                        <CardTitle className="flex items-center gap-3 text-xl">
-                          <div className="p-2 bg-green-500/20 rounded-lg">
-                            <CheckCircle className="w-6 h-6 text-green-500" />
-                          </div>
-                          Campaign Participation
-                        </CardTitle>
-                        <p className="text-sm text-muted-foreground">
-                          Follow the steps below to complete your campaign participation
-                        </p>
-                      </CardHeader>
-                      <CardContent className="space-y-8">
-                        {/* Step 1: Staking */}
-                        <div className="space-y-6">
-                          <div className="flex items-center gap-4">
-                            <div className="flex items-center justify-center w-8 h-8 bg-primary/20 rounded-full">
-                              <span className="text-sm font-bold text-primary">1</span>
-                            </div>
-                            <h3 className="text-lg font-semibold">Stake SQUDY Tokens</h3>
-                          </div>
-                          
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div className="p-4 bg-white/5 rounded-xl border border-white/10">
-                              <div className="text-sm text-muted-foreground mb-2">Your Balance</div>
-                              <div className="text-2xl font-bold">{Number(squdyBalance).toLocaleString()} SQUDY</div>
-                            </div>
-                            <div className="p-4 bg-white/5 rounded-xl border border-white/10">
-                              <div className="text-sm text-muted-foreground mb-2">Tickets You'll Get</div>
-                              <div className="text-2xl font-bold">{ticketsFromStake}</div>
-                            </div>
-                          </div>
-
-                          <div className="space-y-4">
-                            <div>
-                              <Label htmlFor="stakeAmount" className="text-sm font-medium">Amount to Stake (SQUDY)</Label>
-                              <Input
-                                id="stakeAmount"
-                                type="number"
-                                value={stakeAmount}
-                                onChange={(e) => setStakeAmount(e.target.value)}
-                                placeholder={`Minimum ${Number(localCampaign.ticketAmount).toLocaleString()} SQUDY`}
-                                className="mt-2 bg-white/5 border-white/10 focus:border-primary/50"
-                              />
-                            </div>
-                            <div className="flex justify-between text-sm text-muted-foreground">
-                              <span>1 ticket = {Number(localCampaign.ticketAmount).toLocaleString()} SQUDY</span>
-                              <span>{ticketsFromStake} tickets</span>
-                            </div>
-                          </div>
-
-                          {/* Step 1 Complete Message */}
-                          {hasStaked && (
-                            <div className="flex items-center gap-4 p-5 bg-gradient-to-r from-green-500/10 to-emerald-500/10 border border-green-500/20 rounded-xl">
-                              <div className="flex items-center justify-center w-10 h-10 bg-green-500/20 rounded-full">
-                                <CheckCircle className="w-6 h-6 text-green-500" />
-                              </div>
-                              <div className="flex-1">
-                                <p className="text-base font-semibold text-green-400">
-                                  ✓ Step 1 Complete: Tokens Staked Successfully!
-                                </p>
-                                <p className="text-sm text-green-300 mt-1">
-                                  Your {stakeAmount} SQUDY has been staked. Now complete the required tasks below to join the campaign.
-                                </p>
-                              </div>
-                              <div className="text-right">
-                                <div className="text-sm font-bold text-green-400">
-                                  {ticketsFromStake} ticket{ticketsFromStake !== 1 ? 's' : ''} earned
-                                </div>
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Approval and Staking Buttons */}
-                          <div className="space-y-3">
-                            {!hasAllowance && stakeAmount && (
-                              <Button 
-                                onClick={handleApprove}
-                                disabled={isApproving || !stakeAmount}
-                                className="w-full h-12 bg-white/10 hover:bg-white/20 border border-white/20 transition-all duration-200"
-                                variant="outline"
-                              >
-                                {isApproving ? (
-                                  <>
-                                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                                    Approving...
-                                  </>
-                                ) : (
-                                  <>
-                                    <CheckCircle className="w-5 h-5 mr-2" />
-                                    Approve {stakeAmount} SQUDY
-                                  </>
-                                )}
-                              </Button>
-                            )}
-                            
-                            <Button 
-                              onClick={handleStake}
-                              disabled={
-                                isStaking || 
-                                !stakeAmount || 
-                                ticketsFromStake < 1 || 
-                                !hasAllowance ||
-                                parseFloat(stakeAmount) > parseFloat(squdyBalance) ||
-                                hasStaked
-                              }
-                              className="w-full h-12 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-200"
-                            >
-                              {isStaking ? (
-                                <>
-                                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                                  Staking...
-                                </>
-                              ) : hasStaked ? (
-                                <>
-                                  <CheckCircle className="w-5 h-5 mr-2" />
-                                  ✓ Staked Successfully
-                                </>
-                              ) : (
-                                <>
-                                  <Flame className="w-5 h-5 mr-2" />
-                                  Stake {stakeAmount || 0} SQUDY
-                                </>
-                              )}
-                            </Button>
-                          </div>
-                        </div>
-
-                        {/* Step 2: Offchain Tasks */}
-                        {campaignTasks.length > 0 && showTasksSection && (
-                          <div className="space-y-6 pt-8 border-t border-white/10">
-                            <div className="flex items-center gap-4">
-                              <div className="flex items-center justify-center w-8 h-8 bg-primary/20 rounded-full">
-                                <span className="text-sm font-bold text-primary">2</span>
-                              </div>
-                              <h3 className="text-lg font-semibold">Complete Required Tasks</h3>
-                            </div>
-                            
-                            <div className="bg-white/5 rounded-xl p-6 border border-white/10">
-                              <TaskChecklist
-                                tasks={campaignTasks}
-                                completedTasks={completedTasks}
-                                onTaskChange={handleTaskChange}
-                                campaignName={localCampaign.name}
-                                campaignId={localCampaign.id?.toString()}
-                                enableSimulation={true}
-                                highlightFirstIncompleteTask={true}
-                              />
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Step 3: Join Campaign */}
-                        {showJoinButton && (
-                          <div className="space-y-6 pt-8 border-t border-white/10">
-                            <div className="flex items-center gap-4">
-                              <div className="flex items-center justify-center w-8 h-8 bg-yellow-500/20 rounded-full">
-                                <span className="text-sm font-bold text-yellow-500">3</span>
-                              </div>
-                              <h3 className="text-lg font-semibold">Join Campaign</h3>
-                            </div>
-                            
-                            <div className="bg-gradient-to-r from-green-500/10 to-emerald-500/10 border border-green-500/20 rounded-xl p-6">
-                              <div className="flex items-center gap-4 mb-4">
-                                <div className="flex items-center justify-center w-10 h-10 bg-green-500/20 rounded-full">
-                                  <CheckCircle className="w-6 h-6 text-green-500" />
-                                </div>
-                                <div>
-                                  <p className="text-base font-semibold text-green-400">
-                                    All Requirements Met! 🎉
-                                  </p>
-                                  <p className="text-sm text-green-300">
-                                    You're now ready to join the campaign and compete for prizes.
-                                  </p>
-                                </div>
-                              </div>
-                              
-                              <Button 
-                                onClick={handleJoinCampaign}
-                                disabled={isJoiningCampaign || !canJoinCampaign}
-                                className="w-full h-12 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-200"
-                                size="lg"
-                              >
-                                {isJoiningCampaign ? (
-                                  <>
-                                    <Loader2 className="w-6 h-6 mr-2 animate-spin" />
-                                    Joining Campaign...
-                                  </>
-                                ) : (
-                                  <>
-                                    <Trophy className="w-6 h-6 mr-2" />
-                                    🎉 Join Campaign & Compete for Prizes
-                                  </>
-                                )}
-                              </Button>
-                            </div>
-                          </div>
-                        )}
-                      </CardContent>
-                    </Card>
-                  )}
                 </div>
 
-                {/* Tasks Section */}
-                {campaignTasks.length > 0 && showTasksSection && (
-                  <Card className="gradient-card border border-white/10 slide-up-delay-1">
-                    <CardHeader className="pb-6">
-                      <CardTitle className="flex items-center gap-3 text-xl">
-                        <div className="p-2 bg-campaign-secondary/20 border border-campaign-secondary/30 rounded-lg">
-                          <CheckCircle className="w-6 h-6 text-campaign-secondary" />
+                {/* Right Column - Prize Pool & Campaign Info */}
+                <div className="space-y-6">
+                  {/* Prize Pool */}
+                  <PrizePool prizes={localCampaign.prizes} />
+                  
+                  {/* Campaign Details */}
+                  <Card className="gradient-card border border-border/50 shadow-xl">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-3">
+                        <div className="p-3 bg-campaign-info/20 border border-campaign-info/30 rounded-lg">
+                          <BookOpen className="w-5 h-5 text-campaign-info" />
                         </div>
-                        <div>
-                          <span className="text-white">Complete Required Tasks</span>
-                          <p className="text-sm font-normal text-muted-foreground mt-1">
-                            Step 2: Complete social tasks to join
-                          </p>
-                        </div>
+                        <span className="text-foreground">Campaign Details</span>
                       </CardTitle>
                     </CardHeader>
-                    <CardContent>
-                      <TaskChecklist
-                        tasks={campaignTasks}
-                        completedTasks={completedTasks}
-                        onTaskChange={handleTaskChange}
-                        campaignName={localCampaign.name}
-                        campaignId={localCampaign.id?.toString()}
-                        enableSimulation={true}
-                        highlightFirstIncompleteTask={true}
-                      />
+                    <CardContent className="space-y-4">
+                      <div className="space-y-3">
+                        <div className="flex justify-between items-center p-3 bg-muted/30 rounded-lg">
+                          <span className="text-sm text-muted-foreground">Start Date</span>
+                          <span className="text-sm font-medium text-foreground">{new Date(localCampaign.startDate).toLocaleDateString()}</span>
+                        </div>
+                        <div className="flex justify-between items-center p-3 bg-muted/30 rounded-lg">
+                          <span className="text-sm text-muted-foreground">End Date</span>
+                          <span className="text-sm font-medium text-foreground">{new Date(localCampaign.endDate).toLocaleDateString()}</span>
+                        </div>
+                        <div className="flex justify-between items-center p-3 bg-muted/30 rounded-lg">
+                          <span className="text-sm text-muted-foreground">Soft Cap</span>
+                          <span className="text-sm font-medium text-campaign-info">{Number(localCampaign.softCap).toLocaleString()} SQUDY</span>
+                        </div>
+                        <div className="flex justify-between items-center p-3 bg-muted/30 rounded-lg">
+                          <span className="text-sm text-muted-foreground">Hard Cap</span>
+                          <span className="text-sm font-medium text-campaign-warning">{Number(localCampaign.hardCap).toLocaleString()} SQUDY</span>
+                        </div>
+                        <div className="flex justify-between items-center p-3 bg-muted/30 rounded-lg">
+                          <span className="text-sm text-muted-foreground">Status</span>
+                          <Badge 
+                            className={`text-xs ${
+                              localCampaign.status === 'active' 
+                                ? 'bg-campaign-success/20 text-campaign-success border-campaign-success/30' 
+                                : 'bg-muted/50 text-muted-foreground border-border/50'
+                            }`}
+                          >
+                            {localCampaign.status}
+                          </Badge>
+                        </div>
+                      </div>
                     </CardContent>
                   </Card>
-                )}
 
-                {/* Join Campaign Button */}
-                {showJoinButton && (
-                  <Card className="gradient-card border border-campaign-success/20 slide-up-delay-2">
-                    <CardContent className="p-8 text-center">
-                      <div className="space-y-6">
-                        <div className="inline-flex items-center justify-center w-16 h-16 bg-campaign-success/20 border border-campaign-success/30 rounded-full">
-                          <Trophy className="w-8 h-8 text-campaign-success" />
+                  {/* Token Burn Warning */}
+                  <Card className="gradient-card border border-campaign-warning/20 shadow-xl">
+                    <CardContent className="p-6">
+                      <div className="flex items-start gap-3">
+                        <div className="p-3 bg-campaign-warning/20 border border-campaign-warning/30 rounded-lg flex-shrink-0">
+                          <AlertTriangle className="w-5 h-5 text-campaign-warning" />
                         </div>
-                        
                         <div>
-                          <h3 className="text-xl font-bold text-campaign-success mb-2">
-                            🎉 Ready to Join!
-                          </h3>
-                          <p className="text-muted-foreground">
-                            You've completed all requirements. Join the campaign now!
+                          <h4 className="font-semibold text-campaign-warning mb-2">🔥 Token Burn Mechanism</h4>
+                          <p className="text-sm text-campaign-warning/80 leading-relaxed">
+                            All staked SQUDY tokens will be permanently burned at the end of this campaign, 
+                            regardless of winning status. This burn-to-win mechanism creates scarcity and 
+                            adds value to the ecosystem.
                           </p>
+                          <div className="mt-3 p-3 bg-campaign-warning/5 border border-campaign-warning/20 rounded-lg">
+                            <p className="text-xs text-campaign-warning/70">
+                              💡 <strong>Why Burn?</strong> Token burning reduces supply, potentially increasing 
+                              value for remaining token holders while funding amazing prizes.
+                            </p>
+                          </div>
                         </div>
-                        
-                        <Button 
-                          onClick={handleJoinCampaign}
-                          disabled={isJoiningCampaign || !canJoinCampaign}
-                          className="w-full h-14 bg-gradient-to-r from-campaign-success to-campaign-info hover:scale-105 text-white font-bold shadow-lg hover:shadow-xl transition-all duration-200"
-                          size="lg"
-                        >
-                          {isJoiningCampaign ? (
-                            <>
-                              <Loader2 className="w-6 h-6 mr-2 animate-spin" />
-                              Joining Campaign...
-                            </>
-                          ) : (
-                            <>
-                              <Trophy className="w-6 h-6 mr-2" />
-                              Join Campaign & Compete for Prizes
-                            </>
-                          )}
-                        </Button>
                       </div>
                     </CardContent>
                   </Card>
-                )}
-              </div>
-
-              {/* Sidebar */}
-              <div className="xl:col-span-1 space-y-6">
-                {/* Prize Pool */}
-                <PrizePool prizes={localCampaign.prizes} />
-                {/* Campaign Details */}
-                <Card className="gradient-card border border-white/10 slide-up-delay-3">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-3">
-                      <div className="p-2 bg-campaign-info/20 border border-campaign-info/30 rounded-lg">
-                        <BookOpen className="w-5 h-5 text-campaign-info" />
-                      </div>
-                      <span className="text-white">Campaign Details</span>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="space-y-4">
-                      <div className="flex justify-between items-center p-3 bg-white/5 rounded-lg">
-                        <span className="text-sm text-muted-foreground">Start Date</span>
-                        <span className="text-sm font-medium text-white">{new Date(localCampaign.startDate).toLocaleDateString()}</span>
-                      </div>
-                      <div className="flex justify-between items-center p-3 bg-white/5 rounded-lg">
-                        <span className="text-sm text-muted-foreground">End Date</span>
-                        <span className="text-sm font-medium text-white">{new Date(localCampaign.endDate).toLocaleDateString()}</span>
-                      </div>
-                      <div className="flex justify-between items-center p-3 bg-white/5 rounded-lg">
-                        <span className="text-sm text-muted-foreground">Soft Cap</span>
-                        <span className="text-sm font-medium text-campaign-info">{Number(localCampaign.softCap).toLocaleString()} SQUDY</span>
-                      </div>
-                      <div className="flex justify-between items-center p-3 bg-white/5 rounded-lg">
-                        <span className="text-sm text-muted-foreground">Hard Cap</span>
-                        <span className="text-sm font-medium text-campaign-warning">{Number(localCampaign.hardCap).toLocaleString()} SQUDY</span>
-                      </div>
-                      <div className="flex justify-between items-center p-3 bg-white/5 rounded-lg">
-                        <span className="text-sm text-muted-foreground">Status</span>
-                        <Badge 
-                          className={`text-xs ${
-                            localCampaign.status === 'active' 
-                              ? 'bg-campaign-success/20 text-campaign-success border-campaign-success/30' 
-                              : 'bg-gray-500/20 text-gray-400 border-gray-500/30'
-                          }`}
-                        >
-                          {localCampaign.status}
-                        </Badge>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Token Burn Warning */}
-                <Card className="gradient-card border border-campaign-warning/20 slide-up-delay-3">
-                  <CardContent className="p-6">
-                    <div className="flex items-start gap-3">
-                      <div className="p-2 bg-campaign-warning/20 border border-campaign-warning/30 rounded-lg flex-shrink-0">
-                        <AlertTriangle className="w-5 h-5 text-campaign-warning" />
-                      </div>
-                      <div>
-                        <h4 className="font-semibold text-campaign-warning mb-2">🔥 Token Burn Mechanism</h4>
-                        <p className="text-sm text-campaign-warning/80 leading-relaxed">
-                          All staked SQUDY tokens will be permanently burned at the end of this campaign, 
-                          regardless of winning status. This burn-to-win mechanism creates scarcity and 
-                          adds value to the ecosystem.
-                        </p>
-                        <div className="mt-3 p-3 bg-campaign-warning/5 border border-campaign-warning/20 rounded-lg">
-                          <p className="text-xs text-campaign-warning/70">
-                            💡 <strong>Why Burn?</strong> Token burning reduces supply, potentially increasing 
-                            value for remaining token holders while funding amazing prizes.
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
               </div>
             </>
           )}
