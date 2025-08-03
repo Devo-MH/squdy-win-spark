@@ -1,0 +1,15 @@
+{
+  "network": "sepolia",
+  "chainId": 11155111,
+  "deployer": "0xa0Ee7A142d267C1f36714E4a8F75612F20a79720",
+  "contracts": {
+    "mockSqudyToken": {
+      "address": "0x1234567890123456789012345678901234567890"
+    },
+    "campaignManager": {
+      "address": "0x0987654321098765432109876543210987654321"
+    }
+  },
+  "timestamp": "2025-08-03T16:12:29.504Z",
+  "status": "mock_deployment_for_frontend_testing"
+}

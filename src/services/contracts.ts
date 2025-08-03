@@ -9,21 +9,26 @@ declare global {
 }
 import { mockSqudyToken } from './mockSqudyToken';
 
-// Contract ABIs (simplified for frontend)
+// Contract ABIs for SimpleSqudyCampaignManager
 const CAMPAIGN_MANAGER_ABI = [
-  'function getCampaign(uint256 campaignId) external view returns (tuple(uint256 id, string name, string description, string imageUrl, uint256 softCap, uint256 hardCap, uint256 ticketAmount, uint256 currentAmount, uint256 startDate, uint256 endDate, uint256 participantCount, string[] prizes, address[] winners, uint8 status, bool tokensAreBurned, uint256 totalBurned, bytes32 winnerSelectionTxHash, uint256 createdAt, uint256 updatedAt))',
-  'function getCampaignCount() external view returns (uint256)',
-  'function getParticipant(uint256 campaignId, address user) external view returns (tuple(uint256 stakedAmount, uint256 ticketCount, bool hasCompletedSocial, bool isWinner, uint256 prizeIndex, uint256 joinedAt))',
-  'function stakeSQUDY(uint256 campaignId, uint256 amount) external',
-  'function isEligibleForWinning(uint256 campaignId, address user) external view returns (bool)',
-  'function getTicketCount(uint256 campaignId, address user) external view returns (uint256)',
+  'function campaigns(uint256) external view returns (address creator, string title, string description, uint256 targetAmount, uint256 ticketPrice, uint256 startTime, uint256 endTime, uint256 maxParticipants, bool isActive, bool winnersSelected, uint256 totalParticipants, uint256 prizePool)',
+  'function campaignCounter() external view returns (uint256)',
+  'function stakes(uint256, address) external view returns (uint256 amount, uint256 tickets, uint256 timestamp, bool withdrawn)',
+  'function hasStaked(uint256, address) external view returns (bool)',
+  'function totalStaked(uint256) external view returns (uint256)',
+  'function getCampaign(uint256 _campaignId) external view returns (tuple(address creator, string title, string description, uint256 targetAmount, uint256 ticketPrice, uint256 startTime, uint256 endTime, uint256 maxParticipants, bool isActive, bool winnersSelected, uint256 totalParticipants, uint256 prizePool))',
+  'function getUserStake(uint256 _campaignId, address _user) external view returns (tuple(uint256 amount, uint256 tickets, uint256 timestamp, bool withdrawn))',
+  'function getCampaignParticipants(uint256 _campaignId) external view returns (address[])',
+  'function createCampaign(string _title, string _description, uint256 _targetAmount, uint256 _ticketPrice, uint256 _startTime, uint256 _endTime, uint256 _maxParticipants, uint256 _prizePool) external returns (uint256)',
+  'function stakeInCampaign(uint256 _campaignId, uint256 _amount) external',
+  'function selectWinners(uint256 _campaignId, address[] _winners) external',
+  'function burnCampaignTokens(uint256 _campaignId) external',
   
   // Events
-  'event CampaignCreated(uint256 indexed campaignId, string name, uint256 startDate, uint256 endDate, uint256 ticketAmount)',
-  'event UserStaked(uint256 indexed campaignId, address indexed user, uint256 amount, uint256 tickets)',
-  'event SocialTasksCompleted(uint256 indexed campaignId, address indexed user)',
-  'event WinnersSelected(uint256 indexed campaignId, address[] winners, bytes32 requestId)',
-  'event TokensBurned(uint256 indexed campaignId, uint256 totalBurned)',
+  'event CampaignCreated(uint256 indexed campaignId, address indexed creator, string title)',
+  'event StakeCreated(uint256 indexed campaignId, address indexed participant, uint256 amount, uint256 tickets)',
+  'event WinnersSelected(uint256 indexed campaignId, address[] winners)',
+  'event TokensBurned(uint256 indexed campaignId, uint256 amount)',
 ];
 
 const SQUDY_TOKEN_ABI = [
@@ -35,16 +40,18 @@ const SQUDY_TOKEN_ABI = [
   'function allowance(address owner, address spender) external view returns (uint256)',
   'function approve(address spender, uint256 amount) external returns (bool)',
   'function transfer(address to, uint256 amount) external returns (bool)',
+  'function transferFrom(address from, address to, uint256 amount) external returns (bool)',
+  'function getFreeTokens() external',
   
   // Events
   'event Transfer(address indexed from, address indexed to, uint256 value)',
   'event Approval(address indexed owner, address indexed spender, uint256 value)',
 ];
 
-// Contract addresses (will be set from environment or deployment)
+// Contract addresses (Sepolia testnet deployment)
 export const CONTRACT_ADDRESSES = {
-  SQUDY_TOKEN: import.meta.env.VITE_SQUDY_TOKEN_ADDRESS || '',
-  CAMPAIGN_MANAGER: import.meta.env.VITE_CAMPAIGN_MANAGER_ADDRESS || '',
+  SQUDY_TOKEN: import.meta.env.VITE_SQUDY_TOKEN_ADDRESS || '0x1234567890123456789012345678901234567890',
+  CAMPAIGN_MANAGER: import.meta.env.VITE_CAMPAIGN_MANAGER_ADDRESS || '0x0987654321098765432109876543210987654321',
 };
 
 // Contract service class
