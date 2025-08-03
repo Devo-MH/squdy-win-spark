@@ -530,40 +530,7 @@ export class ContractService {
     }
   }
 
-  // Mock token utility methods
-  isUsingMockToken(): boolean {
-    return this.useMockToken;
-  }
 
-  async requestTestTokens(amount: string): Promise<void> {
-    if (!this.useMockToken || !this.squdyTokenContract) {
-      throw new Error('Test tokens only available in mock mode');
-    }
-
-    try {
-      toast.info('🎁 Requesting test tokens...');
-      
-      // Call the getFreeTokens function on the SimpleMockSqudyToken contract
-      const tx = await this.squdyTokenContract.getFreeTokens();
-      
-      // Wait for transaction confirmation
-      await tx.wait();
-      
-      toast.success(`🎉 Successfully received ${amount} test SQUDY tokens!`);
-    } catch (error: any) {
-      console.error('Error requesting test tokens:', error);
-      
-      if (error.code === 'USER_REJECTED') {
-        toast.error('Transaction cancelled by user');
-      } else if (error.message?.includes('Already has enough tokens')) {
-        toast.warning('You already have enough test tokens!');
-      } else {
-        toast.error('Failed to request test tokens. Please try again.');
-      }
-      
-      throw error;
-    }
-  }
 
   // Cleanup event listeners
   removeAllListeners(): void {
