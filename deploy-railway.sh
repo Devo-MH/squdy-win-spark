@@ -1,29 +1,26 @@
 #!/bin/bash
 
-echo "🚀 Railway Deployment Setup for Squdy Backend"
-echo "=============================================="
+echo "🚀 Deploying Squdy Backend to Railway..."
 
-# Check if Railway CLI is installed
-if ! command -v railway &> /dev/null; then
-    echo "📦 Installing Railway CLI..."
-    npm install -g @railway/cli
-fi
+# Login to Railway (will open browser)
+echo "📝 Please log in to Railway when prompted..."
+railway login
 
-echo "🔗 Railway deployment options:"
-echo "1. Connect to Railway: railway login"
-echo "2. Initialize project: railway init"
-echo "3. Deploy: railway up"
-echo ""
-echo "🌐 Alternative - Manual GitHub Integration:"
-echo "1. Go to https://railway.app"
-echo "2. Connect your GitHub account"
-echo "3. Import repository: Devo-MH/squdy-win-spark"
-echo "4. Set build command: cd backend && npm install"
-echo "5. Set start command: cd backend && npm start"
-echo ""
-echo "📋 Environment Variables to set on Railway:"
-echo "PORT=3001"
-echo "NODE_ENV=production"
+# Create new project or link existing
+echo "🔗 Setting up Railway project..."
+railway link
 
-# Make the script executable
-chmod +x deploy-railway.sh
+# Set environment variables
+echo "⚙️ Setting environment variables..."
+railway variables set MONGODB_URI="mongodb+srv://dinabahnasy:wma8hgj_JWD3jbx1gvk@cluster0.d9mxajj.mongodb.net/dcampaign?retryWrites=true&w=majority"
+railway variables set NODE_ENV="production"
+railway variables set PORT="3001"
+
+# Deploy the backend
+echo "🚀 Deploying backend..."
+railway up --detach
+
+echo "✅ Deployment complete!"
+echo "🔗 Your backend will be available at the Railway URL"
+echo "📊 Check deployment status: railway status"
+echo "📝 View logs: railway logs"
