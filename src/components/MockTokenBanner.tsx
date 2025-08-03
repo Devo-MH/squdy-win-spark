@@ -10,6 +10,8 @@ interface MockTokenBannerProps {
 }
 
 export const MockTokenBanner: React.FC<MockTokenBannerProps> = ({ contractService }) => {
+  const [visible, setVisible] = useState(true);
+  if (!visible) return null;
   const { isConnected, account } = useWeb3();
   const [balance, setBalance] = useState<string>('0');
 
@@ -75,16 +77,22 @@ export const MockTokenBanner: React.FC<MockTokenBannerProps> = ({ contractServic
   }
 
   return (
-    <Card className="border-orange-200 bg-orange-50 p-4 mb-4">
+    <Card className="relative bg-orange-50 text-orange-700 p-4 mb-4 rounded-lg">
+      {/* Dismiss Button */}
+      <button
+        onClick={() => setVisible(false)}
+        className="absolute top-2 right-2 text-orange-700 hover:text-orange-900"
+        aria-label="Dismiss"
+      >×</button>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <span className="text-2xl">🧪</span>
           <div>
-            <h3 className="font-semibold text-orange-800">
+            <h3 className="font-semibold text-orange-700">
               Mock SQUDY Token Mode
             </h3>
             <p className="text-sm text-orange-600">
-              You have {Number(balance).toLocaleString()} mSQUDY tokens. This is for development purposes only.
+              You have {Number(balance).toLocaleString()} mSQUDY tokens (dev only).
             </p>
           </div>
         </div>
@@ -92,7 +100,7 @@ export const MockTokenBanner: React.FC<MockTokenBannerProps> = ({ contractServic
           onClick={handleRequestTokens}
           variant="outline"
           size="sm"
-          className="border-orange-300 text-orange-700 hover:bg-orange-100"
+          className="border-orange-300 text-orange-700 hover:bg-orange-100 transition-shadow duration-200"
         >
           🎁 Get 1000 Test Tokens
         </Button>

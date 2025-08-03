@@ -1,7 +1,4 @@
 import React from 'react';
-import { ArrowLeft, Clock, Calendar, Target } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 
 interface CampaignHeaderProps {
   title: string;
@@ -9,123 +6,118 @@ interface CampaignHeaderProps {
   status: string;
   timeLeft: string;
   onBack: () => void;
+  onJoin: () => void;
   isActive: boolean;
+  imageUrl: string;
 }
 
-export function CampaignHeader({ 
-  title, 
-  description, 
-  status, 
-  timeLeft, 
-  onBack, 
-  isActive 
+export function CampaignHeader({
+  title,
+  description,
+  status,
+  timeLeft,
+  onBack,
+  onJoin,
+  isActive,
+  imageUrl,
 }: CampaignHeaderProps) {
+  const handleJoinClick = () => {
+    // Scroll to staking section
+    const stakingSection = document.getElementById('staking');
+    if (stakingSection) {
+      stakingSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } else {
+      // If staking section not found, scroll to page bottom where forms usually are
+      window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+    }
+    onJoin();
+  };
+
   return (
-    <div className="relative overflow-hidden rounded-3xl gradient-hero slide-up">
-      {/* Background Decorative Elements */}
-      <div className="absolute inset-0">
-        <div className="absolute top-10 left-10 w-32 h-32 bg-campaign-primary/10 rounded-full blur-xl float" />
-        <div className="absolute top-20 right-20 w-24 h-24 bg-campaign-secondary/10 rounded-full blur-lg float" style={{ animationDelay: '1s' }} />
-        <div className="absolute bottom-10 left-1/3 w-20 h-20 bg-campaign-accent/10 rounded-full blur-md float" style={{ animationDelay: '2s' }} />
-      </div>
-
-      {/* Content */}
-      <div className="relative z-10 p-8 lg:p-12">
-        {/* Back Button */}
-        <div className="mb-8">
-          <Button
-            variant="ghost"
-            className="group hover:bg-white/10 transition-all duration-300 border border-white/20 backdrop-blur-sm"
-            onClick={onBack}
-          >
-            <ArrowLeft className="w-4 h-4 mr-2 group-hover:-translate-x-1 transition-transform duration-200" />
-            Back to Campaigns
-          </Button>
+    <div className="max-w-6xl mx-auto my-8">
+      <div className="relative w-full h-[380px] sm:h-[420px] rounded-xl overflow-hidden shadow-2xl ring-1 ring-white/10">
+        {/* Full Background Image */}
+        <div className="absolute inset-0">
+          <img
+            src={imageUrl || '/fallback.jpg'}
+            alt={title}
+            className="w-full h-full object-cover"
+            onError={(e) => {
+              e.currentTarget.src = 'https://images.unsplash.com/photo-1639762681485-074b7f938ba0?w=1200&h=600&fit=crop&crop=center';
+            }}
+          />
+          {/* Dark overlay for better text readability */}
+          <div className="absolute inset-0 bg-black/40" />
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
-          {/* Campaign Info */}
-          <div className="space-y-6">
-            {/* Status Badges */}
-            <div className="flex items-center gap-4 flex-wrap">
-              <Badge 
-                variant={status === 'active' ? 'default' : 'secondary'}
-                className={`text-sm px-4 py-2 capitalize font-semibold ${
-                  status === 'active' 
-                    ? 'bg-campaign-success/20 text-campaign-success border-campaign-success/30 pulse-glow' 
-                    : 'bg-gray-500/20 text-gray-400 border-gray-500/30'
-                }`}
-              >
-                <div className="w-2 h-2 bg-current rounded-full mr-2 animate-pulse" />
-                {status}
-              </Badge>
-              
-              {isActive && (
-                <Badge 
-                  variant="outline" 
-                  className="text-sm px-4 py-2 border-campaign-accent/30 bg-campaign-accent/10 text-campaign-accent"
-                >
-                  <Clock className="w-4 h-4 mr-2" />
-                  {timeLeft}
-                </Badge>
-              )}
-            </div>
+        {/* Content Overlay Panel */}
+        <div className="relative z-10 h-full flex items-center">
+          <div className="w-full max-w-lg p-6 sm:p-8 ml-6 sm:ml-8">
+            {/* Semi-transparent content background - no blur to keep image crisp */}
+            <div className="absolute inset-0 bg-black/70 rounded-xl border border-white/10" />
+            
+            {/* Content */}
+            <div className="relative z-10 space-y-4 text-white">
+              {/* Breadcrumbs */}
+              <nav className="text-sm text-gray-300">
+                <a href="/" onClick={onBack} className="hover:underline hover:text-white transition-colors">Home</a>
+                <span className="mx-1">›</span>
+                <a href="/campaigns" onClick={onBack} className="hover:underline hover:text-white transition-colors">Campaigns</a>
+                <span className="mx-1">›</span>
+                <span className="text-white font-semibold">{title}</span>
+              </nav>
 
-            {/* Campaign Title */}
-            <div className="space-y-4">
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white leading-tight">
-                <span className="bg-gradient-to-r from-white via-campaign-secondary to-campaign-accent bg-clip-text text-transparent">
-                  {title}
+              {/* Status Badges */}
+              <div className="flex items-center gap-2 flex-wrap">
+                {/* Active Badge with animated dot */}
+                <span className="bg-green-500/90 text-white text-xs font-semibold px-3 py-1 rounded-full flex items-center gap-1 border border-green-400/20">
+                  <span className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
+                  </span>
+                  Active
                 </span>
+
+                {/* Countdown Badge with clock icon */}
+                {isActive && (
+                  <span className="bg-blue-500/90 text-white text-xs font-semibold px-3 py-1 rounded-full flex items-center gap-1 border border-blue-400/20">
+                    <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M10 2a8 8 0 100 16 8 8 0 000-16zm1 8H9V5h2v5z" />
+                    </svg>
+                    {timeLeft}
+                  </span>
+                )}
+              </div>
+
+              {/* Title */}
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold leading-tight text-white drop-shadow-lg">
+                {title}
               </h1>
-              
-              <p className="text-lg md:text-xl text-white/80 leading-relaxed max-w-2xl">
-                {description}
+
+              {/* Description */}
+              <p className="text-sm sm:text-base text-gray-200 leading-relaxed drop-shadow">
+                {description || 'Participants can stake SQUDY tokens to win amazing prizes!'}
               </p>
-            </div>
 
-            {/* Campaign Meta */}
-            <div className="flex items-center gap-6 text-sm text-white/60">
-              <div className="flex items-center gap-2">
-                <Calendar className="w-4 h-4" />
-                <span>Campaign Active</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Target className="w-4 h-4" />
-                <span>Burn-to-Win</span>
+              {/* Join Campaign Button */}
+              <div className="pt-2">
+                <div className="relative group w-fit">
+                  <span className="absolute inset-0 bg-white/10 blur-xl opacity-0 group-hover:opacity-30 transition-opacity duration-300 rounded-xl"></span>
+                  <button 
+                    onClick={handleJoinClick}
+                    className="relative z-10 flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 via-indigo-500 to-blue-500 text-white font-bold rounded-xl shadow-lg hover:scale-105 hover:shadow-xl transition-all duration-200 border border-white/20"
+                  >
+                    🚀 Join Campaign
+                  </button>
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Decorative Side */}
-          <div className="relative">
-            <div className="aspect-square max-w-md mx-auto relative">
-              {/* Floating Campaign Icons */}
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="w-32 h-32 bg-gradient-campaign rounded-full flex items-center justify-center glow-campaign-lg">
-                  <Target className="w-16 h-16 text-white" />
-                </div>
-              </div>
-              
-              {/* Orbiting Elements */}
-              <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-4">
-                <div className="w-12 h-12 bg-campaign-accent/20 border border-campaign-accent/30 rounded-full flex items-center justify-center float">
-                  <Calendar className="w-6 h-6 text-campaign-accent" />
-                </div>
-              </div>
-              
-              <div className="absolute bottom-0 right-0 transform translate-x-2 translate-y-2">
-                <div className="w-16 h-16 bg-campaign-warning/20 border border-campaign-warning/30 rounded-full flex items-center justify-center float" style={{ animationDelay: '0.5s' }}>
-                  <Clock className="w-8 h-8 text-campaign-warning" />
-                </div>
-              </div>
-            </div>
-          </div>
+          {/* Gradient Edge Fade (from content area into image) */}
+          <div className="absolute inset-y-0 left-0 w-32 sm:w-48 bg-gradient-to-r from-black/20 via-black/10 to-transparent pointer-events-none" />
         </div>
       </div>
-
-      {/* Bottom Gradient Overlay */}
-      <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-background/80 to-transparent" />
     </div>
   );
 }

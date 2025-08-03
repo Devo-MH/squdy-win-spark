@@ -381,68 +381,39 @@ export function TaskChecklist({
 
   return (
     <DefaultCard className="w-full max-w-4xl mx-auto p-6 bg-gradient-secondary border-border/50 shadow-xl">
-      {/* Container Card Header */}
-      <div className="p-6 space-y-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="p-3 bg-campaign-primary/20 rounded-lg">
-              <Target className="w-6 h-6 text-campaign-primary" />
-            </div>
-            <div>
-              <h2 className="text-2xl font-bold text-foreground">
-                Complete Required Tasks
-              </h2>
-              <p className="text-sm text-muted-foreground">
-                {completedRequired}/{requiredTasks.length} completed
-              </p>
-            </div>
-          </div>
-          <div className="text-right">
-            <p className="text-lg font-bold text-campaign-success">{rewardAmount}</p>
-            <p className="text-xs text-muted-foreground">Reward Amount</p>
-          </div>
-        </div>
-        
-        {/* Progress Tracking */}
-        <div className="space-y-2">
-          <div className="flex justify-between items-center text-sm">
-            <span className="text-muted-foreground">Progress</span>
-            <span className="text-foreground font-medium">
-              {progress.toFixed(0)}% Complete
-            </span>
-          </div>
-          <DefaultProgress value={progress} className="h-2 transition-all duration-500" />
-          <p className="text-xs text-muted-foreground text-center">
-            Complete all tasks to join the campaign
-          </p>
-        </div>
+      {/* Progress Header */}
+      <div className="mb-4 font-mono text-sm">
+        {`[ ${Array.from({ length: tasks.length }, (_, i) => i < completedTasks.length ? '■' : '□').join('')} ] ${completedTasks.length}/${tasks.length} tasks done`}
       </div>
 
-      {/* Individual Task Cards */}
-      <div className="p-6 pt-0">
-        <div className="grid gap-4">
-          {tasks.map((task, index) => {
-            // Check if we have a specialized component for this task type
-            const specializedComponent = renderTaskComponent(task);
-            
-            if (specializedComponent) {
-              return (
-                <div 
-                  key={task.id}
-                  className={`min-h-[120px] ${highlightFirstIncompleteTask && task.id === firstIncompleteTaskId ? 'ring-2 ring-campaign-primary rounded-lg shadow-2xl shadow-campaign-primary/20' : ''}`}
-                  ref={highlightFirstIncompleteTask && task.id === firstIncompleteTaskId ? firstIncompleteTaskRef : undefined}
-                >
-                  {specializedComponent}
-                </div>
-              );
-            }
-            
-            // Fallback to enhanced generic task rendering
-            return renderGenericTask(task, index);
-          })}
-        </div>
+      {/* Task Cards Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {tasks.map((task, index) => {
+          const specializedComponent = renderTaskComponent(task);
+          if (specializedComponent) {
+            // Specialized task wrapped in styled card
+            return (
+              <DefaultCard
+                key={task.id}
+                className={`relative task-card min-h-[180px] p-5 rounded-2xl bg-card border-border/50 flex flex-col justify-between hover:shadow-lg focus:shadow-lg transition-shadow duration-200 ${
+                  highlightFirstIncompleteTask && task.id === firstIncompleteTaskId ? 'ring-2 ring-campaign-primary shadow-2xl shadow-campaign-primary/20' : ''
+                }`}
+                ref={highlightFirstIncompleteTask && task.id === firstIncompleteTaskId ? firstIncompleteTaskRef : undefined}
+              >
+                {/* Status Badge */}
+                <span className={`absolute top-4 right-4 px-2 py-1 text-xs rounded-full ${
+                  completedTasks.includes(task.id) ? 'bg-green-500' : 'bg-orange-500'
+                } text-white`}>
+                  {completedTasks.includes(task.id) ? 'Done' : 'Pending'}
+                </span>
+                {specializedComponent}
+              </DefaultCard>
+            );
+          }
+          return renderGenericTask(task, index);
+        })}
       </div>
-
+     
       {/* Success State */}
       {allRequiredComplete && onJoinSuccess && (
         <div className="mt-6 p-4 bg-campaign-success/10 border border-campaign-success/20 rounded-lg text-center">

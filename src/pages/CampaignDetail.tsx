@@ -370,7 +370,9 @@ const CampaignDetail = () => {
                   status={localCampaign.status}
                   timeLeft={timeLeft}
                   onBack={() => navigate(-1)}
+                  onJoin={handleJoinCampaign}
                   isActive={isActive}
+                  imageUrl={localCampaign.imageUrl || 'https://images.unsplash.com/photo-1639762681485-074b7f938ba0?w=800&h=600&fit=crop&crop=center'}
                 />
               </div>
 
@@ -392,7 +394,8 @@ const CampaignDetail = () => {
                 <div className="lg:col-span-2 space-y-6">
                   {/* Staking Section */}
                   {isConnected && !isParticipating && (
-                    <StakingSection
+                    <div id="staking">
+                      <StakingSection
                       squdyBalance={squdyBalance}
                       stakeAmount={stakeAmount}
                       onStakeAmountChange={setStakeAmount}
@@ -404,37 +407,34 @@ const CampaignDetail = () => {
                       hasStaked={hasStaked}
                       onApprove={handleApprove}
                       onStake={handleStake}
-                    />
+                      />
+                    </div>
                   )}
 
                   {/* Tasks Section - Only show when user has staked */}
                   {campaignTasks.length > 0 && showTasksSection && (
-                    <Card className="gradient-card border border-border/50 shadow-xl">
-                      <CardHeader className="pb-4">
-                        <CardTitle className="flex items-center gap-3 text-xl">
-                          <div className="p-3 bg-campaign-secondary/20 border border-campaign-secondary/30 rounded-lg">
-                            <CheckCircle className="w-6 h-6 text-campaign-secondary" />
-                          </div>
-                          <div>
-                            <span className="text-foreground">Complete Required Tasks</span>
-                            <p className="text-sm font-normal text-muted-foreground mt-1">
-                              Complete all tasks to join the campaign
-                            </p>
-                          </div>
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent className="pt-0">
-                        <TaskChecklist
-                          tasks={campaignTasks}
-                          completedTasks={completedTasks}
-                          onTaskChange={handleTaskChange}
-                          campaignName={localCampaign.name}
-                          campaignId={localCampaign.id?.toString()}
-                          enableSimulation={true}
-                          highlightFirstIncompleteTask={true}
-                        />
-                      </CardContent>
-                    </Card>
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-3">
+                        <div className="p-3 bg-campaign-secondary/20 border border-campaign-secondary/30 rounded-lg">
+                          <CheckCircle className="w-6 h-6 text-campaign-secondary" />
+                        </div>
+                        <h3 className="text-xl font-semibold text-foreground">
+                          Complete Required Tasks
+                        </h3>
+                      </div>
+                      <p className="text-sm text-muted-foreground pl-12">
+                        Complete all required offchain tasks to join the campaign.
+                      </p>
+                      <TaskChecklist
+                        tasks={campaignTasks}
+                        completedTasks={completedTasks}
+                        onTaskChange={handleTaskChange}
+                        campaignName={localCampaign.name}
+                        campaignId={localCampaign.id?.toString()}
+                        enableSimulation={true}
+                        highlightFirstIncompleteTask={true}
+                      />
+                    </div>
                   )}
 
                   {/* Join Campaign Button */}
@@ -607,6 +607,7 @@ const CampaignDetail = () => {
                       </div>
                     </CardContent>
                   </Card>
+                </div>
               </div>
             </>
           )}
