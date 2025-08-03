@@ -2,6 +2,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import HeroSection from "@/components/HeroSection";
 import CampaignCard from "@/components/CampaignCard";
+import { MockTokenBanner } from "@/components/MockTokenBanner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -12,9 +13,13 @@ import { useSocket } from "@/services/socket";
 import { useEffect } from "react";
 import { toast } from "sonner";
 import { tokenInfo, campaignStats } from "@/services/mockData";
+import { useWeb3 } from "@/contexts/Web3Context";
+import { useContracts } from "@/services/contracts";
 
 const HomePage = () => {
   const socket = useSocket();
+  const { provider, signer } = useWeb3();
+  const contractService = useContracts(provider, signer);
   const { 
     data: campaignsData, 
     isLoading, 
@@ -62,6 +67,11 @@ const HomePage = () => {
       <Header />
       
       <HeroSection />
+
+      {/* Mock Token Banner */}
+      <div className="container mx-auto px-4 py-4">
+        <MockTokenBanner contractService={contractService} />
+      </div>
 
       {/* Active Campaigns Section */}
       <section className="py-20 bg-background">

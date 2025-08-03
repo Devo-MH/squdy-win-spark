@@ -66,8 +66,10 @@ export class ContractService {
     this.provider = provider;
     this.signer = signer;
     
-    // Use mock token if no real contract address is provided
-    this.useMockToken = !CONTRACT_ADDRESSES.SQUDY_TOKEN || CONTRACT_ADDRESSES.SQUDY_TOKEN === '';
+    // Use mock token if contract addresses are demo addresses
+    this.useMockToken = CONTRACT_ADDRESSES.SQUDY_TOKEN === '0x1234567890123456789012345678901234567890' || 
+                       !CONTRACT_ADDRESSES.SQUDY_TOKEN || 
+                       CONTRACT_ADDRESSES.SQUDY_TOKEN === '';
     
     if (!this.useMockToken) {
       this.squdyTokenContract = new ethers.Contract(
@@ -75,10 +77,16 @@ export class ContractService {
         SQUDY_TOKEN_ABI,
         signer
       );
+    } else {
+      // Create contract instance for the SimpleMockSqudyToken
+      this.squdyTokenContract = new ethers.Contract(
+        CONTRACT_ADDRESSES.SQUDY_TOKEN,
+        SQUDY_TOKEN_ABI,
+        signer
+      );
     }
     
-    // For now, we'll use a placeholder for campaign manager in mock mode
-    // In production, this should point to the real contract
+    // Campaign manager contract
     const campaignAddress = CONTRACT_ADDRESSES.CAMPAIGN_MANAGER || '0x0000000000000000000000000000000000000000';
     this.campaignManagerContract = new ethers.Contract(
       campaignAddress,
@@ -524,10 +532,47 @@ export class ContractService {
     }
   }
 
+  // Mock token utility methods
+  isUsingMockToken(): boolean {
+    return this.useMockToken;
+  }
+
+  async requestTestTokens(amount: string): Promise<void> {
+    if (!this.useMockToken || !this.squdyTokenContract) {
+      throw new Error('Test tokens only available in mock mode');
+    }
+
+    try {
+      toast.info('🎁 Requesting test tokens...');
+      
+      // Call the getFreeTokens function on the SimpleMockSqudyToken contract
+      const tx = await this.squdyTokenContract.getFreeTokens();
+      
+      // Wait for transaction confirmation
+      await tx.wait();
+      
+      toast.success(`🎉 Successfully received ${amount} test SQUDY tokens!`);
+    } catch (error: any) {
+      console.error('Error requesting test tokens:', error);
+      
+      if (error.code === 'USER_REJECTED') {
+        toast.error('Transaction cancelled by user');
+      } else if (error.message?.includes('Already has enough tokens')) {
+        toast.warning('You already have enough test tokens!');
+      } else {
+        toast.error('Failed to request test tokens. Please try again.');
+      }
+      
+      throw error;
+    }
+  }
+
   // Cleanup event listeners
   removeAllListeners(): void {
     this.campaignManagerContract.removeAllListeners();
-    this.squdyTokenContract.removeAllListeners();
+    if (this.squdyTokenContract) {
+      this.squdyTokenContract.removeAllListeners();
+    }
   }
 }
 
