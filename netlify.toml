@@ -1,21 +1,15 @@
 [build]
-  publish = "dist"
   command = "npm run build"
+  publish = "dist"
 
 [build.environment]
   VITE_SQUDY_TOKEN_ADDRESS = "0x1234567890123456789012345678901234567890"
   VITE_CAMPAIGN_MANAGER_ADDRESS = "0x0987654321098765432109876543210987654321"
   VITE_NETWORK_ID = "11155111"
   VITE_NETWORK_NAME = "sepolia"
-  VITE_API_URL = "https://squdy-backend.railway.app/api"
+  VITE_API_URL = "https://squdy-backend-production.up.railway.app/api"
 
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
-
-[context.production]
-  command = "npm run build"
-
-[context.deploy-preview]
-  command = "npm run build"
