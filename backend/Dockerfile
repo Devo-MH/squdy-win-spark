@@ -1,33 +1,40 @@
-# Stage 1: Build
-FROM node:18-alpine AS builder
-
-WORKDIR /app
-
-COPY package*.json ./
-COPY tsconfig.json ./
-COPY src ./src
-COPY scripts/copy-abi.js ./scripts/
-COPY artifacts ./artifacts
-
-RUN npm install
-RUN npm run build
-
-# Stage 2: Production
+# Use Node.js LTS version
 FROM node:18-alpine
 
+# Set working directory
 WORKDIR /app
 
-COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/node_modules ./node_modules
-COPY package.json .
+# Install dependencies for building native modules
+RUN apk add --no-cache python3 make g++
 
-# Create non-root user and logs directory
-RUN addgroup -g 1001 -S nodejs && \
-    adduser -S appuser -u 1001 && \
-    mkdir -p logs && \
-    chown -R appuser:nodejs /app && \
-    chown -R appuser:nodejs logs
-USER appuser
+# Copy package files
+COPY package*.json ./
 
+# Install dependencies
+RUN npm ci --only=production && npm cache clean --force
+
+# Copy source code
+COPY . .
+
+# Create uploads directory
+RUN mkdir -p uploads
+
+# Create non-root user
+RUN addgroup -g 1001 -S nodejs
+RUN adduser -S nodejs -u 1001
+
+# Change ownership of app directory
+RUN chown -R nodejs:nodejs /app
+
+# Switch to non-root user
+USER nodejs
+
+# Expose port
 EXPOSE 3001
-CMD ["node", "dist/index.js"]
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD node -e "require('http').get('http://localhost:3001/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) })"
+
+# Start the application
+CMD ["npm", "start"]
