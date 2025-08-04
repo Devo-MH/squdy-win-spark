@@ -1,4 +1,4 @@
-import { ethers } from 'ethers';
+import { ethers, parseUnits, formatUnits, ZeroAddress } from 'ethers';
 import { toast } from 'sonner';
 
 // Mock SQUDY Token implementation for testing
@@ -8,7 +8,7 @@ export class MockSqudyToken {
   private _decimals = 18;
   private _name = 'Mock SQUDY Token';
   private _symbol = 'mSQUDY';
-  private _totalSupply = ethers.utils.parseUnits('1000000', 18); // 1M tokens
+  private _totalSupply = parseUnits('1000000', 18); // 1M tokens
 
   constructor() {
     // Initialize with some default balances for testing
@@ -17,7 +17,7 @@ export class MockSqudyToken {
 
   private initializeTestBalances() {
     // Give all connected wallets some test tokens
-    const defaultBalance = ethers.utils.parseUnits('10000', this._decimals); // 10k tokens per wallet
+    const defaultBalance = parseUnits('10000', this._decimals); // 10k tokens per wallet
     
     // We'll add balances when wallets connect
     console.log('Mock SQUDY Token initialized with default test balances');
@@ -26,9 +26,9 @@ export class MockSqudyToken {
   // Ensure user has test tokens
   private ensureUserHasTokens(address: string) {
     if (!this.userBalances.has(address.toLowerCase())) {
-      const testBalance = ethers.utils.parseUnits('10000', this._decimals); // 10k tokens
+      const testBalance = parseUnits('10000', this._decimals); // 10k tokens
       this.userBalances.set(address.toLowerCase(), testBalance);
-      console.log(`🎁 Gifted ${ethers.utils.formatUnits(testBalance, this._decimals)} mSQUDY tokens to ${address}`);
+      console.log(`🎁 Gifted ${formatUnits(testBalance, this._decimals)} mSQUDY tokens to ${address}`);
       toast.success(`🎁 You received 10,000 mock SQUDY tokens for testing!`);
     }
   }
@@ -52,14 +52,14 @@ export class MockSqudyToken {
 
   async balanceOf(address: string): Promise<ethers.BigNumber> {
     this.ensureUserHasTokens(address);
-    return this.userBalances.get(address.toLowerCase()) || ethers.constants.Zero;
+    return this.userBalances.get(address.toLowerCase()) || 0n;
   }
 
   async allowance(owner: string, spender: string): Promise<ethers.BigNumber> {
     this.ensureUserHasTokens(owner);
     const ownerAllowances = this.userAllowances.get(owner.toLowerCase());
-    if (!ownerAllowances) return ethers.constants.Zero;
-    return ownerAllowances.get(spender.toLowerCase()) || ethers.constants.Zero;
+    if (!ownerAllowances) return 0n;
+    return ownerAllowances.get(spender.toLowerCase()) || 0n;
   }
 
   async approve(owner: string, spender: string, amount: ethers.BigNumber): Promise<boolean> {
@@ -72,8 +72,8 @@ export class MockSqudyToken {
     const ownerAllowances = this.userAllowances.get(owner.toLowerCase())!;
     ownerAllowances.set(spender.toLowerCase(), amount);
     
-    console.log(`✅ Approved ${ethers.utils.formatUnits(amount, this._decimals)} mSQUDY from ${owner} to ${spender}`);
-    toast.success(`Approved ${ethers.utils.formatUnits(amount, this._decimals)} mSQUDY tokens`);
+    console.log(`✅ Approved ${formatUnits(amount, this._decimals)} mSQUDY from ${owner} to ${spender}`);
+    toast.success(`Approved ${formatUnits(amount, this._decimals)} mSQUDY tokens`);
     
     return true;
   }
@@ -81,7 +81,7 @@ export class MockSqudyToken {
   async transfer(from: string, to: string, amount: ethers.BigNumber): Promise<boolean> {
     this.ensureUserHasTokens(from);
     
-    const fromBalance = this.userBalances.get(from.toLowerCase()) || ethers.constants.Zero;
+    const fromBalance = this.userBalances.get(from.toLowerCase()) || 0n;
     if (fromBalance.lt(amount)) {
       throw new Error('Insufficient balance for transfer');
     }
@@ -89,18 +89,18 @@ export class MockSqudyToken {
     // Update balances
     this.userBalances.set(from.toLowerCase(), fromBalance.sub(amount));
     
-    const toBalance = this.userBalances.get(to.toLowerCase()) || ethers.constants.Zero;
+    const toBalance = this.userBalances.get(to.toLowerCase()) || 0n;
     this.userBalances.set(to.toLowerCase(), toBalance.add(amount));
     
-    console.log(`💸 Transferred ${ethers.utils.formatUnits(amount, this._decimals)} mSQUDY from ${from} to ${to}`);
+    console.log(`💸 Transferred ${formatUnits(amount, this._decimals)} mSQUDY from ${from} to ${to}`);
     
     return true;
   }
 
   // Helper method to add more tokens for testing
   mintTokens(address: string, amount: string) {
-    const amountBN = ethers.utils.parseUnits(amount, this._decimals);
-    const currentBalance = this.userBalances.get(address.toLowerCase()) || ethers.constants.Zero;
+    const amountBN = parseUnits(amount, this._decimals);
+    const currentBalance = this.userBalances.get(address.toLowerCase()) || 0n;
     this.userBalances.set(address.toLowerCase(), currentBalance.add(amountBN));
     console.log(`🏭 Minted ${amount} mSQUDY tokens to ${address}`);
     toast.success(`🏭 Minted ${amount} mock SQUDY tokens for testing!`);
@@ -117,13 +117,13 @@ export class MockSqudyToken {
   burnCampaignTokens(campaignId: number) {
     // In a real implementation, this would burn the actual staked tokens
     // For mock purposes, we'll simulate by reducing the total supply
-    const burnAmount = ethers.utils.parseUnits('1000', this._decimals); // Simulate burning 1000 tokens
+    const burnAmount = parseUnits('1000', this._decimals); // Simulate burning 1000 tokens
     
     if (this._totalSupply.gte(burnAmount)) {
       this._totalSupply = this._totalSupply.sub(burnAmount);
-      console.log(`🔥 Mock: Burned ${ethers.utils.formatUnits(burnAmount, this._decimals)} tokens for campaign ${campaignId}`);
-      console.log(`📊 New total supply: ${ethers.utils.formatUnits(this._totalSupply, this._decimals)} mSQUDY`);
-      toast.success(`🔥 Burned ${ethers.utils.formatUnits(burnAmount, this._decimals)} tokens from total supply`);
+      console.log(`🔥 Mock: Burned ${formatUnits(burnAmount, this._decimals)} tokens for campaign ${campaignId}`);
+      console.log(`📊 New total supply: ${formatUnits(this._totalSupply, this._decimals)} mSQUDY`);
+      toast.success(`🔥 Burned ${formatUnits(burnAmount, this._decimals)} tokens from total supply`);
     } else {
       console.log('⚠️ Mock: Not enough tokens in supply to burn');
       toast.error('Not enough tokens in supply to burn');

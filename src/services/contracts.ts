@@ -1,4 +1,4 @@
-import { ethers } from 'ethers';
+import { ethers, parseUnits, formatUnits } from 'ethers';
 import { toast } from 'sonner';
 
 // Extend Window interface for session tracking
@@ -109,11 +109,11 @@ export class ContractService {
       if (this.useMockToken) {
         const balance = await mockSqudyToken.balanceOf(address);
         const decimals = await mockSqudyToken.decimals();
-        return ethers.utils.formatUnits(balance, decimals);
+        return formatUnits(balance, decimals);
       } else {
         const balance = await this.squdyTokenContract!.balanceOf(address);
         const decimals = await this.squdyTokenContract!.decimals();
-        return ethers.utils.formatUnits(balance, decimals);
+        return formatUnits(balance, decimals);
       }
     } catch (error) {
       console.error('Error getting token balance:', error);
@@ -126,11 +126,11 @@ export class ContractService {
       if (this.useMockToken) {
         const allowance = await mockSqudyToken.allowance(owner, spender);
         const decimals = await mockSqudyToken.decimals();
-        return ethers.utils.formatUnits(allowance, decimals);
+        return formatUnits(allowance, decimals);
       } else {
         const allowance = await this.squdyTokenContract!.allowance(owner, spender);
         const decimals = await this.squdyTokenContract!.decimals();
-        return ethers.utils.formatUnits(allowance, decimals);
+        return formatUnits(allowance, decimals);
       }
     } catch (error) {
       console.error('Error getting token allowance:', error);
@@ -143,7 +143,7 @@ export class ContractService {
       if (this.useMockToken) {
         const userAddress = await this.signer.getAddress();
         const decimals = await mockSqudyToken.decimals();
-        const amountBN = ethers.utils.parseUnits(amount, decimals);
+        const amountBN = parseUnits(amount, decimals);
         
         await mockSqudyToken.approve(userAddress, spender, amountBN);
         
@@ -154,7 +154,7 @@ export class ContractService {
         };
       } else {
         const decimals = await this.squdyTokenContract!.decimals();
-        const amountBN = ethers.utils.parseUnits(amount, decimals);
+        const amountBN = parseUnits(amount, decimals);
         
         const tx = await this.squdyTokenContract!.approve(spender, amountBN);
         toast.info('Approval transaction sent. Please wait for confirmation...');
@@ -187,7 +187,7 @@ export class ContractService {
           name,
           symbol,
           decimals: Number(decimals),
-          totalSupply: ethers.utils.formatUnits(totalSupply, decimals),
+          totalSupply: formatUnits(totalSupply, decimals),
         };
       } else {
         const [name, symbol, decimals, totalSupply] = await Promise.all([
@@ -201,7 +201,7 @@ export class ContractService {
           name,
           symbol,
           decimals: Number(decimals),
-          totalSupply: ethers.utils.formatUnits(totalSupply, decimals),
+          totalSupply: formatUnits(totalSupply, decimals),
         };
       }
     } catch (error) {
@@ -247,7 +247,7 @@ export class ContractService {
         // Mock staking process
         const userAddress = await this.signer.getAddress();
         const decimals = await mockSqudyToken.decimals();
-        const amountBN = ethers.utils.parseUnits(amount, decimals);
+        const amountBN = parseUnits(amount, decimals);
         
         // Check allowance first (get raw BigNumber instead of formatted string)
         const allowanceBN = await mockSqudyToken.allowance(userAddress, CONTRACT_ADDRESSES.CAMPAIGN_MANAGER);
@@ -274,7 +274,7 @@ export class ContractService {
         };
       } else {
         const decimals = await this.squdyTokenContract!.decimals();
-        const amountBN = ethers.utils.parseUnits(amount, decimals);
+        const amountBN = parseUnits(amount, decimals);
         
         // Check allowance first
         const userAddress = await this.signer.getAddress();
