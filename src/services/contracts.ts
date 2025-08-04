@@ -430,10 +430,10 @@ export class ContractService {
       name: campaign.name,
       description: campaign.description,
       imageUrl: campaign.imageUrl,
-      softCap: ethers.utils.formatEther(campaign.softCap),
-      hardCap: ethers.utils.formatEther(campaign.hardCap),
-      ticketAmount: ethers.utils.formatEther(campaign.ticketAmount),
-      currentAmount: ethers.utils.formatEther(campaign.currentAmount),
+              softCap: formatUnits(campaign.softCap, 18),
+        hardCap: formatUnits(campaign.hardCap, 18),
+        ticketAmount: formatUnits(campaign.ticketAmount, 18),
+        currentAmount: formatUnits(campaign.currentAmount, 18),
       startDate: new Date(campaign.startDate.toNumber() * 1000),
       endDate: new Date(campaign.endDate.toNumber() * 1000),
       participantCount: campaign.participantCount.toNumber(),
@@ -441,7 +441,7 @@ export class ContractService {
       winners: campaign.winners,
       status: this.getStatusString(campaign.status),
       tokensAreBurned: campaign.tokensAreBurned,
-      totalBurned: ethers.utils.formatEther(campaign.totalBurned),
+      totalBurned: formatUnits(campaign.totalBurned),
       winnerSelectionTxHash: campaign.winnerSelectionTxHash,
       createdAt: new Date(campaign.createdAt.toNumber() * 1000),
       updatedAt: new Date(campaign.updatedAt.toNumber() * 1000),
@@ -450,7 +450,7 @@ export class ContractService {
 
   private parseParticipantData(participant: any): any {
     return {
-      stakedAmount: ethers.utils.formatEther(participant.stakedAmount),
+      stakedAmount: formatUnits(participant.stakedAmount),
       ticketCount: participant.ticketCount.toNumber(),
       hasCompletedSocial: participant.hasCompletedSocial,
       isWinner: participant.isWinner,
@@ -485,7 +485,7 @@ export class ContractService {
           name,
           startDate: new Date(startDate.toNumber() * 1000),
           endDate: new Date(endDate.toNumber() * 1000),
-          ticketAmount: ethers.utils.formatEther(ticketAmount),
+          ticketAmount: formatUnits(ticketAmount),
         });
       });
     }
@@ -495,7 +495,7 @@ export class ContractService {
         callbacks.onUserStaked!({
           campaignId: campaignId.toNumber(),
           user,
-          amount: ethers.utils.formatEther(amount),
+          amount: formatUnits(amount),
           tickets: tickets.toNumber(),
         });
       });
@@ -524,7 +524,7 @@ export class ContractService {
       this.campaignManagerContract.on('TokensBurned', (campaignId, totalBurned) => {
         callbacks.onTokensBurned!({
           campaignId: campaignId.toNumber(),
-          totalBurned: ethers.utils.formatEther(totalBurned),
+          totalBurned: formatUnits(totalBurned),
         });
       });
     }
