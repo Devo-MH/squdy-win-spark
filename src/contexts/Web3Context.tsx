@@ -1,11 +1,11 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { ethers, BrowserProvider } from 'ethers';
+import { ethers } from 'ethers';
 import { toast } from 'sonner';
 
 // Types
 export interface Web3ContextType {
   // Connection state
-  provider: BrowserProvider | null;
+  provider: ethers.BrowserProvider | null;
   signer: ethers.Signer | null;
   account: string | null;
   chainId: number | null;
@@ -61,7 +61,7 @@ interface Web3ProviderProps {
 }
 
 export const Web3Provider: React.FC<Web3ProviderProps> = ({ children }) => {
-  const [provider, setProvider] = useState<BrowserProvider | null>(null);
+  const [provider, setProvider] = useState<ethers.BrowserProvider | null>(null);
   const [signer, setSigner] = useState<ethers.Signer | null>(null);
   const [account, setAccount] = useState<string | null>(null);
   const [chainId, setChainId] = useState<number | null>(null);
@@ -78,7 +78,7 @@ export const Web3Provider: React.FC<Web3ProviderProps> = ({ children }) => {
   useEffect(() => {
     const initializeProvider = async () => {
       if (typeof window !== 'undefined' && window.ethereum) {
-        const web3Provider = new BrowserProvider(window.ethereum);
+        const web3Provider = new ethers.BrowserProvider(window.ethereum);
         setProvider(web3Provider);
 
         // Check if already connected
@@ -151,7 +151,7 @@ export const Web3Provider: React.FC<Web3ProviderProps> = ({ children }) => {
 
     setIsConnecting(true);
     try {
-      const web3Provider = new BrowserProvider(window.ethereum);
+      const web3Provider = new ethers.BrowserProvider(window.ethereum);
       
       // Request account access
       await window.ethereum.request({ method: 'eth_requestAccounts' });
