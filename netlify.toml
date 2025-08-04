@@ -1,15 +1,22 @@
 [build]
-  command = "npm run build"
-  publish = "dist"
+  command = "cd backend && npm install"
+  functions = "backend"
+  publish = "backend"
 
-[build.environment]
-  VITE_SQUDY_TOKEN_ADDRESS = "0x1234567890123456789012345678901234567890"
-  VITE_CAMPAIGN_MANAGER_ADDRESS = "0x0987654321098765432109876543210987654321"
-  VITE_NETWORK_ID = "11155111"
-  VITE_NETWORK_NAME = "sepolia"
-  VITE_API_URL = "https://squdy-backend-production.up.railway.app/api"
+[functions]
+  node_bundler = "esbuild"
+
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/start/:splat"
+  status = 200
+
+[[redirects]]
+  from = "/health"
+  to = "/.netlify/functions/start/health"
+  status = 200
 
 [[redirects]]
   from = "/*"
-  to = "/index.html"
+  to = "/.netlify/functions/start/:splat"
   status = 200

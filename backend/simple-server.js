@@ -677,9 +677,14 @@ app.post('/api/admin/campaigns/:id/burn-tokens', (req, res) => {
   });
 });
 
-// Start server
-app.listen(port, () => {
-  console.log(`🚀 Simple backend server running on port ${port}`);
-  console.log(`📊 Health check: http://localhost:${port}/health`);
-  console.log(`📋 Campaigns: http://localhost:${port}/api/campaigns`);
-}); 
+// Start server (only if not in serverless environment)
+if (!process.env.NETLIFY && !process.env.VERCEL) {
+  app.listen(port, () => {
+    console.log(`🚀 Simple backend server running on port ${port}`);
+    console.log(`📊 Health check: http://localhost:${port}/health`);
+    console.log(`📋 Campaigns: http://localhost:${port}/api/campaigns`);
+  });
+}
+
+// Export app for serverless deployment
+module.exports = app; 

@@ -368,17 +368,28 @@ const startServer = async () => {
     console.log('🔄 Server starting without database (limited functionality)');
   }
   
-  app.listen(port, () => {
-    console.log(`🚀 Squdy Backend running on port ${port}`);
-    console.log(`📊 Health check: http://localhost:${port}/health`);
-    console.log(`📋 Campaigns: http://localhost:${port}/api/campaigns`);
-    
-    if (process.env.RAILWAY_ENVIRONMENT) {
-      console.log('🚂 Running on Railway Platform');
-    }
-    
-    console.log('✅ Server ready for requests');
-  });
+  // Start server (only if not in serverless environment)
+  if (!process.env.NETLIFY && !process.env.VERCEL) {
+    app.listen(port, () => {
+      console.log(`🚀 Squdy Backend running on port ${port}`);
+      console.log(`📊 Health check: http://localhost:${port}/health`);
+      console.log(`📋 Campaigns: http://localhost:${port}/api/campaigns`);
+      
+      if (process.env.RAILWAY_ENVIRONMENT) {
+        console.log('🚂 Running on Railway Platform');
+      }
+      
+      console.log('✅ Server ready for requests');
+    });
+  }
+  
+  // Export app for serverless deployment
+  return app;
 };
 
-startServer().catch(console.error);
+// For serverless environments, export the app directly
+if (process.env.NETLIFY || process.env.VERCEL) {
+  module.exports = startServer();
+} else {
+  startServer().catch(console.error);
+}
