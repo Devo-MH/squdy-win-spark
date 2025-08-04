@@ -389,7 +389,15 @@ const startServer = async () => {
 
 // For serverless environments, export the app directly
 if (process.env.NETLIFY || process.env.VERCEL) {
-  module.exports = startServer();
+  module.exports = (async () => {
+    try {
+      return await startServer();
+    } catch (error) {
+      console.error('Failed to start server:', error);
+      // Fallback to simple server
+      return require('./simple-server.js');
+    }
+  })();
 } else {
   startServer().catch(console.error);
 }

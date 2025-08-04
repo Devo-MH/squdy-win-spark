@@ -3,7 +3,11 @@ import { toast } from 'sonner';
 import { Task } from '@/components/offchain-verifier/types';
 
 // API Configuration
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 
+  (import.meta.env.PROD 
+    ? '/api'  // Production: Use relative path for Vercel
+    : 'http://localhost:3001/api'  // Development: Use local backend
+  );
 
 // Create axios instance
 const apiClient: AxiosInstance = axios.create({

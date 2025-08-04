@@ -1,19 +1,29 @@
 {
   "version": 2,
-  "builds": [
-    {
-      "src": "backend/start.js",
-      "use": "@vercel/node"
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "functions": {
+    "api/*.js": {
+      "runtime": "@vercel/node"
     }
-  ],
+  },
   "routes": [
     {
+      "src": "/api/(.*)",
+      "dest": "/api/index.js"
+    },
+    {
+      "src": "/health",
+      "dest": "/api/index.js"
+    },
+    {
       "src": "/(.*)",
-      "dest": "backend/start.js"
+      "dest": "/$1"
     }
   ],
   "env": {
     "MONGODB_URI": "mongodb+srv://dinabahnasy:wma8hgj_JWD3jbx1gvk@cluster0.d9mxajj.mongodb.net/dcampaign?retryWrites=true&w=majority",
-    "NODE_ENV": "production"
+    "NODE_ENV": "production",
+    "VERCEL": "true"
   }
 }
