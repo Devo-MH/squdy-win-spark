@@ -23,7 +23,7 @@ const campaigns = [
   }
 ];
 
-export default function handler(req, res) {
+module.exports = (req, res) => {
   console.log('📋 Campaigns API requested');
   
   // CORS headers
@@ -61,4 +61,4 @@ export default function handler(req, res) {
   } else {
     res.status(405).json({ error: 'Method not allowed' });
   }
-}
+};

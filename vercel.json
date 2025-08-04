@@ -9,16 +9,7 @@
       }
     }
   ],
-  "rewrites": [
-    {
-      "source": "/health",
-      "destination": "/api/health"
-    },
-    {
-      "source": "/api/campaigns/:path*",
-      "destination": "/api/campaigns"
-    }
-  ],
+
   "env": {
     "MONGODB_URI": "mongodb+srv://dinabahnasy:wma8hgj_JWD3jbx1gvk@cluster0.d9mxajj.mongodb.net/dcampaign?retryWrites=true&w=majority",
     "NODE_ENV": "production",
