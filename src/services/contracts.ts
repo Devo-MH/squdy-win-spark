@@ -252,13 +252,13 @@ export class ContractService {
         // Check allowance first (get raw BigNumber instead of formatted string)
         const allowanceBN = await mockSqudyToken.allowance(userAddress, CONTRACT_ADDRESSES.CAMPAIGN_MANAGER);
         
-        if (allowanceBN.lt(amountBN)) {
+        if (allowanceBN < amountBN) {
           throw new Error('Insufficient token allowance. Please approve tokens first.');
         }
         
         // Check balance
         const balance = await mockSqudyToken.balanceOf(userAddress);
-        if (balance.lt(amountBN)) {
+        if (balance < amountBN) {
           throw new Error('Insufficient token balance for staking.');
         }
         
@@ -280,7 +280,7 @@ export class ContractService {
         const userAddress = await this.signer.getAddress();
         const allowanceBN = await this.squdyTokenContract!.allowance(userAddress, CONTRACT_ADDRESSES.CAMPAIGN_MANAGER);
         
-        if (allowanceBN.lt(amountBN)) {
+        if (allowanceBN < amountBN) {
           throw new Error('Insufficient token allowance. Please approve tokens first.');
         }
         
