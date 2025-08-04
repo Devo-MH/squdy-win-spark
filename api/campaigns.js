@@ -45,7 +45,7 @@ const campaigns = [
   }
 ];
 
-module.exports = (req, res) => {
+export default function handler(req, res) {
   try {
     console.log('📋 Campaigns API requested', { method: req.method, url: req.url });
     
@@ -94,4 +94,4 @@ module.exports = (req, res) => {
     console.error('❌ API Error:', error);
     res.status(500).json({ error: 'Internal server error', details: error.message });
   }
-};
+}

@@ -1,5 +1,5 @@
 // Simple health check endpoint for Vercel
-module.exports = (req, res) => {
+export default function handler(req, res) {
   console.log('📊 Health check requested');
   
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -12,4 +12,4 @@ module.exports = (req, res) => {
   }
   
   res.status(200).send('OK');
-};
+}
