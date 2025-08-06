@@ -56,7 +56,7 @@ contract AutomatedSqudyCampaignManager is AccessControl, ReentrancyGuard, Pausab
         uint256 joinedAt;
     }
 
-    enum CampaignStatus { Active, Finished, Burned }
+    enum CampaignStatus { Pending, Active, Paused, Finished, Cancelled, Burned }
 
     // ============ EVENTS ============
     event CampaignCreated(uint256 indexed campaignId, address indexed creator, string name);
@@ -65,6 +65,10 @@ contract AutomatedSqudyCampaignManager is AccessControl, ReentrancyGuard, Pausab
     event WinnersSelected(uint256 indexed campaignId, address[] winners, uint256 blockNumber);
     event TokensBurned(uint256 indexed campaignId, uint256 amount);
     event CampaignStatusChanged(uint256 indexed campaignId, CampaignStatus status);
+    event CampaignTerminated(uint256 indexed campaignId, bool refunded);
+    event CampaignPaused(uint256 indexed campaignId);
+    event CampaignResumed(uint256 indexed campaignId);
+    event CampaignEndDateUpdated(uint256 indexed campaignId, uint256 oldEndDate, uint256 newEndDate);
 
     // ============ MODIFIERS ============
     modifier campaignExists(uint256 campaignId) {
@@ -375,5 +379,104 @@ contract AutomatedSqudyCampaignManager is AccessControl, ReentrancyGuard, Pausab
 
     function getTotalCampaigns() external view returns (uint256) {
         return _campaignIds;
+    }
+
+    // ============ ADMIN EMERGENCY FUNCTIONS ============
+
+    /**
+     * @dev Emergency terminate campaign (admin only)
+     * Allows early termination with optional refunds
+     */
+    function emergencyTerminateCampaign(uint256 campaignId, bool refundUsers) 
+        external 
+        onlyRole(ADMIN_ROLE) 
+        campaignExists(campaignId) 
+        nonReentrant 
+    {
+        Campaign storage campaign = campaigns[campaignId];
+        require(campaign.status == CampaignStatus.Active, "Campaign not active");
+        
+        campaign.status = CampaignStatus.Cancelled;
+        
+        if (refundUsers && campaign.currentAmount > 0) {
+            // Refund all participants
+            address[] memory participantList = campaignParticipants[campaignId];
+            for (uint256 i = 0; i < participantList.length; i++) {
+                address participant = participantList[i];
+                Participant storage p = participants[campaignId][participant];
+                if (p.stakedAmount > 0) {
+                    require(squdyToken.transfer(participant, p.stakedAmount), "Refund failed");
+                    p.stakedAmount = 0;
+                    p.ticketCount = 0;
+                }
+            }
+            campaign.currentAmount = 0;
+        }
+        
+        emit CampaignTerminated(campaignId, refundUsers);
+    }
+
+    /**
+     * @dev Pause a specific campaign (admin/operator only)
+     */
+    function pauseCampaign(uint256 campaignId) 
+        external 
+        onlyRole(OPERATOR_ROLE) 
+        campaignExists(campaignId) 
+    {
+        Campaign storage campaign = campaigns[campaignId];
+        require(campaign.status == CampaignStatus.Active, "Campaign not active");
+        
+        campaign.status = CampaignStatus.Paused;
+        emit CampaignPaused(campaignId);
+    }
+
+    /**
+     * @dev Resume a paused campaign (admin/operator only)
+     */
+    function resumeCampaign(uint256 campaignId) 
+        external 
+        onlyRole(OPERATOR_ROLE) 
+        campaignExists(campaignId) 
+    {
+        Campaign storage campaign = campaigns[campaignId];
+        require(campaign.status == CampaignStatus.Paused, "Campaign not paused");
+        require(block.timestamp <= campaign.endDate, "Campaign has ended");
+        
+        campaign.status = CampaignStatus.Active;
+        emit CampaignResumed(campaignId);
+    }
+
+    /**
+     * @dev Emergency pause all contract operations (admin only)
+     */
+    function emergencyPause() external onlyRole(ADMIN_ROLE) {
+        _pause();
+    }
+
+    /**
+     * @dev Emergency unpause all contract operations (admin only)
+     */
+    function emergencyUnpause() external onlyRole(ADMIN_ROLE) {
+        _unpause();
+    }
+
+    /**
+     * @dev Update campaign end date (admin only, before campaign ends)
+     */
+    function updateCampaignEndDate(uint256 campaignId, uint256 newEndDate) 
+        external 
+        onlyRole(ADMIN_ROLE) 
+        campaignExists(campaignId) 
+    {
+        Campaign storage campaign = campaigns[campaignId];
+        require(campaign.status == CampaignStatus.Active || campaign.status == CampaignStatus.Paused, "Campaign not active/paused");
+        require(newEndDate > block.timestamp, "End date must be in future");
+        require(newEndDate != campaign.endDate, "Same end date");
+        
+        uint256 oldEndDate = campaign.endDate;
+        campaign.endDate = newEndDate;
+        
+        emit CampaignEndDateUpdated(campaignId, oldEndDate, newEndDate);
     }
 }
