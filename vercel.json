@@ -8,6 +8,7 @@
   "env": {
     "MONGODB_URI": "mongodb+srv://dinabahnasy:wma8hgj_JWD3jbx1gvk@cluster0.d9mxajj.mongodb.net/dcampaign?retryWrites=true&w=majority",
     "NODE_ENV": "production",
-    "VERCEL": "true"
+    "VERCEL": "true",
+    "ADMIN_WALLETS": "0x1234567890123456789012345678901234567890,0x919cc7DC63AEaBe3954DfA69E087E389F145c541"
   }
 }

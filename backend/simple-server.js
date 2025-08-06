@@ -274,7 +274,10 @@ app.post('/api/auth/verify-signature', (req, res) => {
     verified: true,
     user: {
       walletAddress,
-      isAdmin: walletAddress.toLowerCase() === '0x1234567890123456789012345678901234567890', // Mock admin check
+      isAdmin: (process.env.ADMIN_WALLETS || '0x1234567890123456789012345678901234567890')
+        .split(',')
+        .map(addr => addr.trim().toLowerCase())
+        .includes(walletAddress.toLowerCase()), // Check against admin wallets
       nonce: Math.random().toString(36).substring(2, 15)
     },
     token: 'mock-jwt-token-' + Math.random().toString(36).substring(2, 15)
