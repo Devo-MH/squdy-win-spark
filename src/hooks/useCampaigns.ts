@@ -29,7 +29,9 @@ export const useCampaigns = (params?: {
   return useQuery({
     queryKey: campaignKeys.list(params),
     queryFn: () => campaignAPI.getCampaigns(params),
-    staleTime: 1000 * 60 * 2, // 2 minutes
+    staleTime: import.meta.env.DEV ? 1000 * 10 : 1000 * 60 * 2, // 10 seconds in dev, 2 minutes in prod
+    refetchOnWindowFocus: true, // Refresh when window regains focus
+    refetchInterval: import.meta.env.DEV ? 1000 * 30 : false, // Auto-refresh every 30 seconds in dev
   });
 };
 
@@ -38,7 +40,8 @@ export const useCampaign = (id: number) => {
     queryKey: campaignKeys.detail(id),
     queryFn: () => campaignAPI.getCampaignById(id),
     enabled: !!id,
-    staleTime: 1000 * 60 * 1, // 1 minute
+    staleTime: import.meta.env.DEV ? 1000 * 5 : 1000 * 60 * 1, // 5 seconds in dev, 1 minute in prod
+    refetchOnWindowFocus: true, // Refresh when window regains focus
   });
 };
 

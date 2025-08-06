@@ -7,7 +7,7 @@ import { DebugPanel } from "@/components/DebugPanel";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowRight, ExternalLink, TrendingUp, Users, Flame, Trophy, AlertCircle, DollarSign } from "lucide-react";
+import { ArrowRight, ExternalLink, TrendingUp, Users, Flame, Trophy, AlertCircle, DollarSign, RefreshCw } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { useCampaigns } from "@/hooks/useCampaigns";
 import { useSocket } from "@/services/socket";
@@ -16,10 +16,13 @@ import { toast } from "sonner";
 import { tokenInfo, campaignStats } from "@/services/mockData";
 import { useWeb3 } from "@/contexts/Web3Context";
 import { useContracts } from "@/services/contracts";
+import { useQueryClient } from "@tanstack/react-query";
+import { campaignKeys } from "@/hooks/useCampaigns";
 
 const HomePage = () => {
   const socket = useSocket();
   const location = useLocation();
+  const queryClient = useQueryClient();
   const { provider, signer } = useWeb3();
   const contractService = useContracts(provider, signer);
   
@@ -33,6 +36,14 @@ const HomePage = () => {
     error,
     refetch 
   } = useCampaigns({ limit: campaignLimit });
+
+  // Force refresh campaigns cache
+  const forceRefreshCampaigns = () => {
+    console.log('🔄 Force refreshing campaigns cache...');
+    queryClient.invalidateQueries({ queryKey: campaignKeys.all });
+    refetch();
+    toast.success("Refreshing campaigns...");
+  };
 
   const campaigns = campaignsData?.campaigns || [];
   const activeCampaigns = campaigns.filter(c => c.status === "active");
@@ -57,7 +68,8 @@ const HomePage = () => {
 
     const handleCampaignCreated = (data: any) => {
       toast.success(`New campaign "${data.name}" has been created!`);
-      refetch();
+      // Force refresh campaigns immediately
+      forceRefreshCampaigns();
     };
 
     socket.onCampaignCreated(handleCampaignCreated);
@@ -65,7 +77,7 @@ const HomePage = () => {
     return () => {
       socket.off('campaign:created', handleCampaignCreated);
     };
-  }, [socket, refetch]);
+  }, [socket, queryClient]);
 
   // Campaign cards loading skeleton
   const CampaignSkeleton = () => (
@@ -98,9 +110,21 @@ const HomePage = () => {
       <section id="campaigns-section" className="py-20 bg-background">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-              {isOnCampaignsPage ? '🚀 All Available Campaigns' : '🔥 Active Campaigns'}
-            </h2>
+            <div className="flex items-center justify-center gap-4 mb-4">
+              <h2 className="text-3xl md:text-4xl font-bold text-foreground">
+                {isOnCampaignsPage ? '🚀 All Available Campaigns' : '🔥 Active Campaigns'}
+              </h2>
+              <Button 
+                onClick={forceRefreshCampaigns}
+                variant="outline" 
+                size="sm"
+                className="gap-2"
+                disabled={isLoading}
+              >
+                <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+                Refresh
+              </Button>
+            </div>
             <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
               {isOnCampaignsPage 
                 ? 'Explore all campaigns, stake your SQUDY tokens, and compete for amazing prizes in our deflationary ecosystem.'
