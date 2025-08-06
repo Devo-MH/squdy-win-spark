@@ -5,7 +5,7 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "./ISqudyToken.sol";
+// import "./ISqudyToken.sol"; // Using IERC20 instead
 
 /**
  * @title AutomatedSqudyCampaignManager
@@ -19,7 +19,7 @@ contract AutomatedSqudyCampaignManager is AccessControl, ReentrancyGuard, Pausab
     bytes32 public constant OPERATOR_ROLE = keccak256("OPERATOR_ROLE");
 
     // ============ STATE VARIABLES ============
-    ISqudyToken public immutable squdyToken;
+    IERC20 public immutable squdyToken;
     uint256 private _campaignIds;
     uint256 private _randomSeed;
     
@@ -80,14 +80,14 @@ contract AutomatedSqudyCampaignManager is AccessControl, ReentrancyGuard, Pausab
     // ============ CONSTRUCTOR ============
     constructor(address _squdyToken) {
         require(_squdyToken != address(0), "Invalid token address");
-        squdyToken = ISqudyToken(_squdyToken);
+        squdyToken = IERC20(_squdyToken);
         
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _grantRole(ADMIN_ROLE, msg.sender);
         _grantRole(OPERATOR_ROLE, msg.sender);
         
         // Initialize random seed
-        _randomSeed = uint256(keccak256(abi.encodePacked(block.timestamp, block.difficulty, msg.sender)));
+        _randomSeed = uint256(keccak256(abi.encodePacked(block.timestamp, block.prevrandao, msg.sender)));
     }
 
     // ============ MAIN FUNCTIONS ============
@@ -199,7 +199,7 @@ contract AutomatedSqudyCampaignManager is AccessControl, ReentrancyGuard, Pausab
         // Generate randomness using multiple entropy sources
         uint256 entropy = uint256(keccak256(abi.encodePacked(
             block.timestamp,
-            block.difficulty,
+            block.prevrandao,
             block.number,
             campaignId,
             campaign.currentAmount,

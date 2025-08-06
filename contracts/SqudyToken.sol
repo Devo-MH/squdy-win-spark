@@ -5,14 +5,14 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
-import "./ISqudyToken.sol";
+// import "./ISqudyToken.sol"; // Not needed for implementation
 
 /**
  * @title SqudyToken
  * @dev Real SQUDY token with deflationary burn mechanics
  * @author Squdy Team
  */
-contract SqudyToken is ERC20, ERC20Burnable, Ownable, Pausable, ISqudyToken {
+contract SqudyToken is ERC20, ERC20Burnable, Ownable, Pausable {
     
     // ============ CONSTANTS ============
     uint256 public constant INITIAL_SUPPLY = 1_000_000_000 * 10**18; // 1 billion tokens
@@ -74,7 +74,7 @@ contract SqudyToken is ERC20, ERC20Burnable, Ownable, Pausable, ISqudyToken {
      * @param from Address to burn tokens from
      * @param amount Amount to burn
      */
-    function burnFrom(address from, uint256 amount) public override onlyAuthorizedBurner {
+    function burnFrom(address from, uint256 amount) public override(ERC20Burnable) onlyAuthorizedBurner {
         require(from != address(0), "Cannot burn from zero address");
         require(balanceOf(from) >= amount, "Insufficient balance to burn");
         
@@ -87,7 +87,7 @@ contract SqudyToken is ERC20, ERC20Burnable, Ownable, Pausable, ISqudyToken {
     /**
      * @dev Enhanced burn function that tracks total burned
      */
-    function burn(uint256 amount) public override {
+    function burn(uint256 amount) public override(ERC20Burnable) {
         super.burn(amount);
         totalBurned += amount;
     }
