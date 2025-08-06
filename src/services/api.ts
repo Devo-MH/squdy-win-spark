@@ -40,54 +40,123 @@ apiClient.interceptors.response.use(
         if (campaignIdMatch) {
           const requestedId = parseInt(campaignIdMatch[1]);
           
-          // Mock campaign data for individual requests
-          const mockCampaigns = [
-            {
-              id: 1,
-              contractId: 1,
-              name: "🚀 Squdy Launch Campaign",
-              description: "Join the official Squdy platform launch! Complete social media tasks and earn SQUDY tokens.",
-              imageUrl: "https://images.unsplash.com/photo-1640340434855-6084b1f4901c?w=800&h=400&fit=crop",
-              status: "active",
-              currentAmount: 2500,
-              hardCap: 10000,
-              participantCount: 15,
-              softCap: 1000,
-              ticketAmount: 100,
-              startDate: new Date().toISOString(),
-              endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-              prizes: [
-                { name: "Grand Prize", value: 5000, currency: "SQUDY" },
-                { name: "Second Prize", value: 2500, currency: "SQUDY" },
-                { name: "Third Prize", value: 1000, currency: "SQUDY" }
-              ],
-              createdAt: new Date().toISOString(),
-              updatedAt: new Date().toISOString(),
-              offchainTasks: []
-            },
-            {
-              id: 2,
-              contractId: 2,
-              name: "🌟 Community Builder Challenge",
-              description: "Help grow the Squdy community! Invite friends, create content, and earn rewards.",
-              imageUrl: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&h=400&fit=crop",
-              status: "active",
-              currentAmount: 750,
-              hardCap: 5000,
-              participantCount: 8,
-              softCap: 500,
-              ticketAmount: 50,
-              startDate: new Date().toISOString(),
-              endDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
-              prizes: [
-                { name: "Top Builder", value: 2000, currency: "SQUDY" },
-                { name: "Rising Star", value: 1000, currency: "SQUDY" }
-              ],
-              createdAt: new Date().toISOString(),
-              updatedAt: new Date().toISOString(),
-              offchainTasks: []
-            }
-          ];
+                        // Mock campaign data for individual requests - updated to match real campaigns
+              const mockCampaigns = [
+                {
+                  id: 1,
+                  contractId: 1,
+                  name: "Test Campaign",
+                  description: "A test campaign for development",
+                  imageUrl: "https://images.unsplash.com/photo-1640340434855-6084b1f4901c?w=800&h=400&fit=crop",
+                  status: "burned",
+                  currentAmount: 1000,
+                  hardCap: 10000,
+                  participantCount: 5,
+                  softCap: 500,
+                  ticketAmount: 100,
+                  startDate: "2025-08-04T12:10:45.817Z",
+                  endDate: "2025-08-11T12:10:45.819Z",
+                  prizes: [
+                    { name: "First Prize", value: 1000, currency: "USD" },
+                    { name: "Second Prize", value: 500, currency: "USD" }
+                  ],
+                  createdAt: "2025-08-04T12:10:45.819Z",
+                  updatedAt: "2025-08-04T14:18:38.900Z",
+                  offchainTasks: []
+                },
+                {
+                  id: 2,
+                  contractId: 2,
+                  name: "Test Campaign 886",
+                  description: "This is a test campaign created for testing purposes. Participants can stake SQUDY tokens to win amazing prizes!",
+                  imageUrl: "https://images.unsplash.com/photo-1640340434855-6084b1f4901c?w=800&h=400&fit=crop",
+                  status: "active",
+                  currentAmount: 0,
+                  hardCap: 50000,
+                  participantCount: 0,
+                  softCap: 5000,
+                  ticketAmount: 100,
+                  startDate: "2025-08-05T13:03",
+                  endDate: "2025-08-11T13:03",
+                  prizes: [
+                    { name: "First Prize", description: "Winner takes all", value: "10000", currency: "USD", quantity: 1 },
+                    { name: "Second Prize", description: "Runner up reward", value: "5000", currency: "USD", quantity: 1 },
+                    { name: "Third Prize", description: "Bronze medal", value: "2500", currency: "USD", quantity: 1 }
+                  ],
+                  createdAt: "2025-08-04T13:03:45.272Z",
+                  updatedAt: "2025-08-04T13:03:49.873Z",
+                  offchainTasks: []
+                },
+                {
+                  id: 3,
+                  contractId: 3,
+                  name: "Test Campaign 151",
+                  description: "This is a test campaign created for testing purposes. Participants can stake SQUDY tokens to win amazing prizes!",
+                  imageUrl: "https://images.unsplash.com/photo-1640340434855-6084b1f4901c?w=800&h=400&fit=crop",
+                  status: "active",
+                  currentAmount: 0,
+                  hardCap: 50000,
+                  participantCount: 0,
+                  softCap: 5000,
+                  ticketAmount: 100,
+                  startDate: "2025-08-05T14:18",
+                  endDate: "2025-08-11T14:18",
+                  prizes: [
+                    { name: "First Prize", description: "Winner takes all", value: "10000", currency: "USD", quantity: 1 },
+                    { name: "Second Prize", description: "Runner up reward", value: "5000", currency: "USD", quantity: 1 },
+                    { name: "Third Prize", description: "Bronze medal", value: "2500", currency: "USD", quantity: 1 }
+                  ],
+                  createdAt: "2025-08-04T14:18:24.870Z",
+                  updatedAt: "2025-08-04T14:18:29.026Z",
+                  offchainTasks: []
+                },
+                {
+                  id: 4,
+                  contractId: 4,
+                  name: "Test Campaign 693",
+                  description: "This is a test campaign created for testing purposes. Participants can stake SQUDY tokens to win amazing prizes!",
+                  imageUrl: "https://images.unsplash.com/photo-1640340434855-6084b1f4901c?w=800&h=400&fit=crop",
+                  status: "active",
+                  currentAmount: 0,
+                  hardCap: 50000,
+                  participantCount: 0,
+                  softCap: 5000,
+                  ticketAmount: 100,
+                  startDate: "2025-08-07T12:28",
+                  endDate: "2025-08-13T12:28",
+                  prizes: [
+                    { name: "First Prize", description: "Winner takes all", value: "10000", currency: "USD", quantity: 1 },
+                    { name: "Second Prize", description: "Runner up reward", value: "5000", currency: "USD", quantity: 1 },
+                    { name: "Third Prize", description: "Bronze medal", value: "2500", currency: "USD", quantity: 1 }
+                  ],
+                  createdAt: "2025-08-06T12:28:41.716Z",
+                  updatedAt: "2025-08-06T12:28:57.179Z",
+                  offchainTasks: []
+                },
+                {
+                  id: 5,
+                  contractId: 5,
+                  name: "Dina-Test Campaign 118",
+                  description: "This is a test campaign created for testing purposes. Participants can stake SQUDY tokens to win amazing prizes!",
+                  imageUrl: "https://images.unsplash.com/photo-1640340434855-6084b1f4901c?w=800&h=400&fit=crop",
+                  status: "active",
+                  currentAmount: 0,
+                  hardCap: 50000,
+                  participantCount: 0,
+                  softCap: 5000,
+                  ticketAmount: 100,
+                  startDate: "2025-08-07T15:04",
+                  endDate: "2025-08-13T15:04",
+                  prizes: [
+                    { name: "First Prize", description: "Winner takes all", value: "10000", currency: "USD", quantity: 1 },
+                    { name: "Second Prize", description: "Runner up reward", value: "5000", currency: "USD", quantity: 1 },
+                    { name: "Third Prize", description: "Bronze medal", value: "2500", currency: "USD", quantity: 1 }
+                  ],
+                  createdAt: "2025-08-06T15:05:00.262Z",
+                  updatedAt: "2025-08-06T15:05:10.804Z",
+                  offchainTasks: []
+                }
+              ];
           
           const campaign = mockCampaigns.find(c => c.id === requestedId || c.contractId === requestedId);
           if (campaign) {
@@ -118,63 +187,129 @@ apiClient.interceptors.response.use(
           });
         }
         
-        // For campaigns list endpoint
-        return Promise.resolve({
-          data: {
-            campaigns: [
-              {
-                id: 1,
-                contractId: 1,
-                name: "🚀 Squdy Launch Campaign",
-                description: "Join the official Squdy platform launch! Complete social media tasks and earn SQUDY tokens.",
-                imageUrl: "https://images.unsplash.com/photo-1640340434855-6084b1f4901c?w=800&h=400&fit=crop",
-                status: "active",
-                currentAmount: 2500,
-                hardCap: 10000,
-                participantCount: 15,
-                softCap: 1000,
-                ticketAmount: 100,
-                startDate: new Date().toISOString(),
-                endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-                prizes: [
-                  { name: "Grand Prize", value: 5000, currency: "SQUDY" },
-                  { name: "Second Prize", value: 2500, currency: "SQUDY" },
-                  { name: "Third Prize", value: 1000, currency: "SQUDY" }
+                    // For campaigns list endpoint - updated to match real campaigns
+            return Promise.resolve({
+              data: {
+                campaigns: [
+                  {
+                    id: 1,
+                    contractId: 1,
+                    name: "Test Campaign",
+                    description: "A test campaign for development",
+                    imageUrl: "https://images.unsplash.com/photo-1640340434855-6084b1f4901c?w=800&h=400&fit=crop",
+                    status: "burned",
+                    currentAmount: 1000,
+                    hardCap: 10000,
+                    participantCount: 5,
+                    softCap: 500,
+                    ticketAmount: 100,
+                    startDate: "2025-08-04T12:10:45.817Z",
+                    endDate: "2025-08-11T12:10:45.819Z",
+                    prizes: [
+                      { name: "First Prize", value: 1000, currency: "USD" },
+                      { name: "Second Prize", value: 500, currency: "USD" }
+                    ],
+                    createdAt: "2025-08-04T12:10:45.819Z",
+                    updatedAt: "2025-08-04T14:18:38.900Z"
+                  },
+                  {
+                    id: 2,
+                    contractId: 2,
+                    name: "Test Campaign 886",
+                    description: "This is a test campaign created for testing purposes. Participants can stake SQUDY tokens to win amazing prizes!",
+                    imageUrl: "https://images.unsplash.com/photo-1640340434855-6084b1f4901c?w=800&h=400&fit=crop",
+                    status: "active",
+                    currentAmount: 0,
+                    hardCap: 50000,
+                    participantCount: 0,
+                    softCap: 5000,
+                    ticketAmount: 100,
+                    startDate: "2025-08-05T13:03",
+                    endDate: "2025-08-11T13:03",
+                    prizes: [
+                      { name: "First Prize", description: "Winner takes all", value: "10000", currency: "USD", quantity: 1 },
+                      { name: "Second Prize", description: "Runner up reward", value: "5000", currency: "USD", quantity: 1 },
+                      { name: "Third Prize", description: "Bronze medal", value: "2500", currency: "USD", quantity: 1 }
+                    ],
+                    createdAt: "2025-08-04T13:03:45.272Z",
+                    updatedAt: "2025-08-04T13:03:49.873Z"
+                  },
+                  {
+                    id: 3,
+                    contractId: 3,
+                    name: "Test Campaign 151",
+                    description: "This is a test campaign created for testing purposes. Participants can stake SQUDY tokens to win amazing prizes!",
+                    imageUrl: "https://images.unsplash.com/photo-1640340434855-6084b1f4901c?w=800&h=400&fit=crop",
+                    status: "active",
+                    currentAmount: 0,
+                    hardCap: 50000,
+                    participantCount: 0,
+                    softCap: 5000,
+                    ticketAmount: 100,
+                    startDate: "2025-08-05T14:18",
+                    endDate: "2025-08-11T14:18",
+                    prizes: [
+                      { name: "First Prize", description: "Winner takes all", value: "10000", currency: "USD", quantity: 1 },
+                      { name: "Second Prize", description: "Runner up reward", value: "5000", currency: "USD", quantity: 1 },
+                      { name: "Third Prize", description: "Bronze medal", value: "2500", currency: "USD", quantity: 1 }
+                    ],
+                    createdAt: "2025-08-04T14:18:24.870Z",
+                    updatedAt: "2025-08-04T14:18:29.026Z"
+                  },
+                  {
+                    id: 4,
+                    contractId: 4,
+                    name: "Test Campaign 693",
+                    description: "This is a test campaign created for testing purposes. Participants can stake SQUDY tokens to win amazing prizes!",
+                    imageUrl: "https://images.unsplash.com/photo-1640340434855-6084b1f4901c?w=800&h=400&fit=crop",
+                    status: "active",
+                    currentAmount: 0,
+                    hardCap: 50000,
+                    participantCount: 0,
+                    softCap: 5000,
+                    ticketAmount: 100,
+                    startDate: "2025-08-07T12:28",
+                    endDate: "2025-08-13T12:28",
+                    prizes: [
+                      { name: "First Prize", description: "Winner takes all", value: "10000", currency: "USD", quantity: 1 },
+                      { name: "Second Prize", description: "Runner up reward", value: "5000", currency: "USD", quantity: 1 },
+                      { name: "Third Prize", description: "Bronze medal", value: "2500", currency: "USD", quantity: 1 }
+                    ],
+                    createdAt: "2025-08-06T12:28:41.716Z",
+                    updatedAt: "2025-08-06T12:28:57.179Z"
+                  },
+                  {
+                    id: 5,
+                    contractId: 5,
+                    name: "Dina-Test Campaign 118",
+                    description: "This is a test campaign created for testing purposes. Participants can stake SQUDY tokens to win amazing prizes!",
+                    imageUrl: "https://images.unsplash.com/photo-1640340434855-6084b1f4901c?w=800&h=400&fit=crop",
+                    status: "active",
+                    currentAmount: 0,
+                    hardCap: 50000,
+                    participantCount: 0,
+                    softCap: 5000,
+                    ticketAmount: 100,
+                    startDate: "2025-08-07T15:04",
+                    endDate: "2025-08-13T15:04",
+                    prizes: [
+                      { name: "First Prize", description: "Winner takes all", value: "10000", currency: "USD", quantity: 1 },
+                      { name: "Second Prize", description: "Runner up reward", value: "5000", currency: "USD", quantity: 1 },
+                      { name: "Third Prize", description: "Bronze medal", value: "2500", currency: "USD", quantity: 1 }
+                    ],
+                    createdAt: "2025-08-06T15:05:00.262Z",
+                    updatedAt: "2025-08-06T15:05:10.804Z"
+                  }
                 ],
-                createdAt: new Date().toISOString(),
-                updatedAt: new Date().toISOString()
+                pagination: {
+                  page: 1,
+                  limit: 10,
+                  total: 5,
+                  totalPages: 1
+                }
               },
-              {
-                id: 2,
-                contractId: 2,
-                name: "🌟 Community Builder Challenge",
-                description: "Help grow the Squdy community! Invite friends, create content, and earn rewards.",
-                imageUrl: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&h=400&fit=crop",
-                status: "active",
-                currentAmount: 750,
-                hardCap: 5000,
-                participantCount: 8,
-                softCap: 500,
-                ticketAmount: 50,
-                startDate: new Date().toISOString(),
-                endDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
-                prizes: [
-                  { name: "Top Builder", value: 2000, currency: "SQUDY" },
-                  { name: "Rising Star", value: 1000, currency: "SQUDY" }
-                ],
-                createdAt: new Date().toISOString(),
-                updatedAt: new Date().toISOString()
-              }
-            ],
-            pagination: {
-              page: 1,
-              limit: 10,
-              total: 2,
-              totalPages: 1
-            }
-          },
-          status: 200
-        });
+              status: 200
+            });
       }
       
       // Generic fallback for other endpoints
