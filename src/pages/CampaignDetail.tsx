@@ -421,6 +421,39 @@ const CampaignDetail = () => {
                     </div>
                   )}
 
+                  {/* Debug Info for Mobile Issues */}
+                  {import.meta.env.DEV && (
+                    <Card className="bg-yellow-500/10 border-yellow-500/20 p-4">
+                      <h4 className="font-semibold text-yellow-600 mb-2">Debug Info (Mobile)</h4>
+                      <div className="text-sm space-y-1">
+                        <p>isConnected: {String(isConnected)}</p>
+                        <p>isParticipating: {String(isParticipating)}</p>
+                        <p>hasJoinedLocally: {String(hasJoinedLocally)}</p>
+                        <p>statusData?.isParticipating: {String(statusData?.isParticipating)}</p>
+                        <p>account: {account || 'none'}</p>
+                        <p>Show Staking: {String(isConnected && !isParticipating)}</p>
+                      </div>
+                    </Card>
+                  )}
+
+                  {/* Fallback Staking Section for Mobile - Always show if not participating */}
+                  {!isParticipating && !isConnected && (
+                    <Card className="bg-orange-500/10 border-orange-500/20">
+                      <CardContent className="p-6 text-center">
+                        <div className="p-3 bg-orange-500/20 border border-orange-500/30 rounded-lg w-fit mx-auto mb-4">
+                          <AlertTriangle className="w-6 h-6 text-orange-500" />
+                        </div>
+                        <h3 className="text-lg font-semibold text-orange-600 mb-2">Connect Wallet to Stake</h3>
+                        <p className="text-sm text-muted-foreground mb-4">
+                          Please connect your wallet to stake SQUDY tokens and participate in this campaign.
+                        </p>
+                        <Button onClick={() => window.location.reload()} variant="outline">
+                          Connect Wallet
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  )}
+
                   {/* Tasks Section - Only show when user has staked */}
                   {campaignTasks.length > 0 && showTasksSection && (
                     <div className="space-y-4">
