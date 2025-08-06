@@ -3,6 +3,7 @@ import Footer from "@/components/Footer";
 import HeroSection from "@/components/HeroSection";
 import CampaignCard from "@/components/CampaignCard";
 import { MockTokenBanner } from "@/components/MockTokenBanner";
+import { DebugPanel } from "@/components/DebugPanel";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -224,6 +225,7 @@ const HomePage = () => {
       </section>
 
       <Footer />
+      <DebugPanel />
     </div>
   );
 };
