@@ -5,10 +5,15 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:sepolia": "cp .env.sepolia .env && vite",
     "build": "tsc && vite build",
+    "build:sepolia": "cp .env.sepolia .env && tsc && vite build",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
-    "vercel-build": "npm run build"
+    "vercel-build": "npm run build",
+    "sepolia:summary": "node scripts/sepolia-summary.cjs",
+    "sepolia:test": "node scripts/test-sepolia-deployment.cjs",
+    "sepolia:admin": "node scripts/grant-admin-roles-sepolia.cjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",

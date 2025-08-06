@@ -1,0 +1,28 @@
+{
+  "network": "sepolia",
+  "chainId": 11155111,
+  "deployer": "0x86A598b3717915dC281B0c313B7496C5A262203C",
+  "timestamp": "2025-08-06T21:57:04.444Z",
+  "contracts": {
+    "SqudyToken": {
+      "address": "0xDa0aCfDEea788b3BeD30f25F5B32a19fd0Ec371F",
+      "blockNumber": 8928087
+    },
+    "AutomatedSqudyCampaignManager": {
+      "address": "0x2c8F042394Aca5b10322f8828B6D09e2d494A5b2",
+      "blockNumber": 8928088
+    }
+  },
+  "adminRoles": {
+    "grantedAt": "2025-08-06T22:09:16.326Z",
+    "adminWallets": [
+      "0x86A598b3717915dC281B0c313B7496C5A262203C",
+      "0x919cc7DC63AEaBe3954DfA69E087E389F145c541",
+      "0x9d7C3125a54A840776C70cD086bA9bA7ff4cF56b"
+    ],
+    "roles": {
+      "ADMIN_ROLE": "0xa49807205ce4d355092ef5a8a18f56e8913cf4a201fbe287825b095693c21775",
+      "OPERATOR_ROLE": "0x97667070c54ef182b0f5858b034beac1b6f3089aa2d3188bb1e8929f4fa9b929"
+    }
+  }
+}

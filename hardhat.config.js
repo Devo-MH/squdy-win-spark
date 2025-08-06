@@ -1,7 +1,7 @@
 require("@nomicfoundation/hardhat-toolbox");
 require("hardhat-deploy");
 require("solidity-coverage");
-require("dotenv").config();
+require("dotenv").config({ path: './backend/.env' });
 
 /** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {

@@ -28,7 +28,7 @@ export const BLOCKCHAIN_NETWORKS = {
   SEPOLIA: {
     name: 'Sepolia Testnet',
     chainId: 11155111,
-    rpcUrl: 'https://sepolia.infura.io/v3/${INFURA_API_KEY}',
+    rpcUrl: 'https://sepolia.drpc.org',
     blockExplorer: 'https://sepolia.etherscan.io',
     currency: 'SepoliaETH',
     testnet: true,
@@ -37,6 +37,12 @@ export const BLOCKCHAIN_NETWORKS = {
       'https://sepoliafaucet.com/',
       'https://www.alchemy.com/faucets/ethereum-sepolia',
     ],
+    contracts: {
+      squdyToken: '0xDa0aCfDEea788b3BeD30f25F5B32a19fd0Ec371F',
+      campaignManager: '0x2c8F042394Aca5b10322f8828B6D09e2d494A5b2',
+      deployedAt: '2025-08-06T21:57:04.444Z',
+      deployer: '0x86A598b3717915dC281B0c313B7496C5A262203C',
+    },
   },
   GOERLI: {
     name: 'Goerli Testnet',
