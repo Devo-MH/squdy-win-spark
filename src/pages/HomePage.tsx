@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowRight, ExternalLink, TrendingUp, Users, Flame, Trophy, AlertCircle, DollarSign } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { useCampaigns } from "@/hooks/useCampaigns";
 import { useSocket } from "@/services/socket";
 import { useEffect } from "react";
@@ -19,18 +19,37 @@ import { useContracts } from "@/services/contracts";
 
 const HomePage = () => {
   const socket = useSocket();
+  const location = useLocation();
   const { provider, signer } = useWeb3();
   const contractService = useContracts(provider, signer);
+  
+  // Show more campaigns if we're on /campaigns route
+  const isOnCampaignsPage = location.pathname === '/campaigns';
+  const campaignLimit = isOnCampaignsPage ? 20 : 6;
+  
   const { 
     data: campaignsData, 
     isLoading, 
     error,
     refetch 
-  } = useCampaigns({ limit: 6 });
+  } = useCampaigns({ limit: campaignLimit });
 
   const campaigns = campaignsData?.campaigns || [];
   const activeCampaigns = campaigns.filter(c => c.status === "active");
   const finishedCampaigns = campaigns.filter(c => c.status === "finished");
+
+  // Auto-scroll to campaigns section if on /campaigns route
+  useEffect(() => {
+    if (isOnCampaignsPage) {
+      const timer = setTimeout(() => {
+        const campaignsSection = document.getElementById('campaigns-section');
+        if (campaignsSection) {
+          campaignsSection.scrollIntoView({ behavior: 'smooth' });
+        }
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [isOnCampaignsPage]);
 
   // Listen for real-time campaign updates
   useEffect(() => {
@@ -67,7 +86,8 @@ const HomePage = () => {
     <div className="min-h-screen bg-background">
       <Header />
       
-      <HeroSection />
+      {/* Hero Section - only show on homepage */}
+      {!isOnCampaignsPage && <HeroSection />}
 
       {/* Mock Token Banner */}
       <div className="container mx-auto px-4 py-4">
@@ -75,14 +95,17 @@ const HomePage = () => {
       </div>
 
       {/* Active Campaigns Section */}
-      <section className="py-20 bg-background">
+      <section id="campaigns-section" className="py-20 bg-background">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-              🔥 Active Campaigns
+              {isOnCampaignsPage ? '🚀 All Available Campaigns' : '🔥 Active Campaigns'}
             </h2>
             <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-              Join ongoing campaigns, stake your SQUDY tokens, and compete for amazing prizes while contributing to token deflation.
+              {isOnCampaignsPage 
+                ? 'Explore all campaigns, stake your SQUDY tokens, and compete for amazing prizes in our deflationary ecosystem.'
+                : 'Join ongoing campaigns, stake your SQUDY tokens, and compete for amazing prizes while contributing to token deflation.'
+              }
             </p>
           </div>
 
@@ -102,6 +125,19 @@ const HomePage = () => {
                   Try Again
                 </Button>
               </div>
+            ) : isOnCampaignsPage ? (
+              // All campaigns page - show all campaigns
+              campaigns.length === 0 ? (
+                <div className="col-span-full text-center py-12">
+                  <Flame className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold text-foreground mb-2">No Campaigns Available</h3>
+                  <p className="text-muted-foreground">Check back soon for new burn-to-win campaigns!</p>
+                </div>
+              ) : (
+                campaigns.map((campaign) => (
+                  <CampaignCard key={campaign.id || campaign.contractId} campaign={campaign} />
+                ))
+              )
             ) : activeCampaigns.length === 0 ? (
               // No active campaigns
               <div className="col-span-full text-center py-12">
@@ -110,25 +146,29 @@ const HomePage = () => {
                 <p className="text-muted-foreground">Check back soon for new burn-to-win campaigns!</p>
               </div>
             ) : (
-              // Active campaigns
+              // Active campaigns only (homepage)
               activeCampaigns.map((campaign) => (
                 <CampaignCard key={campaign.id || campaign.contractId} campaign={campaign} />
               ))
             )}
           </div>
 
-          <div className="text-center">
-            <Link to="/campaigns">
-              <Button variant="outline" size="lg">
-                View All Campaigns
-                <ArrowRight className="w-5 h-5" />
-              </Button>
-            </Link>
-          </div>
+          {/* Only show "View All Campaigns" button on homepage */}
+          {!isOnCampaignsPage && (
+            <div className="text-center">
+              <Link to="/campaigns">
+                <Button variant="outline" size="lg">
+                  View All Campaigns
+                  <ArrowRight className="w-5 h-5" />
+                </Button>
+              </Link>
+            </div>
+          )}
         </div>
       </section>
 
-      {/* About SQUDY Section */}
+      {/* About SQUDY Section - only show on homepage */}
+      {!isOnCampaignsPage && (
       <section className="py-20 bg-secondary/30">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center space-y-8">
@@ -203,8 +243,10 @@ const HomePage = () => {
           </div>
         </div>
       </section>
+      )}
 
-      {/* Recent Campaigns */}
+      {/* Recent Campaigns - only show on homepage */}
+      {!isOnCampaignsPage && (
       <section className="py-20 bg-background">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
@@ -223,6 +265,7 @@ const HomePage = () => {
           </div>
         </div>
       </section>
+      )}
 
       <Footer />
       <DebugPanel />

@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Link } from "react-router-dom";
 import { Flame, Target, Users, Trophy, ArrowRight, ExternalLink } from "lucide-react";
 
 const HeroSection = () => {
@@ -28,15 +29,19 @@ const HeroSection = () => {
 
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            <Button variant="neon" size="lg" className="text-lg px-8 py-6">
-              <Flame className="w-6 h-6" />
-              Explore Campaigns
-              <ArrowRight className="w-5 h-5" />
-            </Button>
-            <Button variant="outline" size="lg" className="text-lg px-8 py-6">
-              <ExternalLink className="w-5 h-5" />
-              Buy SQUDY on PancakeSwap
-            </Button>
+            <Link to="/campaigns">
+              <Button variant="neon" size="lg" className="text-lg px-8 py-6">
+                <Flame className="w-6 h-6" />
+                Explore Campaigns
+                <ArrowRight className="w-5 h-5" />
+              </Button>
+            </Link>
+            <a href="https://pancakeswap.finance" target="_blank" rel="noopener noreferrer">
+              <Button variant="outline" size="lg" className="text-lg px-8 py-6">
+                <ExternalLink className="w-5 h-5" />
+                Buy SQUDY on PancakeSwap
+              </Button>
+            </a>
           </div>
 
           {/* Stats Cards */}
