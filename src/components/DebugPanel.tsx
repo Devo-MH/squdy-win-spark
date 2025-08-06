@@ -7,6 +7,11 @@ import { RefreshCw, Bug, Smartphone, Monitor } from 'lucide-react';
 
 export const DebugPanel = () => {
   const [isVisible, setIsVisible] = useState(false);
+  
+  // Hide debug panel in production unless explicitly requested
+  if (import.meta.env.PROD && !localStorage.getItem('showDebug')) {
+    return null;
+  }
   const { data: campaignsData, isLoading, error, refetch } = useCampaigns({ limit: 10 });
   
   const campaigns = campaignsData?.campaigns || [];
