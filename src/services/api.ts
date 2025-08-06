@@ -34,6 +34,91 @@ apiClient.interceptors.response.use(
       
       // For campaigns endpoint, provide mock data
       if (error.config?.url?.includes('campaigns')) {
+        
+        // Check if it's a single campaign request (campaigns/:id)
+        const campaignIdMatch = error.config?.url?.match(/campaigns\/(\d+)$/);
+        if (campaignIdMatch) {
+          const requestedId = parseInt(campaignIdMatch[1]);
+          
+          // Mock campaign data for individual requests
+          const mockCampaigns = [
+            {
+              id: 1,
+              contractId: 1,
+              name: "🚀 Squdy Launch Campaign",
+              description: "Join the official Squdy platform launch! Complete social media tasks and earn SQUDY tokens.",
+              imageUrl: "https://images.unsplash.com/photo-1640340434855-6084b1f4901c?w=800&h=400&fit=crop",
+              status: "active",
+              currentAmount: 2500,
+              hardCap: 10000,
+              participantCount: 15,
+              softCap: 1000,
+              ticketAmount: 100,
+              startDate: new Date().toISOString(),
+              endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+              prizes: [
+                { name: "Grand Prize", value: 5000, currency: "SQUDY" },
+                { name: "Second Prize", value: 2500, currency: "SQUDY" },
+                { name: "Third Prize", value: 1000, currency: "SQUDY" }
+              ],
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+              offchainTasks: []
+            },
+            {
+              id: 2,
+              contractId: 2,
+              name: "🌟 Community Builder Challenge",
+              description: "Help grow the Squdy community! Invite friends, create content, and earn rewards.",
+              imageUrl: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&h=400&fit=crop",
+              status: "active",
+              currentAmount: 750,
+              hardCap: 5000,
+              participantCount: 8,
+              softCap: 500,
+              ticketAmount: 50,
+              startDate: new Date().toISOString(),
+              endDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+              prizes: [
+                { name: "Top Builder", value: 2000, currency: "SQUDY" },
+                { name: "Rising Star", value: 1000, currency: "SQUDY" }
+              ],
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+              offchainTasks: []
+            }
+          ];
+          
+          const campaign = mockCampaigns.find(c => c.id === requestedId || c.contractId === requestedId);
+          if (campaign) {
+            return Promise.resolve({
+              data: { campaign },
+              status: 200
+            });
+          } else {
+            return Promise.resolve({
+              data: { campaign: mockCampaigns[0] }, // Fallback to first campaign
+              status: 200
+            });
+          }
+        }
+        
+        // Check if it's a status request (campaigns/:id/my-status)
+        const statusMatch = error.config?.url?.match(/campaigns\/(\d+)\/my-status$/);
+        if (statusMatch) {
+          return Promise.resolve({
+            data: {
+              isParticipating: false,
+              status: 'not_participating',
+              hasStaked: false,
+              socialTasksCompleted: {},
+              allSocialTasksCompleted: false
+            },
+            status: 200
+          });
+        }
+        
+        // For campaigns list endpoint
         return Promise.resolve({
           data: {
             campaigns: [
