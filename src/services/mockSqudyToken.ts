@@ -1,4 +1,4 @@
-import { ethers, parseUnits, formatUnits, ZeroAddress } from 'ethers';
+import { ethers } from 'ethers';
 import { toast } from 'sonner';
 
 // Mock SQUDY Token implementation for testing

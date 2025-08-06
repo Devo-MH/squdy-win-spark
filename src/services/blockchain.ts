@@ -155,7 +155,7 @@ class MockCampaignContract {
       hash: `0xStakeTx${Date.now()}${Math.random().toString(36).substr(2, 9)}`,
       from: account,
       to: this.campaignInfo.contractAddress,
-      value: ethers.parseEther(amount.toString()).toString(),
+      value: ethers.utils.parseEther(amount.toString()).toString(),
       gasUsed: '150000',
       gasPrice: '5000000000',
       blockNumber: Math.floor(Math.random() * 1000000) + 1000000,
