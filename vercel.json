@@ -4,6 +4,9 @@
       "runtime": "nodejs20.x"
     }
   },
+  "buildCommand": "npm run build",
+  "installCommand": "npm install --legacy-peer-deps",
+  "outputDirectory": "dist",
   "rewrites": [
     {
       "source": "/health",
