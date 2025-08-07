@@ -187,7 +187,7 @@ export class ContractService {
           name,
           symbol,
           decimals: Number(decimals),
-          totalSupply: formatUnits(totalSupply, decimals),
+          totalSupply: ethers.utils.formatUnits(totalSupply, decimals),
         };
       } else {
         const [name, symbol, decimals, totalSupply] = await Promise.all([
@@ -201,7 +201,7 @@ export class ContractService {
           name,
           symbol,
           decimals: Number(decimals),
-          totalSupply: formatUnits(totalSupply, decimals),
+          totalSupply: ethers.utils.formatUnits(totalSupply, decimals),
         };
       }
     } catch (error) {
@@ -430,10 +430,10 @@ export class ContractService {
       name: campaign.name,
       description: campaign.description,
       imageUrl: campaign.imageUrl,
-              softCap: formatUnits(campaign.softCap, 18),
-        hardCap: formatUnits(campaign.hardCap, 18),
-        ticketAmount: formatUnits(campaign.ticketAmount, 18),
-        currentAmount: formatUnits(campaign.currentAmount, 18),
+              softCap: ethers.utils.formatUnits(campaign.softCap, 18),
+        hardCap: ethers.utils.formatUnits(campaign.hardCap, 18),
+        ticketAmount: ethers.utils.formatUnits(campaign.ticketAmount, 18),
+        currentAmount: ethers.utils.formatUnits(campaign.currentAmount, 18),
       startDate: new Date(campaign.startDate.toNumber() * 1000),
       endDate: new Date(campaign.endDate.toNumber() * 1000),
       participantCount: campaign.participantCount.toNumber(),
@@ -441,7 +441,7 @@ export class ContractService {
       winners: campaign.winners,
       status: this.getStatusString(campaign.status),
       tokensAreBurned: campaign.tokensAreBurned,
-      totalBurned: formatUnits(campaign.totalBurned),
+      totalBurned: ethers.utils.formatUnits(campaign.totalBurned),
       winnerSelectionTxHash: campaign.winnerSelectionTxHash,
       createdAt: new Date(campaign.createdAt.toNumber() * 1000),
       updatedAt: new Date(campaign.updatedAt.toNumber() * 1000),
@@ -450,7 +450,7 @@ export class ContractService {
 
   private parseParticipantData(participant: any): any {
     return {
-      stakedAmount: formatUnits(participant.stakedAmount),
+      stakedAmount: ethers.utils.formatUnits(participant.stakedAmount),
       ticketCount: participant.ticketCount.toNumber(),
       hasCompletedSocial: participant.hasCompletedSocial,
       isWinner: participant.isWinner,
@@ -485,7 +485,7 @@ export class ContractService {
           name,
           startDate: new Date(startDate.toNumber() * 1000),
           endDate: new Date(endDate.toNumber() * 1000),
-          ticketAmount: formatUnits(ticketAmount),
+          ticketAmount: ethers.utils.formatUnits(ticketAmount),
         });
       });
     }
@@ -495,7 +495,7 @@ export class ContractService {
         callbacks.onUserStaked!({
           campaignId: campaignId.toNumber(),
           user,
-          amount: formatUnits(amount),
+          amount: ethers.utils.formatUnits(amount),
           tickets: tickets.toNumber(),
         });
       });
@@ -524,7 +524,7 @@ export class ContractService {
       this.campaignManagerContract.on('TokensBurned', (campaignId, totalBurned) => {
         callbacks.onTokensBurned!({
           campaignId: campaignId.toNumber(),
-          totalBurned: formatUnits(totalBurned),
+          totalBurned: ethers.utils.formatUnits(totalBurned),
         });
       });
     }

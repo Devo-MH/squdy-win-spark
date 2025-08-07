@@ -1,4 +1,4 @@
-import { ethers, parseUnits, formatUnits } from 'ethers';
+import { ethers } from 'ethers';
 import { toast } from 'sonner';
 import { mockSqudyToken } from './mockSqudyToken';
 
@@ -151,10 +151,10 @@ export class AutomatedContractService {
     try {
       if (this.useMockToken) {
         const balance = await mockSqudyToken.balanceOf(address);
-        return formatUnits(balance, 18);
+        return ethers.utils.formatUnits(balance, 18);
       } else {
         const balance = await this.squdyTokenContract!.balanceOf(address);
-        return formatUnits(balance, 18);
+        return ethers.utils.formatUnits(balance, 18);
       }
     } catch (error) {
       console.error('Error getting token balance:', error);
@@ -166,10 +166,10 @@ export class AutomatedContractService {
     try {
       if (this.useMockToken) {
         const allowance = await mockSqudyToken.allowance(owner, spender);
-        return formatUnits(allowance, 18);
+        return ethers.utils.formatUnits(allowance, 18);
       } else {
         const allowance = await this.squdyTokenContract!.allowance(owner, spender);
-        return formatUnits(allowance, 18);
+        return ethers.utils.formatUnits(allowance, 18);
       }
     } catch (error) {
       console.error('Error getting token allowance:', error);
@@ -179,7 +179,7 @@ export class AutomatedContractService {
 
   async approveTokens(spender: string, amount: string): Promise<boolean> {
     try {
-      const amountBN = parseUnits(amount, 18);
+      const amountBN = ethers.utils.parseUnits(amount, 18);
       
       if (this.useMockToken) {
         const userAddress = await this.signer.getAddress();
@@ -204,7 +204,7 @@ export class AutomatedContractService {
 
     try {
       const userAddress = await this.signer.getAddress();
-      const amount = parseUnits('1000', 18); // 1000 test tokens
+      const amount = ethers.utils.parseUnits('1000', 18); // 1000 test tokens
       mockSqudyToken.mintTokens(userAddress, amount);
       
       if (!window.mockTokenToastShown) {
@@ -281,7 +281,7 @@ export class AutomatedContractService {
 
   async stakeTokens(campaignId: number, amount: string): Promise<boolean> {
     try {
-      const amountBN = parseUnits(amount, 18);
+      const amountBN = ethers.utils.parseUnits(amount, 18);
       
       if (this.useMockToken) {
         // Mock staking logic
@@ -360,9 +360,9 @@ export class AutomatedContractService {
     prizes: string[]
   ): Promise<number | null> {
     try {
-      const softCapBN = parseUnits(softCap, 18);
-      const hardCapBN = parseUnits(hardCap, 18);
-      const ticketAmountBN = parseUnits(ticketAmount, 18);
+      const softCapBN = ethers.utils.parseUnits(softCap, 18);
+      const hardCapBN = ethers.utils.parseUnits(hardCap, 18);
+      const ticketAmountBN = ethers.utils.parseUnits(ticketAmount, 18);
 
       const tx = await this.campaignManagerContract.createCampaign(
         name,
@@ -408,8 +408,8 @@ export class AutomatedContractService {
     try {
       const stats = await this.squdyTokenContract!.getBurnStats();
       return {
-        burned: formatUnits(stats.burned, 18),
-        circulating: formatUnits(stats.circulating, 18),
+        burned: ethers.utils.formatUnits(stats.burned, 18),
+        circulating: ethers.utils.formatUnits(stats.circulating, 18),
         burnRate: (Number(stats.burnRate) / 100).toString() // Convert basis points to percentage
       };
     } catch (error) {
