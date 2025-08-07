@@ -1,16 +1,14 @@
-// Vercel serverless function for Squdy backend (consolidated)
-const express = require('express');
-const cors = require('cors');
-const { ethers } = require('ethers');
-const crypto = require('crypto');
+// Vercel serverless function for Squdy backend (consolidated, ESM)
+import express from 'express';
+import cors from 'cors';
+import { ethers } from 'ethers';
+import { randomBytes } from 'crypto';
 
 const app = express();
 
 // Middleware
 app.use(cors());
 app.use(express.json());
-
-console.log('🚀 Squdy Serverless Backend Starting...');
 
 // Health endpoint
 app.get('/api/health', (req, res) => res.send('OK'));
@@ -78,7 +76,7 @@ app.get('/api/auth', (req, res) => {
   if (action !== 'nonce') return res.status(400).json({ error: 'Invalid action' });
   if (!walletAddress || !/^0x[a-fA-F0-9]{40}$/.test(walletAddress)) return res.status(400).json({ error: 'Invalid wallet address' });
 
-  const nonce = crypto.randomBytes(16).toString('hex');
+  const nonce = randomBytes(16).toString('hex');
   const timestamp = Date.now();
   const message = `Welcome to Squdy Platform!\n\nThis request will not trigger a blockchain transaction or cost any gas fees.\n\nWallet: ${walletAddress}\nNonce: ${nonce}\nTimestamp: ${timestamp}\n\nSign this message to authenticate your wallet.`;
   res.json({ message, nonce, timestamp, walletAddress: walletAddress.toLowerCase() });
@@ -93,9 +91,9 @@ app.post('/api/auth', (req, res) => {
   try { recovered = ethers.utils.verifyMessage(message, signature); } catch { return res.status(400).json({ error: 'Invalid signature', verified: false }); }
   if (recovered.toLowerCase() !== walletAddress.toLowerCase()) return res.status(400).json({ error: 'Signature verification failed', verified: false });
 
-  const adminWallets = (process.env.ADMIN_WALLETS || '').split(',').map(w => w.toLowerCase());
+  const adminWallets = (process.env.ADMIN_WALLETS || '').split(',').map(w => w.trim().toLowerCase()).filter(Boolean);
   const isAdmin = adminWallets.includes(walletAddress.toLowerCase());
   res.json({ verified: true, walletAddress: walletAddress.toLowerCase(), isAdmin, timestamp: Date.now() });
 });
 
-module.exports = app;
+export default app;
