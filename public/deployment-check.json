@@ -1,0 +1,8 @@
+{
+  "timestamp": "2025-08-07T13:53:00Z",
+  "deployment": "ethers-v5-safe-helpers",
+  "bundle": "index-BCO6VkWc.js",
+  "fix": "safe-parseUnits-helpers",
+  "status": "deployed",
+  "cache_buster": true
+}
