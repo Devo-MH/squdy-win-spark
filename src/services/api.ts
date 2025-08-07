@@ -454,12 +454,12 @@ apiClient.interceptors.response.use(
 // Auth API
 export const authAPI = {
   getNonce: async (walletAddress: string) => {
-    const response = await apiClient.get(`/auth/nonce/${walletAddress}`);
+    const response = await apiClient.get(`/auth?action=nonce&walletAddress=${walletAddress}`);
     return response.data;
   },
 
   verifySignature: async (authData: WalletAuthRequest) => {
-    const response = await apiClient.post('/auth/verify-signature', authData);
+    const response = await apiClient.post('/auth', authData);
     return response.data;
   },
 };
