@@ -1,0 +1,10 @@
+{
+  "name": "squdy-backend-api",
+  "version": "1.0.0",
+  "description": "Squdy Platform Backend API for Vercel Serverless Functions",
+  "type": "module",
+  "dependencies": {
+    "mongodb": "^6.3.0",
+    "ethers": "^5.8.0"
+  }
+}
