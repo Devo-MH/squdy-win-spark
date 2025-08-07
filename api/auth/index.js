@@ -1,6 +1,6 @@
 // Vercel serverless function: Auth API
 import crypto from 'crypto';
-import { ethers } from 'ethers';
+import ethers from 'ethers';
 
 export default async function handler(req, res) {
   // CORS headers
