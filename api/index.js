@@ -13,10 +13,8 @@ app.use(express.json());
 // Health endpoint
 app.get('/api/health', (req, res) => res.send('OK'));
 
-// Campaigns (demo data to unblock UI)
-app.get('/api/campaigns', (req, res) => {
-  const limit = parseInt(req.query.limit || '10', 10);
-  const campaigns = [1,2,3,4,5].map((i) => ({
+// In-memory demo campaigns (ephemeral)
+const demoCampaigns = [1,2,3,4,5].map((i) => ({
     id: i,
     contractId: i,
     name: `Demo Campaign ${i}`,
@@ -37,8 +35,18 @@ app.get('/api/campaigns', (req, res) => {
     ],
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
-  }));
-  res.json({ campaigns: campaigns.slice(0, limit), pagination: { page: 1, limit, total: campaigns.length, totalPages: 1 } });
+}));
+
+let campaignsInMemory = [...demoCampaigns];
+
+// Campaigns list
+app.get('/api/campaigns', (req, res) => {
+  const limit = parseInt(req.query.limit || '10', 10);
+  const page = 1;
+  res.json({
+    campaigns: campaignsInMemory.slice(0, limit),
+    pagination: { page, limit, total: campaignsInMemory.length, totalPages: 1 }
+  });
 });
 
 // Admin stats (Mongo optional)
@@ -61,13 +69,45 @@ app.get('/api/admin/stats', async (req, res) => {
   }
 });
 
-// Admin create campaign (mock)
+// Admin create campaign (mock; ephemeral)
 app.post('/api/admin/campaigns', (req, res) => {
   const data = req.body || {};
   if (!data.name || !data.description || !data.softCap || !data.hardCap || !data.ticketAmount) {
     return res.status(400).json({ error: 'Missing required fields' });
   }
-  return res.status(201).json({ message: 'Campaign created (mock)', campaign: { id: Date.now(), ...data } });
+  const newCampaign = {
+    id: campaignsInMemory.length + 1,
+    contractId: campaignsInMemory.length + 1,
+    name: data.name,
+    description: data.description,
+    imageUrl: data.imageUrl || 'https://images.unsplash.com/photo-1640340434855-6084b1f4901c?w=800&h=400&fit=crop',
+    status: 'active',
+    currentAmount: 0,
+    hardCap: Number(data.hardCap),
+    participantCount: 0,
+    softCap: Number(data.softCap),
+    ticketAmount: Number(data.ticketAmount),
+    startDate: data.startDate || new Date().toISOString(),
+    endDate: data.endDate || new Date(Date.now() + 7*24*60*60*1000).toISOString(),
+    prizes: data.prizes || [],
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
+  campaignsInMemory = [newCampaign, ...campaignsInMemory];
+  return res.status(201).json({ message: 'Campaign created (mock)', campaign: newCampaign });
+});
+
+// Single campaign
+app.get('/api/campaigns/:id', (req, res) => {
+  const id = Number(req.params.id);
+  const campaign = campaignsInMemory.find(c => c.id === id || c.contractId === id);
+  if (!campaign) return res.status(404).json({ error: 'Campaign not found' });
+  return res.json({ campaign });
+});
+
+// My status for campaign (mock)
+app.get('/api/campaigns/:id/my-status', (req, res) => {
+  return res.json({ isParticipating: false, status: null, stakeAmount: 0, socialTasks: {} });
 });
 
 // Auth (nonce + verify)
