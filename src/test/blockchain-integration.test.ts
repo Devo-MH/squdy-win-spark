@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { ethers, formatEther, parseUnits } from 'ethers';
+import { ethers } from 'ethers';
 import { ContractService } from '@/services/contracts';
 import { mockSqudyToken } from '@/services/mockSqudyToken';
 import { BLOCKCHAIN_NETWORKS, BlockchainValidator, estimateGas } from '@/config/blockchain-testing';
@@ -43,7 +43,7 @@ describe('Blockchain Integration Tests', () => {
 
     it('should have sufficient test ETH', async () => {
       const balance = await provider.getBalance(testAccount);
-      const balanceInEth = formatEther(balance);
+      const balanceInEth = ethers.utils.formatEther(balance);
       expect(parseFloat(balanceInEth)).toBeGreaterThan(1); // At least 1 ETH for testing
     });
 
@@ -65,7 +65,7 @@ describe('Blockchain Integration Tests', () => {
     });
 
     it('should handle token approval', async () => {
-      const approveAmount = parseUnits('1000', 18);
+      const approveAmount = ethers.utils.parseUnits('1000', 18);
       const tx = await contractService.approveToken(approveAmount);
       expect(tx).toBeDefined();
       expect(tx.hash).toMatch(/^0x[a-fA-F0-9]+$/);
