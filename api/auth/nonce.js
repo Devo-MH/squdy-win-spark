@@ -16,9 +16,12 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { walletAddress } = req.query;
+    // Extract wallet address from URL path
+    const urlPath = req.url;
+    const pathParts = urlPath.split('/');
+    const walletAddress = pathParts[pathParts.length - 1];
 
-    if (!walletAddress) {
+    if (!walletAddress || walletAddress.includes('?')) {
       return res.status(400).json({ error: 'Wallet address is required' });
     }
 

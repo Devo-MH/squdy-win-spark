@@ -8,6 +8,10 @@
     {
       "source": "/health",
       "destination": "/api/health"
+    },
+    {
+      "source": "/api/auth/nonce/(.*)",
+      "destination": "/api/auth/nonce"
     }
   ],
   "env": {
