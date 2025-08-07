@@ -40,7 +40,7 @@ const demoCampaigns = [1,2,3,4,5].map((i) => ({
 let campaignsInMemory = [...demoCampaigns];
 
 // Campaigns list
-app.get('/api/campaigns', (req, res) => {
+app.get(['/api/campaigns','/campaigns'], (req, res) => {
   const limit = parseInt(req.query.limit || '10', 10);
   const page = 1;
   res.json({
@@ -50,7 +50,7 @@ app.get('/api/campaigns', (req, res) => {
 });
 
 // Admin stats (Mongo optional)
-app.get('/api/admin/stats', async (req, res) => {
+app.get(['/api/admin/stats','/admin/stats'], async (req, res) => {
   try {
     const stats = {
       platform: { totalCampaigns: 0, activeCampaigns: 0, totalParticipants: 0, totalRaised: 0, status: 'operational' },
@@ -70,7 +70,7 @@ app.get('/api/admin/stats', async (req, res) => {
 });
 
 // Admin create campaign (mock; ephemeral)
-app.post('/api/admin/campaigns', (req, res) => {
+app.post(['/api/admin/campaigns','/admin/campaigns'], (req, res) => {
   const data = req.body || {};
   if (!data.name || !data.description || !data.softCap || !data.hardCap || !data.ticketAmount) {
     return res.status(400).json({ error: 'Missing required fields' });
@@ -98,7 +98,7 @@ app.post('/api/admin/campaigns', (req, res) => {
 });
 
 // Single campaign
-app.get('/api/campaigns/:id', (req, res) => {
+app.get(['/api/campaigns/:id','/campaigns/:id'], (req, res) => {
   const id = Number(req.params.id);
   const campaign = campaignsInMemory.find(c => c.id === id || c.contractId === id);
   if (!campaign) return res.status(404).json({ error: 'Campaign not found' });
@@ -106,7 +106,7 @@ app.get('/api/campaigns/:id', (req, res) => {
 });
 
 // My status for campaign (mock)
-app.get('/api/campaigns/:id/my-status', (req, res) => {
+app.get(['/api/campaigns/:id/my-status','/campaigns/:id/my-status'], (req, res) => {
   return res.json({ isParticipating: false, status: null, stakeAmount: 0, socialTasks: {} });
 });
 
