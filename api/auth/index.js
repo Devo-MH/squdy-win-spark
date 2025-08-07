@@ -1,5 +1,5 @@
 // Vercel serverless function: Auth API
-import crypto from 'crypto';
+import { randomBytes } from 'crypto';
 import { ethers } from 'ethers';
 
 export default async function handler(req, res) {
@@ -29,7 +29,7 @@ export default async function handler(req, res) {
       }
 
       // Generate nonce and timestamp
-      const nonce = crypto.randomBytes(16).toString('hex');
+      const nonce = randomBytes(16).toString('hex');
       const timestamp = Date.now();
 
       // Create authentication message
