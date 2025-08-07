@@ -1,6 +1,6 @@
 // Vercel serverless function: Auth API
 import crypto from 'crypto';
-import ethers from 'ethers';
+import { ethers } from 'ethers';
 
 export default async function handler(req, res) {
   // CORS headers
@@ -33,15 +33,7 @@ export default async function handler(req, res) {
       const timestamp = Date.now();
 
       // Create authentication message
-      const message = `Welcome to Squdy Platform!
-
-This request will not trigger a blockchain transaction or cost any gas fees.
-
-Wallet: ${walletAddress}
-Nonce: ${nonce}
-Timestamp: ${timestamp}
-
-Sign this message to authenticate your wallet.`;
+      const message = `Welcome to Squdy Platform!\n\nThis request will not trigger a blockchain transaction or cost any gas fees.\n\nWallet: ${walletAddress}\nNonce: ${nonce}\nTimestamp: ${timestamp}\n\nSign this message to authenticate your wallet.`;
 
       console.log(`🔐 Generated nonce for ${walletAddress}: ${nonce}`);
 

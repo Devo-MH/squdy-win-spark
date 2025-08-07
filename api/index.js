@@ -1,6 +1,8 @@
 // Vercel serverless function for Squdy backend
 const express = require('express');
 const cors = require('cors');
+const { ethers } = require('ethers');
+const crypto = require('crypto');
 
 const app = express();
 
@@ -101,6 +103,65 @@ app.get('/api/campaigns/:id/status', (req, res) => {
     stakeAmount: 0,
     socialTasks: {}
   });
+});
+
+// Auth endpoints (nonce + verify) to avoid Vercel routing conflicts
+app.get('/api/auth', (req, res) => {
+  try {
+    const { action, walletAddress } = req.query;
+    if (action !== 'nonce') {
+      return res.status(400).json({ error: 'Invalid action' });
+    }
+    if (!walletAddress || !/^0x[a-fA-F0-9]{40}$/.test(walletAddress)) {
+      return res.status(400).json({ error: 'Invalid wallet address' });
+    }
+
+    const nonce = crypto.randomBytes(16).toString('hex');
+    const timestamp = Date.now();
+    const message = `Welcome to Squdy Platform!\n\nThis request will not trigger a blockchain transaction or cost any gas fees.\n\nWallet: ${walletAddress}\nNonce: ${nonce}\nTimestamp: ${timestamp}\n\nSign this message to authenticate your wallet.`;
+
+    return res.status(200).json({
+      message,
+      nonce,
+      timestamp,
+      walletAddress: walletAddress.toLowerCase(),
+    });
+  } catch (error) {
+    console.error('Auth nonce error:', error);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.post('/api/auth', (req, res) => {
+  try {
+    const { message, signature, walletAddress } = req.body || {};
+    if (!message || !signature || !walletAddress) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+    if (!/^0x[a-fA-F0-9]{40}$/.test(walletAddress)) {
+      return res.status(400).json({ error: 'Invalid wallet address' });
+    }
+
+    let recovered;
+    try {
+      recovered = ethers.utils.verifyMessage(message, signature);
+    } catch (e) {
+      console.error('Signature verify error:', e);
+      return res.status(400).json({ error: 'Invalid signature', verified: false });
+    }
+
+    if (recovered.toLowerCase() !== walletAddress.toLowerCase()) {
+      return res.status(400).json({ error: 'Signature verification failed', verified: false });
+    }
+
+    const adminWallets = (process.env.ADMIN_WALLETS || '').split(',').map(w => w.toLowerCase());
+    const isAdmin = adminWallets.includes(walletAddress.toLowerCase());
+
+    return res.status(200).json({ verified: true, walletAddress: walletAddress.toLowerCase(), isAdmin, timestamp: Date.now() });
+  } catch (error) {
+    console.error('Auth verify error:', error);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
 // Export the Express app for Vercel

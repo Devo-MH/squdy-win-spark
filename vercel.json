@@ -11,6 +11,10 @@
     {
       "source": "/health",
       "destination": "/api/health"
+    },
+    {
+      "source": "/api/(.*)",
+      "destination": "/api/$1"
     }
   ],
   "env": {
