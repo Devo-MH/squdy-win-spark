@@ -435,6 +435,36 @@ app.get(['/api/campaigns/:id/my-status','/campaigns/:id/my-status'], (req, res) 
   return res.json({ isParticipating: false, status: null, stakeAmount: 0, socialTasks: {} });
 });
 
+// Admin maintenance: drop conflicting indexes created earlier (production one-off)
+app.post('/api/admin/db-fix-indexes', async (req, res) => {
+  try {
+    const db = await getDatabase();
+    const col = db.collection('campaigns');
+    const before = (await col.indexes()).map(ix => ({ name: ix.name, key: ix.key, unique: !!ix.unique }));
+
+    const names = new Set(before.map(ix => ix.name));
+    const dropped = [];
+    if (names.has('id_1')) {
+      await col.dropIndex('id_1');
+      dropped.push('id_1');
+    }
+    if (names.has('address_1')) {
+      await col.dropIndex('address_1');
+      dropped.push('address_1');
+    }
+    // Ensure a helpful non-unique index exists
+    try {
+      await col.createIndex({ contractId: 1 }, { unique: false, name: 'contractId_1' });
+    } catch {}
+
+    const after = (await col.indexes()).map(ix => ({ name: ix.name, key: ix.key, unique: !!ix.unique }));
+    res.set('Cache-Control', 'no-store');
+    return res.json({ ok: true, dropped, before, after });
+  } catch (e) {
+    return res.status(500).json({ ok: false, error: String(e && e.message) });
+  }
+});
+
 // Auth (nonce + verify)
 app.get('/api/auth', (req, res) => {
   const { action, walletAddress } = req.query;
