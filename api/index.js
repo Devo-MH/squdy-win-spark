@@ -91,7 +91,7 @@ app.get(['/api/campaigns','/campaigns'], async (req, res) => {
     const page = 1;
 
     const col = await getCampaignsCollection();
-    const filter = { name: { $exists: true } };
+    const filter = { name: { $exists: true, $ne: null } };
     const total = await col.countDocuments(filter);
     let campaigns = [];
 
@@ -99,18 +99,30 @@ app.get(['/api/campaigns','/campaigns'], async (req, res) => {
       const raw = await col
         .find(filter)
         .sort({ createdAt: -1 })
-        .limit(limit * 3) // fetch extra and filter client-side to ensure valid items
+        .limit(limit)
         .toArray();
-      // Keep only campaigns with a numeric contractId which our UI uses as key/route
-      campaigns = raw
-        .filter((c) => typeof c.contractId === 'number' && Number.isFinite(c.contractId))
-        .slice(0, limit)
-        .map((c) => ({
-          participantCount: 0,
-          status: c.status || 'active',
-          imageUrl: c.imageUrl || 'https://images.unsplash.com/photo-1640340434855-6084b1f4901c?w=800&h=400&fit=crop',
-          ...c,
-        }));
+
+      // Normalize results so UI always has usable fields
+      campaigns = raw.map((c, idx) => ({
+        id: (c._id && c._id.toString) ? c._id.toString() : String(c.id ?? idx),
+        contractId: typeof c.contractId === 'number' && Number.isFinite(c.contractId)
+          ? c.contractId
+          : 1000 + idx,
+        name: c.name ?? 'Untitled Campaign',
+        description: c.description ?? '',
+        imageUrl: c.imageUrl || 'https://images.unsplash.com/photo-1640340434855-6084b1f4901c?w=800&h=400&fit=crop',
+        status: c.status || 'active',
+        currentAmount: Number(c.currentAmount || 0),
+        hardCap: Number(c.hardCap || 0),
+        participantCount: Number(c.participantCount || 0),
+        softCap: Number(c.softCap || 0),
+        ticketAmount: Number(c.ticketAmount || 0),
+        startDate: c.startDate || new Date().toISOString(),
+        endDate: c.endDate || new Date(Date.now() + 7*24*60*60*1000).toISOString(),
+        prizes: Array.isArray(c.prizes) ? c.prizes : [],
+        createdAt: c.createdAt || new Date().toISOString(),
+        updatedAt: c.updatedAt || new Date().toISOString(),
+      }));
     }
     
     // If no valid campaigns from MongoDB, use in-memory as fallback
@@ -156,6 +168,46 @@ app.get(['/api/campaigns','/campaigns'], async (req, res) => {
       campaigns,
       pagination: { page: 1, limit: 10, total: campaignsInMemory.length, totalPages: 1 }
     });
+  }
+});
+
+// Temporary: alternative list endpoint with relaxed normalization (no numeric contractId requirement)
+app.get('/api/campaigns2', async (req, res) => {
+  try {
+    const limit = parseInt(req.query.limit || '10', 10);
+    const col = await getCampaignsCollection();
+    const raw = await col
+      .find({})
+      .sort({ createdAt: -1, _id: -1 })
+      .limit(limit)
+      .toArray();
+
+    const campaigns = raw.map((c, idx) => ({
+      id: (c._id && c._id.toString) ? c._id.toString() : String(idx + 1),
+      contractId: typeof c.contractId === 'number' && Number.isFinite(c.contractId)
+        ? c.contractId
+        : (typeof c.contractId === 'string' && !isNaN(Number(c.contractId)) ? Number(c.contractId) : 1000 + idx),
+      name: c.name ?? 'Untitled Campaign',
+      description: c.description ?? '',
+      imageUrl: c.imageUrl || 'https://images.unsplash.com/photo-1640340434855-6084b1f4901c?w=800&h=400&fit=crop',
+      status: c.status || 'active',
+      currentAmount: Number(c.currentAmount || 0),
+      hardCap: Number(c.hardCap || 0),
+      participantCount: Number(c.participantCount || 0),
+      softCap: Number(c.softCap || 0),
+      ticketAmount: Number(c.ticketAmount || 0),
+      startDate: c.startDate || new Date().toISOString(),
+      endDate: c.endDate || new Date(Date.now() + 7*24*60*60*1000).toISOString(),
+      prizes: Array.isArray(c.prizes) ? c.prizes : [],
+      createdAt: c.createdAt || new Date().toISOString(),
+      updatedAt: c.updatedAt || new Date().toISOString(),
+    }));
+
+    res.set('Cache-Control', 'no-store');
+    return res.json({ campaigns, pagination: { page: 1, limit, total: campaigns.length, totalPages: 1 } });
+  } catch (e) {
+    console.error('campaigns2 error:', e);
+    return res.status(500).json({ error: 'Internal server error' });
   }
 });
 
@@ -243,6 +295,8 @@ async function handleCreateCampaign(req, res) {
     return res.status(201).json({ message: 'Campaign created', campaign: newCampaign });
   } catch (e) {
     console.error('Create campaign error, falling back to memory:', e);
+    console.error('MongoDB URI available:', !!process.env.MONGODB_URI);
+    console.error('Error details:', e.message);
     const newCampaign = {
       id: campaignsInMemory.length + 1,
       contractId: campaignsInMemory.length + 1,
@@ -263,7 +317,7 @@ async function handleCreateCampaign(req, res) {
     };
     campaignsInMemory = [newCampaign, ...campaignsInMemory];
     res.set('Cache-Control', 'no-store');
-    return res.status(201).json({ message: 'Campaign created (fallback)', campaign: newCampaign });
+    return res.status(201).json({ message: 'Campaign created (fallback)', campaign: newCampaign, debug: { mongoUriPresent: !!process.env.MONGODB_URI, error: e.message } });
   }
 }
 
