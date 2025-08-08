@@ -49,6 +49,30 @@ app.get(['/api/campaigns','/campaigns'], (req, res) => {
   });
 });
 
+// Debug: list registered routes
+app.get('/api/routes', (req, res) => {
+  const routes = [];
+  app._router.stack.forEach((middleware) => {
+    if (middleware.route) {
+      const methods = Object.keys(middleware.route.methods)
+        .filter((m) => middleware.route.methods[m])
+        .map((m) => m.toUpperCase());
+      routes.push({ path: middleware.route.path, methods });
+    } else if (middleware.name === 'router' && middleware.handle.stack) {
+      middleware.handle.stack.forEach((handler) => {
+        const route = handler.route;
+        if (route) {
+          const methods = Object.keys(route.methods)
+            .filter((m) => route.methods[m])
+            .map((m) => m.toUpperCase());
+          routes.push({ path: route.path, methods });
+        }
+      });
+    }
+  });
+  res.json({ routes });
+});
+
 // Admin stats (Mongo optional)
 app.get(['/api/admin/stats','/admin/stats'], async (req, res) => {
   try {
