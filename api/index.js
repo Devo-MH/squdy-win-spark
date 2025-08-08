@@ -41,7 +41,7 @@ app.get(['/api/health', '/health'], async (req, res) => {
     }
   } catch (e) {
     mongoStatus = 'error';
-    mongoError = e.message;
+    mongoError = e?.message || String(e);
   }
   
   res.json({ 
@@ -89,15 +89,17 @@ async function getCampaignsCollection() {
 // Campaigns list
 app.get(['/api/campaigns','/campaigns'], async (req, res) => {
   try {
-    const limit = parseInt(req.query.limit || '10', 10);
+    const limit = isNaN(Number(req.query.limit)) ? 10 : parseInt(req.query.limit, 10);
     const page = 1;
 
     const col = await getCampaignsCollection();
-    const raw = await col
-      .find({})
-      .sort({ createdAt: -1, _id: -1 })
-      .limit(limit)
-      .toArray();
+    let raw = [];
+    try {
+      raw = await col.find({}).sort({ createdAt: -1, _id: -1 }).limit(limit).toArray();
+    } catch (inner) {
+      console.error('Mongo list error:', inner?.message || inner);
+      raw = [];
+    }
 
     // Normalize results so UI always has usable fields
     let campaigns = raw.map((c, idx) => {
@@ -155,19 +157,14 @@ app.get(['/api/campaigns','/campaigns'], async (req, res) => {
     }
 
     res.set('Cache-Control', 'no-store');
-    res.json({
-      campaigns,
-      pagination: { page, limit, total: campaigns.length, totalPages: 1 }
-    });
+    res.json({ campaigns, pagination: { page, limit, total: campaigns.length, totalPages: 1 } });
   } catch (e) {
-    console.error('List campaigns error, using fallback:', e);
+    console.error('List campaigns error, using fallback:', e?.message || e);
     // Fallback to in-memory campaigns on any error
-    const campaigns = campaignsInMemory.slice(0, parseInt(req.query.limit || '10', 10));
+    const fallbackLimit = isNaN(Number(req.query.limit)) ? 10 : parseInt(req.query.limit, 10);
+    const campaigns = campaignsInMemory.slice(0, fallbackLimit);
     res.set('Cache-Control', 'no-store');
-    res.json({
-      campaigns,
-      pagination: { page: 1, limit: 10, total: campaignsInMemory.length, totalPages: 1 }
-    });
+    res.json({ campaigns, pagination: { page: 1, limit: fallbackLimit, total: campaigns.length, totalPages: 1 } });
   }
 });
 
