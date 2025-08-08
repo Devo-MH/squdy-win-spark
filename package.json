@@ -13,7 +13,9 @@
     "vercel-build": "npm run build",
     "sepolia:summary": "node scripts/sepolia-summary.cjs",
     "sepolia:test": "node scripts/test-sepolia-deployment.cjs",
-    "sepolia:admin": "node scripts/grant-admin-roles-sepolia.cjs"
+    "sepolia:admin": "node scripts/grant-admin-roles-sepolia.cjs",
+    "api:local": "node local-server.mjs",
+    "api:test": "node testCampaignAPI.js"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",
