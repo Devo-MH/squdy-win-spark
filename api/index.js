@@ -105,7 +105,6 @@ app.post(['/api/admin/campaigns','/admin/campaigns','/api/admin-create-campaign'
 app.post(['/api/campaigns','/campaigns'], (req, res) => {
   return handleCreateCampaign(req, res);
 });
-});
 
 // Debug route to verify Vercel routing for this path
 app.get(['/api/admin/campaigns','/admin/campaigns','/api/admin-create-campaign'], (req, res) => {
