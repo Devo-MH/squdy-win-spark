@@ -387,15 +387,16 @@ app.get(['/api/campaigns/:id','/campaigns/:id'], async (req, res) => {
     const col = await getCampaignsCollection();
     let campaign = null;
 
-    if (ObjectId.isValid(rawId)) {
-      campaign = await col.findOne({ _id: new ObjectId(rawId) });
-    }
-    if (!campaign && !isNaN(Number(rawId))) {
-      campaign = await col.findOne({ contractId: Number(rawId) });
-      if (!campaign) {
-        campaign = await col.findOne({ id: Number(rawId) });
+    try {
+      if (ObjectId.isValid(rawId)) {
+        campaign = await col.findOne({ _id: new ObjectId(rawId) });
       }
-    }
+    } catch (_) {}
+    try {
+      if (!campaign && !isNaN(Number(rawId))) {
+        campaign = await col.findOne({ contractId: Number(rawId) }) || await col.findOne({ id: Number(rawId) });
+      }
+    } catch (_) {}
 
     if (campaign) {
       const normalized = {
