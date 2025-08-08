@@ -1,5 +1,8 @@
-// Ultra-minimal production API with MongoDB persistence
-import { getDatabase } from './lib/mongodb.js';
+// Ultra-minimal production API with MongoDB persistence (lazy-loaded)
+async function getDb() {
+  const mod = await import('./lib/mongodb.js');
+  return mod.getDatabase();
+}
 export const config = { runtime: 'nodejs' };
 
 export default async function handler(req, res) {
@@ -12,7 +15,7 @@ export default async function handler(req, res) {
   }
 
   // Parse URL without query params
-  const url = new URL(req.url, `http://${req.headers.host}`).pathname;
+  const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`).pathname;
   
   /**
    * Return a minimal set of built-in demo campaigns.
@@ -84,7 +87,7 @@ export default async function handler(req, res) {
   // Campaigns list
   if ((url === '/api/campaigns' || url === '/campaigns') && req.method === 'GET') {
     try {
-      const db = await getDatabase();
+      const db = await getDb();
       const collection = db.collection('campaigns');
       const results = await collection.find({}).sort({ createdAt: -1 }).toArray();
       const campaigns = (results && results.length > 0) ? results : getBaseCampaigns();
@@ -124,7 +127,7 @@ export default async function handler(req, res) {
       // GET by _id or contractId
       let campaign = null;
       try {
-        const db = await getDatabase();
+        const db = await getDb();
         const collection = db.collection('campaigns');
         const asNumber = Number(idParam);
         // Try by _id string match first, then by numeric contractId
@@ -198,7 +201,7 @@ export default async function handler(req, res) {
         updatedAt: nowIso,
       };
 
-      const db = await getDatabase();
+      const db = await getDb();
       const collection = db.collection('campaigns');
       const result = await collection.insertOne(newCampaign);
 
