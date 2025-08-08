@@ -88,6 +88,12 @@ const AdminPanel = () => {
   });
   
   const campaigns = campaignsData?.campaigns || [];
+  const setCampaignsImmediate = (newCampaign: Campaign) => {
+    // Optimistically prepend to visible list
+    if (campaignsData && Array.isArray(campaignsData.campaigns)) {
+      campaignsData.campaigns = [newCampaign, ...campaignsData.campaigns];
+    }
+  };
 
   // Check admin access on mount
   useEffect(() => {
@@ -173,7 +179,7 @@ const AdminPanel = () => {
 
     setIsCreating(true);
     try {
-      await adminAPI.createCampaign({
+      const created = await adminAPI.createCampaign({
         name: formData.name,
         description: formData.description,
         imageUrl: formData.imageUrl || 'https://images.unsplash.com/photo-1640340434855-6084b1f4901c?w=400&h=300&fit=crop',
@@ -188,6 +194,29 @@ const AdminPanel = () => {
 
       setShowCreateForm(false);
       resetForm();
+      // Optimistic UI: show the new campaign immediately
+      if (created?.campaign) {
+        setCampaignsImmediate({
+          contractId: created.campaign.contractId,
+          name: created.campaign.name,
+          description: created.campaign.description || '',
+          imageUrl: created.campaign.imageUrl || 'https://images.unsplash.com/photo-1640340434855-6084b1f4901c?w=400&h=300&fit=crop',
+          softCap: created.campaign.softCap || 0,
+          hardCap: created.campaign.hardCap || 0,
+          ticketAmount: created.campaign.ticketAmount || 0,
+          currentAmount: 0,
+          startDate: created.campaign.startDate || new Date().toISOString(),
+          endDate: created.campaign.endDate || new Date(Date.now() + 7*24*60*60*1000).toISOString(),
+          status: 'active',
+          participantCount: 0,
+          prizes: [],
+          winners: [],
+          totalBurned: 0,
+          bscScanUrl: '',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        } as unknown as Campaign);
+      }
       refetchCampaigns();
       
       toast.success("Campaign created successfully!");

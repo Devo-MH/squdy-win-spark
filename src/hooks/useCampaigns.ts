@@ -29,7 +29,8 @@ export const useCampaigns = (params?: {
   return useQuery({
     queryKey: campaignKeys.list(params),
     queryFn: () => campaignAPI.getCampaigns(params),
-    staleTime: import.meta.env.DEV ? 1000 * 10 : 1000 * 60 * 2, // 10 seconds in dev, 2 minutes in prod
+    // Prefer quick freshness in production so newly created campaigns show up fast
+    staleTime: import.meta.env.DEV ? 1000 * 10 : 1000 * 15,
     refetchOnWindowFocus: true, // Refresh when window regains focus
     refetchInterval: import.meta.env.DEV ? 1000 * 30 : false, // Auto-refresh every 30 seconds in dev
   });
