@@ -57,18 +57,21 @@ app.get(['/api/campaigns','/campaigns'], async (req, res) => {
     let campaigns = [];
 
     if (total > 0) {
-      campaigns = await col
+      const raw = await col
         .find(filter)
         .sort({ createdAt: -1 })
-        .limit(limit)
+        .limit(limit * 3) // fetch extra and filter client-side to ensure valid items
         .toArray();
-      // Normalize missing fields for UI safety
-      campaigns = campaigns.map((c) => ({
-        participantCount: 0,
-        status: 'active',
-        imageUrl: 'https://images.unsplash.com/photo-1640340434855-6084b1f4901c?w=800&h=400&fit=crop',
-        ...c,
-      }));
+      // Keep only campaigns with a numeric contractId which our UI uses as key/route
+      campaigns = raw
+        .filter((c) => typeof c.contractId === 'number' && Number.isFinite(c.contractId))
+        .slice(0, limit)
+        .map((c) => ({
+          participantCount: 0,
+          status: c.status || 'active',
+          imageUrl: c.imageUrl || 'https://images.unsplash.com/photo-1640340434855-6084b1f4901c?w=800&h=400&fit=crop',
+          ...c,
+        }));
     } else {
       // Fallback to demo campaigns if DB empty
       campaigns = campaignsInMemory.slice(0, limit);
@@ -138,8 +141,8 @@ async function handleCreateCampaign(req, res) {
   const nowIso = new Date().toISOString();
   try {
     const col = await getCampaignsCollection();
-    const last = await col.find({}).sort({ contractId: -1 }).limit(1).toArray();
-    const nextId = last.length ? (Number(last[0].contractId) + 1) : 1;
+    const last = await col.find({ contractId: { $type: 'number' } }).sort({ contractId: -1 }).limit(1).toArray();
+    const nextId = last.length && typeof last[0].contractId === 'number' ? (last[0].contractId + 1) : 1;
 
     const newCampaign = {
       id: nextId,
