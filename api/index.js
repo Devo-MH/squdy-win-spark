@@ -12,7 +12,46 @@ app.use(cors());
 app.use(express.json());
 
 // Health endpoint
-app.get('/api/health', (req, res) => res.send('OK'));
+app.get('/api/health', async (req, res) => {
+  let mongoStatus = 'unknown';
+  let mongoError = null;
+  let mongoInfo = {};
+  
+  try {
+    if (!process.env.MONGODB_URI) {
+      mongoStatus = 'no_uri';
+    } else {
+      const db = await getDatabase();
+      const col = db.collection('campaigns');
+      const count = await col.countDocuments({});
+      const sample = await col.findOne({});
+      mongoStatus = 'connected';
+      mongoInfo = {
+        dbName: db.databaseName,
+        totalCampaigns: count,
+        sampleCampaign: sample ? {
+          id: sample._id,
+          name: sample.name,
+          contractId: sample.contractId,
+          contractIdType: typeof sample.contractId
+        } : null
+      };
+    }
+  } catch (e) {
+    mongoStatus = 'error';
+    mongoError = e.message;
+  }
+  
+  res.json({ 
+    status: 'ok', 
+    timestamp: new Date().toISOString(),
+    mongodb: {
+      status: mongoStatus,
+      error: mongoError,
+      info: mongoInfo
+    }
+  });
+});
 
 // In-memory demo campaigns (ephemeral fallback when DB empty)
 const demoCampaigns = [1,2,3,4,5].map((i) => ({
