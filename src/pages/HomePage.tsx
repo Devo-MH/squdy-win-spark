@@ -159,7 +159,7 @@ const HomePage = () => {
                 </div>
               ) : (
                 campaigns.map((campaign) => (
-                  <CampaignCard key={campaign.id || campaign.contractId} campaign={campaign} />
+                  <CampaignCard key={(campaign as any)._id || campaign.id || campaign.contractId} campaign={campaign} />
                 ))
               )
             ) : activeCampaigns.length === 0 ? (
@@ -172,7 +172,7 @@ const HomePage = () => {
             ) : (
               // Active campaigns only (homepage)
               activeCampaigns.map((campaign) => (
-                <CampaignCard key={campaign.id || campaign.contractId} campaign={campaign} />
+                <CampaignCard key={(campaign as any)._id || campaign.id || campaign.contractId} campaign={campaign} />
               ))
             )}
           </div>
@@ -284,7 +284,7 @@ const HomePage = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {finishedCampaigns.map((campaign) => (
-              <CampaignCard key={campaign.id || campaign.contractId} campaign={campaign} />
+              <CampaignCard key={(campaign as any)._id || campaign.id || campaign.contractId} campaign={campaign} />
             ))}
           </div>
         </div>

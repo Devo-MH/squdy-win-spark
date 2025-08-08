@@ -221,6 +221,10 @@ const AdminPanel = () => {
           updatedAt: new Date().toISOString(),
         } as unknown as Campaign);
       }
+      // Invalidate all queries under 'campaigns' so Home and Campaigns pages refresh
+      queryClient.invalidateQueries({
+        predicate: (q) => Array.isArray(q.queryKey) && q.queryKey[0] === 'campaigns'
+      });
       // Also trigger a refetch shortly to confirm from backend (Mongo)
       setTimeout(() => { void refetchCampaigns(); }, 250);
       

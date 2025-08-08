@@ -1,5 +1,6 @@
-// Ultra-minimal production API
-let sessionCampaigns = []; // Store created campaigns in this session
+// Ultra-minimal production API with MongoDB persistence
+import { getDatabase } from './lib/mongodb.js';
+export const config = { runtime: 'nodejs' };
 
 export default function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -69,10 +70,7 @@ export default function handler(req, res) {
     ];
   }
 
-  /** Return all campaigns: session-created first, then base demo ones. */
-  function getAllCampaigns() {
-    return [...sessionCampaigns, ...getBaseCampaigns()];
-  }
+  // Note: No in-memory session campaigns. Persistence handled via MongoDB.
   
   // Health
   if (url === '/api/health' || url === '/health') {
@@ -85,12 +83,20 @@ export default function handler(req, res) {
   
   // Campaigns list
   if ((url === '/api/campaigns' || url === '/campaigns') && req.method === 'GET') {
-    const allCampaigns = getAllCampaigns();
-    res.setHeader('Cache-Control', 'no-store');
-    return res.json({
-      campaigns: allCampaigns,
-      pagination: { page: 1, limit: 10, total: allCampaigns.length, totalPages: 1 }
-    });
+    try {
+      const db = await getDatabase();
+      const collection = db.collection('campaigns');
+      const results = await collection.find({}).sort({ createdAt: -1 }).toArray();
+      const campaigns = (results && results.length > 0) ? results : getBaseCampaigns();
+      res.setHeader('Cache-Control', 'no-store');
+      return res.json({
+        campaigns,
+        pagination: { page: 1, limit: 10, total: campaigns.length, totalPages: 1 }
+      });
+    } catch (err) {
+      console.error('GET /campaigns error:', err);
+      return res.status(500).json({ error: 'Internal Server Error' });
+    }
   }
   
   // Campaign detail and my-status
@@ -105,18 +111,32 @@ export default function handler(req, res) {
 
       // GET my-status
       if (trailing === 'my-status') {
-        // Static status response
         res.setHeader('Cache-Control', 'no-store');
         return res.json({ joined: false, isWinner: false, hasClaimed: false, canClaim: false });
       }
 
-      // GET by id or contractId
-      const all = getAllCampaigns();
-      const asNumber = Number(idParam);
-      const campaign = all.find(c => c.id === idParam || (!Number.isNaN(asNumber) && c.contractId === asNumber));
+      // GET by _id or contractId
+      let campaign = null;
+      try {
+        const db = await getDatabase();
+        const collection = db.collection('campaigns');
+        const asNumber = Number(idParam);
+        // Try by _id string match first, then by numeric contractId
+        campaign = await collection.findOne({ $or: [ { _id: idParam }, (!Number.isNaN(asNumber) ? { contractId: asNumber } : null) ].filter(Boolean) });
+      } catch (dbErr) {
+        console.error('DB error in GET /campaigns/:id:', dbErr);
+      }
+
+      if (!campaign) {
+        const base = getBaseCampaigns();
+        const asNumber = Number(idParam);
+        campaign = base.find(c => c.id === idParam || (!Number.isNaN(asNumber) && c.contractId === asNumber)) || null;
+      }
+
       if (!campaign) {
         return res.status(404).json({ error: 'Not found' });
       }
+
       res.setHeader('Cache-Control', 'no-store');
       return res.json({ campaign });
     } catch (err) {
@@ -136,45 +156,52 @@ export default function handler(req, res) {
     });
   }
   
-  // Create campaign
+  // Create campaign (persist to MongoDB)
   if (req.method === 'POST' && (url.includes('/admin/campaigns') || url === '/api/campaigns' || url === '/campaigns')) {
-    // Parse request body (handle both object and string)
-    let body = req.body;
-    if (typeof body === 'string') {
-      try {
-        body = JSON.parse(body);
-      } catch (e) {
-        return res.status(400).json({ error: 'Invalid JSON in request body' });
+    try {
+      // Parse request body (handle both object and string)
+      let body = req.body;
+      if (typeof body === 'string') {
+        try {
+          body = JSON.parse(body);
+        } catch (e) {
+          return res.status(400).json({ error: 'Invalid JSON in request body' });
+        }
       }
+
+      const nowIso = new Date().toISOString();
+      const newCampaign = {
+        id: `created_${Date.now()}`,
+        contractId: Math.floor(Math.random() * 1e9),
+        name: body?.name || 'New Campaign',
+        description: body?.description || '',
+        imageUrl: body?.imageUrl || 'https://images.unsplash.com/photo-1640340434855-6084b1f4901c?w=800&h=400&fit=crop',
+        status: 'active',
+        currentAmount: 0,
+        hardCap: Number(body?.hardCap || 0),
+        participantCount: 0,
+        softCap: Number(body?.softCap || 0),
+        ticketAmount: Number(body?.ticketAmount || 0),
+        totalValue: Number(body?.hardCap || 0),
+        progressPercentage: 0,
+        daysRemaining: 7,
+        startDate: body?.startDate || nowIso,
+        endDate: body?.endDate || new Date(Date.now() + 7*24*60*60*1000).toISOString(),
+        prizes: Array.isArray(body?.prizes) ? body.prizes : [],
+        createdAt: nowIso,
+        updatedAt: nowIso,
+      };
+
+      const db = await getDatabase();
+      const collection = db.collection('campaigns');
+      const result = await collection.insertOne(newCampaign);
+
+      res.setHeader('Cache-Control', 'no-store');
+      return res.status(201).json({ message: 'Campaign created', campaign: { _id: result.insertedId, ...newCampaign } });
+    } catch (err) {
+      console.error('POST /campaigns error:', err);
+      return res.status(500).json({ error: 'Internal Server Error' });
     }
-    
-    const newCampaign = {
-      id: `created_${Date.now()}`,
-      contractId: Date.now() % 10000,
-      name: body?.name || 'New Campaign',
-      description: body?.description || '',
-      imageUrl: 'https://images.unsplash.com/photo-1640340434855-6084b1f4901c?w=800&h=400&fit=crop',
-      status: 'active',
-      currentAmount: 0,
-      hardCap: Number(body?.hardCap || 0),
-      participantCount: 0,
-      softCap: Number(body?.softCap || 0),
-      ticketAmount: Number(body?.ticketAmount || 0),
-      totalValue: Number(body?.hardCap || 0),
-      progressPercentage: 0,
-      daysRemaining: 7,
-      startDate: new Date().toISOString(),
-      endDate: new Date(Date.now() + 7*24*60*60*1000).toISOString(),
-      prizes: body?.prizes || [],
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-    
-    // Add to session campaigns so it appears in the list immediately
-    sessionCampaigns.unshift(newCampaign);
-    
-    res.setHeader('Cache-Control', 'no-store');
-    return res.status(201).json({ message: 'Campaign created', campaign: newCampaign });
   }
   
   // Auth mock
