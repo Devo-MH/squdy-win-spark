@@ -111,65 +111,68 @@ export default async function handler(req, res) {
   // Campaign detail and my-status
   if (req.method === 'GET' && (url.startsWith('/api/campaigns/') || url.startsWith('/campaigns/'))) {
     try {
-      const match = url.match(/^\/(?:api\/)?campaigns\/([^\/]+)(?:\/(my-status))?$/);
-      if (!match) {
-        return res.status(404).json({ error: 'Not found' });
-      }
-      const idParam = match[1];
-      const trailing = match[2];
+      // Specific matchers (trailing slash tolerated)
+      const statusMatch = url.match(/^\/(?:api\/)?campaigns\/([a-zA-Z0-9]+)\/my-status\/?$/);
+      const detailMatch = url.match(/^\/(?:api\/)?campaigns\/([a-zA-Z0-9]+)\/?$/);
 
-      // GET my-status
-      if (trailing === 'my-status') {
+      // /:id/my-status → static object
+      if (statusMatch) {
         res.setHeader('Cache-Control', 'no-store');
         return res.json({ joined: false, isWinner: false, hasClaimed: false, canClaim: false });
       }
 
-      // GET by _id or contractId
-      let campaign = null;
-      try {
-        const db = await getDb();
-        const collection = db.collection('campaigns');
-        const asNumber = Number(idParam);
-        // Try by _id string match first, then by numeric contractId
-        campaign = await collection.findOne({ $or: [ { _id: idParam }, (!Number.isNaN(asNumber) ? { contractId: asNumber } : null) ].filter(Boolean) });
-      } catch (dbErr) {
-        console.error('DB error in GET /campaigns/:id:', dbErr);
+      // /:id → find in DB by _id or contractId, else fallback
+      if (detailMatch) {
+        const idParam = detailMatch[1];
+        let campaign = null;
+
+        try {
+          const db = await getDb();
+          const collection = db.collection('campaigns');
+          const asNumber = Number(idParam);
+
+          // Try ObjectId lookup if idParam looks like a 24-hex string
+          if (/^[a-fA-F0-9]{24}$/.test(idParam)) {
+            const { ObjectId } = await import('mongodb');
+            try {
+              campaign = await collection.findOne({ _id: new ObjectId(idParam) });
+            } catch (e) {
+              // ignore invalid ObjectId
+            }
+          }
+
+          // Fallback to contractId numeric match
+          if (!campaign && !Number.isNaN(asNumber)) {
+            campaign = await collection.findOne({ contractId: asNumber });
+          }
+        } catch (dbErr) {
+          console.error('DB error in GET /campaigns/:id:', dbErr);
+        }
+
+        // Final fallback to base campaigns
+        if (!campaign) {
+          const base = getBaseCampaigns();
+          const asNumber = Number(idParam);
+          campaign = base.find(c => c.id === idParam || (!Number.isNaN(asNumber) && c.contractId === asNumber)) || null;
+        }
+
+        if (!campaign) {
+          return res.status(404).json({ error: 'Not found' });
+        }
+
+        res.setHeader('Cache-Control', 'no-store');
+        return res.json({ campaign });
       }
 
-      if (!campaign) {
-        const base = getBaseCampaigns();
-        const asNumber = Number(idParam);
-        campaign = base.find(c => c.id === idParam || (!Number.isNaN(asNumber) && c.contractId === asNumber)) || null;
-      }
-
-      if (!campaign) {
-        return res.status(404).json({ error: 'Not found' });
-      }
-
-      res.setHeader('Cache-Control', 'no-store');
-      return res.json({ campaign });
+      return res.status(404).json({ error: 'Not found' });
     } catch (err) {
       console.error('GET /campaigns/:id error:', err);
-      // Fail-open behavior:
-      try {
-        // If it was a my-status request, always return static object
-        if (/\/my-status$/.test(url)) {
-          res.setHeader('Cache-Control', 'no-store');
-          return res.json({ joined: false, isWinner: false, hasClaimed: false, canClaim: false });
-        }
-        // Otherwise, attempt fallback to base campaigns
-        const base = getBaseCampaigns();
-        const asNumber = Number(url.split('/').filter(Boolean).pop());
-        const fallback = base.find(c => (!Number.isNaN(asNumber) && c.contractId === asNumber));
-        if (fallback) {
-          res.setHeader('Cache-Control', 'no-store');
-          return res.json({ campaign: fallback });
-        }
-        return res.status(404).json({ error: 'Not found' });
-      } catch (fallbackErr) {
-        console.error('Fallback in GET /campaigns/:id failed:', fallbackErr);
-        return res.status(500).json({ error: 'Internal Server Error' });
+      // Fail-open: if status route, return static object; else 404
+      if (/\/my-status\/?$/.test(url)) {
+        res.setHeader('Cache-Control', 'no-store');
+        return res.json({ joined: false, isWinner: false, hasClaimed: false, canClaim: false });
       }
+      return res.status(404).json({ error: 'Not found' });
     }
   }
   
