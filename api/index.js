@@ -220,8 +220,32 @@ app.get('/api/create-campaign', (req, res) => {
 });
 
 // Debug route to verify Vercel routing for this path
-app.get(['/api/admin/campaigns','/admin/campaigns','/api/admin-create-campaign'], (req, res) => {
-  return res.status(200).json({ ok: true, path: '/api/admin/campaigns', note: 'GET available for routing verification' });
+app.get(['/api/admin/campaigns','/admin/campaigns','/api/admin-create-campaign'], async (req, res) => {
+  try {
+    const db = await getDatabase();
+    const col = db.collection('campaigns');
+    const allRaw = await col.find({}).toArray();
+    const withName = await col.find({ name: { $exists: true } }).toArray();
+    const withNumericId = await col.find({ contractId: { $type: 'number' } }).toArray();
+    
+    return res.status(200).json({ 
+      ok: true, 
+      path: req.path,
+      debug: {
+        totalInDB: allRaw.length,
+        withName: withName.length,
+        withNumericId: withNumericId.length,
+        sampleDocs: allRaw.map(doc => ({
+          _id: doc._id,
+          name: doc.name,
+          contractId: doc.contractId,
+          contractIdType: typeof doc.contractId
+        }))
+      }
+    });
+  } catch (e) {
+    return res.status(200).json({ ok: false, error: e.message });
+  }
 });
 
 // Allow CORS preflight on admin campaigns path
