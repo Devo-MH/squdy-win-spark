@@ -264,10 +264,11 @@ async function handleCreateCampaign(req, res) {
   try {
     const col = await getCampaignsCollection();
     const last = await col.find({ contractId: { $type: 'number' } }).sort({ contractId: -1 }).limit(1).toArray();
-    const nextId = last.length && typeof last[0].contractId === 'number' ? (last[0].contractId + 1) : 1;
+    const nextId = last.length && typeof last[0].contractId === 'number' ? (last[0].contractId + 1) : Math.floor(Date.now() / 1000);
+    const generatedId = (new Date().getTime()).toString(36) + '-' + Math.random().toString(36).slice(2, 10);
 
     const newCampaign = {
-      id: nextId,
+      id: generatedId,
       contractId: nextId,
       name: data.name,
       description: data.description,
