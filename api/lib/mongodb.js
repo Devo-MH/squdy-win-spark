@@ -1,44 +1,30 @@
-// MongoDB connection for Vercel serverless functions
+// MongoDB connection helper for Vercel serverless functions (resilient)
 import { MongoClient } from 'mongodb';
 
-if (!process.env.MONGODB_URI) {
-  throw new Error('Please define the MONGODB_URI environment variable');
-}
+const uri = process.env.MONGODB_URI || '';
 
-const uri = process.env.MONGODB_URI;
-const options = {
-  useUnifiedTopology: true,
-  useNewUrlParser: true,
-};
+let cachedClient = null;
+let cachedPromise = null;
 
-let client;
-let clientPromise;
-
-// In production environment, reuse connections across serverless function invocations
-if (process.env.NODE_ENV === 'development') {
-  // In development mode, use a global variable to preserve the connection across module reloads
-  if (!global._mongoClientPromise) {
-    client = new MongoClient(uri, options);
-    global._mongoClientPromise = client.connect();
+export async function getMongoClient() {
+  if (!uri) {
+    throw new Error('MONGODB_URI is not set');
   }
-  clientPromise = global._mongoClientPromise;
-} else {
-  // In production mode, create a new connection for each invocation
-  client = new MongoClient(uri, options);
-  clientPromise = client.connect();
+  if (cachedClient) return cachedClient;
+  if (!cachedPromise) {
+    cachedPromise = new MongoClient(uri).connect().then((client) => {
+      cachedClient = client;
+      return client;
+    });
+  }
+  return cachedPromise;
 }
 
-export default clientPromise;
-
-// Helper function to get database
+// Helper function to get database using the default DB in the URI
 export async function getDatabase() {
-  const client = await clientPromise;
-  return client.db('squdy-platform');
+  const client = await getMongoClient();
+  // If the URI contains a database (mongodb+srv://.../mydb), client.db() uses it
+  return client.db();
 }
 
-// Helper function to close connection (for cleanup)
-export async function closeConnection() {
-  if (client) {
-    await client.close();
-  }
-}
+export default getMongoClient;
