@@ -12,7 +12,7 @@ app.use(cors());
 app.use(express.json());
 
 // Health endpoint
-app.get('/api/health', async (req, res) => {
+app.get(['/api/health', '/health'], async (req, res) => {
   let mongoStatus = 'unknown';
   let mongoError = null;
   let mongoInfo = {};
