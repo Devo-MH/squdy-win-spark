@@ -343,7 +343,7 @@ const CampaignDetail = () => {
           {(isCampaignLoading || !localCampaign) && (
             <div className="space-y-8">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <div className="space-y-6">
+              <div className="space-y-6">
                   <Skeleton className="h-8 w-32" />
                   <Skeleton className="h-12 w-full" />
                   <Skeleton className="h-20 w-full" />
@@ -364,7 +364,7 @@ const CampaignDetail = () => {
                 </p>
                 <Button onClick={() => navigate('/campaigns')}>
                   Browse Campaigns
-                </Button>
+                    </Button>
               </CardContent>
             </Card>
           )}
@@ -396,10 +396,10 @@ const CampaignDetail = () => {
                   timeLeft={timeLeft}
                   ticketAmount={Number(localCampaign.ticketAmount)}
                 />
-              </div>
+          </div>
 
               {/* Main Grid Layout */}
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {/* Main Content Area - Participation Flow */}
                 <div className="lg:col-span-2 space-y-6">
                   {/* Staking Section */}
@@ -432,7 +432,7 @@ const CampaignDetail = () => {
                         <p>statusData?.isParticipating: {String(statusData?.isParticipating)}</p>
                         <p>account: {account || 'none'}</p>
                         <p>Show Staking: {String(isConnected && !isParticipating)}</p>
-                      </div>
+                    </div>
                     </Card>
                   )}
 
@@ -442,7 +442,7 @@ const CampaignDetail = () => {
                       <CardContent className="p-6 text-center">
                         <div className="p-3 bg-orange-500/20 border border-orange-500/30 rounded-lg w-fit mx-auto mb-4">
                           <AlertTriangle className="w-6 h-6 text-orange-500" />
-                        </div>
+                  </div>
                         <h3 className="text-lg font-semibold text-orange-600 mb-2">Connect Wallet to Stake</h3>
                         <p className="text-sm text-muted-foreground mb-4">
                           Please connect your wallet to stake SQUDY tokens and participate in this campaign.
@@ -460,11 +460,11 @@ const CampaignDetail = () => {
                       <div className="flex items-center gap-3">
                         <div className="p-3 bg-campaign-secondary/20 border border-campaign-secondary/30 rounded-lg">
                           <CheckCircle className="w-6 h-6 text-campaign-secondary" />
-                        </div>
+                    </div>
                         <h3 className="text-xl font-semibold text-foreground">
                           Complete Required Tasks
                         </h3>
-                      </div>
+                    </div>
                       <p className="text-sm text-muted-foreground pl-12">
                         Complete all required offchain tasks to join the campaign.
                       </p>
@@ -487,7 +487,7 @@ const CampaignDetail = () => {
                         <div className="space-y-6">
                           <div className="inline-flex items-center justify-center w-16 h-16 bg-campaign-success/20 border border-campaign-success/30 rounded-full">
                             <Trophy className="w-8 h-8 text-campaign-success" />
-                          </div>
+                  </div>
                           
                           <div>
                             <h3 className="text-xl font-bold text-campaign-success mb-2">
@@ -568,48 +568,48 @@ const CampaignDetail = () => {
                               </p>
                               <p className="text-sm text-muted-foreground">SQUDY Staked</p>
                             </div>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
+                      </div>
+                  </div>
+                </CardContent>
+              </Card>
                   )}
 
 
-                </div>
+            </div>
 
                 {/* Right Column - Prize Pool & Campaign Info */}
-                <div className="space-y-6">
-                  {/* Prize Pool */}
+            <div className="space-y-6">
+              {/* Prize Pool */}
                   <PrizePool prizes={localCampaign.prizes} />
                   
                   {/* Campaign Details */}
                   <Card className="gradient-card border border-border/50 shadow-xl">
-                    <CardHeader>
+                <CardHeader>
                       <CardTitle className="flex items-center gap-3">
                         <div className="p-3 bg-campaign-info/20 border border-campaign-info/30 rounded-lg">
                           <BookOpen className="w-5 h-5 text-campaign-info" />
                         </div>
                         <span className="text-foreground">Campaign Details</span>
-                      </CardTitle>
-                    </CardHeader>
+                  </CardTitle>
+                </CardHeader>
                     <CardContent className="space-y-4">
-                      <div className="space-y-3">
+                  <div className="space-y-3">
                         <div className="flex justify-between items-center p-3 bg-muted/30 rounded-lg">
                           <span className="text-sm text-muted-foreground">Start Date</span>
                           <span className="text-sm font-medium text-foreground">{new Date(localCampaign.startDate).toLocaleDateString()}</span>
-                        </div>
+                      </div>
                         <div className="flex justify-between items-center p-3 bg-muted/30 rounded-lg">
                           <span className="text-sm text-muted-foreground">End Date</span>
                           <span className="text-sm font-medium text-foreground">{new Date(localCampaign.endDate).toLocaleDateString()}</span>
-                        </div>
+                  </div>
                         <div className="flex justify-between items-center p-3 bg-muted/30 rounded-lg">
                           <span className="text-sm text-muted-foreground">Soft Cap</span>
                           <span className="text-sm font-medium text-campaign-info">{Number(localCampaign.softCap).toLocaleString()} SQUDY</span>
-                        </div>
+                    </div>
                         <div className="flex justify-between items-center p-3 bg-muted/30 rounded-lg">
                           <span className="text-sm text-muted-foreground">Hard Cap</span>
                           <span className="text-sm font-medium text-campaign-warning">{Number(localCampaign.hardCap).toLocaleString()} SQUDY</span>
-                        </div>
+                    </div>
                         <div className="flex justify-between items-center p-3 bg-muted/30 rounded-lg">
                           <span className="text-sm text-muted-foreground">Status</span>
                           <Badge 
@@ -621,15 +621,15 @@ const CampaignDetail = () => {
                           >
                             {localCampaign.status}
                           </Badge>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
 
                   {/* Token Burn Warning */}
                   <Card className="gradient-card border border-campaign-warning/20 shadow-xl">
                     <CardContent className="p-6">
-                      <div className="flex items-start gap-3">
+                  <div className="flex items-start gap-3">
                         <div className="p-3 bg-campaign-warning/20 border border-campaign-warning/30 rounded-lg flex-shrink-0">
                           <AlertTriangle className="w-5 h-5 text-campaign-warning" />
                         </div>
@@ -646,17 +646,17 @@ const CampaignDetail = () => {
                               value for remaining token holders while funding amazing prizes.
                             </p>
                           </div>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-              </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
             </>
           )}
         </div>
       </div>
-      
+
       <Footer />
     </div>
   );

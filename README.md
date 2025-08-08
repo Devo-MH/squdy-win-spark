@@ -70,8 +70,8 @@ A revolutionary blockchain platform that combines the excitement of lottery-styl
 
 3. **Start development server**
    ```bash
-   npm run dev
-   ```
+npm run dev
+```
 
 4. **Open in browser**
    ```
