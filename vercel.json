@@ -3,7 +3,6 @@
   "installCommand": "npm install --legacy-peer-deps",
   "rewrites": [
     { "source": "/health", "destination": "/api/health" },
-    { "source": "/api/(.*)", "destination": "/api/$1" },
     { "source": "/wallet-auth/(.*)", "destination": "/api/wallet-auth/$1" },
     { "source": "/((?!api/).*)", "destination": "/" }
   ],
