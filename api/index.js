@@ -3,6 +3,7 @@ import express from 'express';
 import cors from 'cors';
 import { ethers } from 'ethers';
 import { randomBytes } from 'crypto';
+import { getDatabase } from './lib/mongodb.js';
 
 const app = express();
 
@@ -13,7 +14,7 @@ app.use(express.json());
 // Health endpoint
 app.get('/api/health', (req, res) => res.send('OK'));
 
-// In-memory demo campaigns (ephemeral)
+// In-memory demo campaigns (ephemeral fallback when DB empty)
 const demoCampaigns = [1,2,3,4,5].map((i) => ({
     id: i,
     contractId: i,
@@ -39,14 +40,36 @@ const demoCampaigns = [1,2,3,4,5].map((i) => ({
 
 let campaignsInMemory = [...demoCampaigns];
 
+async function getCampaignsCollection() {
+  const db = await getDatabase();
+  return db.collection('campaigns');
+}
+
 // Campaigns list
-app.get(['/api/campaigns','/campaigns'], (req, res) => {
-  const limit = parseInt(req.query.limit || '10', 10);
-  const page = 1;
-  res.json({
-    campaigns: campaignsInMemory.slice(0, limit),
-    pagination: { page, limit, total: campaignsInMemory.length, totalPages: 1 }
-  });
+app.get(['/api/campaigns','/campaigns'], async (req, res) => {
+  try {
+    const limit = parseInt(req.query.limit || '10', 10);
+    const page = 1;
+
+    const col = await getCampaignsCollection();
+    const total = await col.countDocuments();
+    let campaigns = [];
+
+    if (total > 0) {
+      campaigns = await col.find({}).sort({ createdAt: -1 }).limit(limit).toArray();
+    } else {
+      // Fallback to demo campaigns if DB empty
+      campaigns = campaignsInMemory.slice(0, limit);
+    }
+
+    res.json({
+      campaigns,
+      pagination: { page, limit, total: total || campaignsInMemory.length, totalPages: 1 }
+    });
+  } catch (e) {
+    console.error('List campaigns error:', e);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
 // Debug: list registered routes
@@ -94,31 +117,65 @@ app.get(['/api/admin/stats','/admin/stats'], async (req, res) => {
 });
 
 // Admin create campaign (mock; ephemeral) - include alternate path to avoid any platform routing quirks
-function handleCreateCampaign(req, res) {
+async function handleCreateCampaign(req, res) {
   const data = req.body || {};
   if (!data.name || !data.description || !data.softCap || !data.hardCap || !data.ticketAmount) {
     return res.status(400).json({ error: 'Missing required fields' });
   }
-  const newCampaign = {
-    id: campaignsInMemory.length + 1,
-    contractId: campaignsInMemory.length + 1,
-    name: data.name,
-    description: data.description,
-    imageUrl: data.imageUrl || 'https://images.unsplash.com/photo-1640340434855-6084b1f4901c?w=800&h=400&fit=crop',
-    status: 'active',
-    currentAmount: 0,
-    hardCap: Number(data.hardCap),
-    participantCount: 0,
-    softCap: Number(data.softCap),
-    ticketAmount: Number(data.ticketAmount),
-    startDate: data.startDate || new Date().toISOString(),
-    endDate: data.endDate || new Date(Date.now() + 7*24*60*60*1000).toISOString(),
-    prizes: data.prizes || [],
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  };
-  campaignsInMemory = [newCampaign, ...campaignsInMemory];
-  return res.status(201).json({ message: 'Campaign created (mock)', campaign: newCampaign });
+  const nowIso = new Date().toISOString();
+  try {
+    const col = await getCampaignsCollection();
+    const last = await col.find({}).sort({ contractId: -1 }).limit(1).toArray();
+    const nextId = last.length ? (Number(last[0].contractId) + 1) : 1;
+
+    const newCampaign = {
+      id: nextId,
+      contractId: nextId,
+      name: data.name,
+      description: data.description,
+      imageUrl: data.imageUrl || 'https://images.unsplash.com/photo-1640340434855-6084b1f4901c?w=800&h=400&fit=crop',
+      status: 'active',
+      currentAmount: 0,
+      hardCap: Number(data.hardCap),
+      participantCount: 0,
+      softCap: Number(data.softCap),
+      ticketAmount: Number(data.ticketAmount),
+      startDate: data.startDate || nowIso,
+      endDate: data.endDate || new Date(Date.now() + 7*24*60*60*1000).toISOString(),
+      prizes: data.prizes || [],
+      createdAt: nowIso,
+      updatedAt: nowIso,
+    };
+
+    await col.insertOne(newCampaign);
+
+    // Keep in-memory fallback updated (useful if DB temporarily unavailable later)
+    campaignsInMemory = [newCampaign, ...campaignsInMemory];
+
+    return res.status(201).json({ message: 'Campaign created', campaign: newCampaign });
+  } catch (e) {
+    console.error('Create campaign error, falling back to memory:', e);
+    const newCampaign = {
+      id: campaignsInMemory.length + 1,
+      contractId: campaignsInMemory.length + 1,
+      name: data.name,
+      description: data.description,
+      imageUrl: data.imageUrl || 'https://images.unsplash.com/photo-1640340434855-6084b1f4901c?w=800&h=400&fit=crop',
+      status: 'active',
+      currentAmount: 0,
+      hardCap: Number(data.hardCap),
+      participantCount: 0,
+      softCap: Number(data.softCap),
+      ticketAmount: Number(data.ticketAmount),
+      startDate: data.startDate || nowIso,
+      endDate: data.endDate || new Date(Date.now() + 7*24*60*60*1000).toISOString(),
+      prizes: data.prizes || [],
+      createdAt: nowIso,
+      updatedAt: nowIso,
+    };
+    campaignsInMemory = [newCampaign, ...campaignsInMemory];
+    return res.status(201).json({ message: 'Campaign created (fallback)', campaign: newCampaign });
+  }
 }
 
 app.post(['/api/admin/campaigns','/admin/campaigns','/api/admin-create-campaign'], (req, res) => {
@@ -158,11 +215,18 @@ app.options(['/api/admin/campaigns','/admin/campaigns','/api/admin-create-campai
 });
 
 // Single campaign
-app.get(['/api/campaigns/:id','/campaigns/:id'], (req, res) => {
+app.get(['/api/campaigns/:id','/campaigns/:id'], async (req, res) => {
   const id = Number(req.params.id);
-  const campaign = campaignsInMemory.find(c => c.id === id || c.contractId === id);
-  if (!campaign) return res.status(404).json({ error: 'Campaign not found' });
-  return res.json({ campaign });
+  try {
+    const col = await getCampaignsCollection();
+    const byContract = await col.findOne({ contractId: id });
+    if (byContract) return res.json({ campaign: byContract });
+  } catch (e) {
+    console.error('Read single campaign DB error:', e);
+  }
+  const fallback = campaignsInMemory.find(c => c.id === id || c.contractId === id);
+  if (!fallback) return res.status(404).json({ error: 'Campaign not found' });
+  return res.json({ campaign: fallback });
 });
 
 // My status for campaign (mock)
