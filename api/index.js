@@ -52,11 +52,23 @@ app.get(['/api/campaigns','/campaigns'], async (req, res) => {
     const page = 1;
 
     const col = await getCampaignsCollection();
-    const total = await col.countDocuments();
+    const filter = { name: { $exists: true } };
+    const total = await col.countDocuments(filter);
     let campaigns = [];
 
     if (total > 0) {
-      campaigns = await col.find({}).sort({ createdAt: -1 }).limit(limit).toArray();
+      campaigns = await col
+        .find(filter)
+        .sort({ createdAt: -1 })
+        .limit(limit)
+        .toArray();
+      // Normalize missing fields for UI safety
+      campaigns = campaigns.map((c) => ({
+        participantCount: 0,
+        status: 'active',
+        imageUrl: 'https://images.unsplash.com/photo-1640340434855-6084b1f4901c?w=800&h=400&fit=crop',
+        ...c,
+      }));
     } else {
       // Fallback to demo campaigns if DB empty
       campaigns = campaignsInMemory.slice(0, limit);
