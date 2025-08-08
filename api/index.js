@@ -34,9 +34,14 @@ export default function handler(req, res) {
         participantCount: 25,
         softCap: 3000,
         ticketAmount: 30,
+        totalValue: 15000,
+        progressPercentage: 53,
+        daysRemaining: 7,
         startDate: "2025-08-08T18:46:04.248Z",
         endDate: "2025-08-15T18:46:06.347Z",
-        prizes: [],
+        prizes: [
+          { name: "First Prize", description: "Winner takes all", value: "10000", currency: "USD", quantity: 1 }
+        ],
         createdAt: "2025-08-08T18:46:04.248Z",
         updatedAt: "2025-08-08T18:46:04.248Z",
       },
@@ -52,9 +57,15 @@ export default function handler(req, res) {
         participantCount: 42,
         softCap: 10000,
         ticketAmount: 100,
+        totalValue: 50000,
+        progressPercentage: 30,
+        daysRemaining: 7,
         startDate: new Date().toISOString(),
         endDate: new Date(Date.now() + 7*24*60*60*1000).toISOString(),
-        prizes: ["1st Prize: $10,000"],
+        prizes: [
+          { name: "First Prize", description: "Winner takes all", value: "10000", currency: "USD", quantity: 1 },
+          { name: "Second Prize", description: "Runner up", value: "5000", currency: "USD", quantity: 1 }
+        ],
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       }
@@ -84,9 +95,14 @@ export default function handler(req, res) {
         participantCount: 25,
         softCap: 3000,
         ticketAmount: 30,
+        totalValue: 15000,
+        progressPercentage: 53,
+        daysRemaining: 7,
         startDate: "2025-08-08T18:46:04.248Z",
         endDate: "2025-08-15T18:46:06.347Z",
-        prizes: [],
+        prizes: [
+          { name: "First Prize", description: "Winner takes all", value: "10000", currency: "USD", quantity: 1 }
+        ],
         createdAt: "2025-08-08T18:46:04.248Z",
         updatedAt: "2025-08-08T18:46:04.248Z",
       };
@@ -125,9 +141,12 @@ export default function handler(req, res) {
       participantCount: 0,
       softCap: Number(req.body?.softCap || 0),
       ticketAmount: Number(req.body?.ticketAmount || 0),
+      totalValue: Number(req.body?.hardCap || 0),
+      progressPercentage: 0,
+      daysRemaining: 7,
       startDate: new Date().toISOString(),
       endDate: new Date(Date.now() + 7*24*60*60*1000).toISOString(),
-      prizes: [],
+      prizes: req.body?.prizes || [],
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
