@@ -88,11 +88,15 @@ const AdminPanel = () => {
   });
   
   const campaigns = campaignsData?.campaigns || [];
-  const setCampaignsImmediate = (newCampaign: Campaign) => {
-    // Optimistically prepend to visible list
-    if (campaignsData && Array.isArray(campaignsData.campaigns)) {
-      campaignsData.campaigns = [newCampaign, ...campaignsData.campaigns];
-    }
+  const prependCampaignOptimistic = (newCampaign: Campaign) => {
+    // Use react-query cache to avoid mutating fetched objects directly
+    queryClient.setQueryData<any>(campaignKeys.list({ limit: 50 }), (old) => {
+      const prev = old?.campaigns ?? [];
+      return {
+        campaigns: [newCampaign, ...prev],
+        pagination: { page: 1, limit: 50, total: (old?.pagination?.total ?? prev.length) + 1, totalPages: 1 },
+      };
+    });
   };
 
   // Check admin access on mount
@@ -196,7 +200,7 @@ const AdminPanel = () => {
       resetForm();
       // Optimistic UI: show the new campaign immediately
       if (created?.campaign) {
-        setCampaignsImmediate({
+        prependCampaignOptimistic({
           contractId: created.campaign.contractId,
           name: created.campaign.name,
           description: created.campaign.description || '',
@@ -217,7 +221,8 @@ const AdminPanel = () => {
           updatedAt: new Date().toISOString(),
         } as unknown as Campaign);
       }
-      refetchCampaigns();
+      // Also trigger a refetch shortly to confirm from backend (Mongo)
+      setTimeout(() => { void refetchCampaigns(); }, 250);
       
       toast.success("Campaign created successfully!");
     } catch (error: any) {
