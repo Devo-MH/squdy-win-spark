@@ -13,18 +13,12 @@ export default function handler(req, res) {
   // Parse URL without query params
   const url = new URL(req.url, `http://${req.headers.host}`).pathname;
   
-  // Health
-  if (url === '/api/health' || url === '/health') {
-    return res.json({
-      status: 'ok',
-      timestamp: new Date().toISOString(),
-      mongodb: { status: 'connected' }
-    });
-  }
-  
-  // Campaigns list
-  if ((url === '/api/campaigns' || url === '/campaigns') && req.method === 'GET') {
-    const baseCampaigns = [
+  /**
+   * Return a minimal set of built-in demo campaigns.
+   * This simulates persistent data alongside session-created campaigns.
+   */
+  function getBaseCampaigns() {
+    return [
       {
         id: "689645ee0b152227c14038fe",
         contractId: 1001,
@@ -73,10 +67,25 @@ export default function handler(req, res) {
         updatedAt: new Date().toISOString(),
       }
     ];
-    
-    // Combine session campaigns (created this session) with base campaigns
-    const allCampaigns = [...sessionCampaigns, ...baseCampaigns];
-    
+  }
+
+  /** Return all campaigns: session-created first, then base demo ones. */
+  function getAllCampaigns() {
+    return [...sessionCampaigns, ...getBaseCampaigns()];
+  }
+  
+  // Health
+  if (url === '/api/health' || url === '/health') {
+    return res.json({
+      status: 'ok',
+      timestamp: new Date().toISOString(),
+      mongodb: { status: 'connected' }
+    });
+  }
+  
+  // Campaigns list
+  if ((url === '/api/campaigns' || url === '/campaigns') && req.method === 'GET') {
+    const allCampaigns = getAllCampaigns();
     res.setHeader('Cache-Control', 'no-store');
     return res.json({
       campaigns: allCampaigns,
@@ -84,41 +93,35 @@ export default function handler(req, res) {
     });
   }
   
-  // Campaign detail
-  if (url.includes('/campaigns/')) {
-    const idMatch = url.match(/\/campaigns\/([^\/\?]+)/);
-    if (idMatch) {
-      const id = idMatch[1];
-      const campaign = {
-        id: "689645ee0b152227c14038fe",
-        contractId: 1001,
-        name: "Persist-Finalized",
-        description: "Production campaign working",
-        imageUrl: "https://images.unsplash.com/photo-1640340434855-6084b1f4901c?w=800&h=400&fit=crop",
-        status: "active",
-        currentAmount: 8000,
-        hardCap: 15000,
-        participantCount: 25,
-        softCap: 3000,
-        ticketAmount: 30,
-        totalValue: 15000,
-        progressPercentage: 53,
-        daysRemaining: 7,
-        startDate: "2025-08-08T18:46:04.248Z",
-        endDate: "2025-08-15T18:46:06.347Z",
-        prizes: [
-          { name: "First Prize", description: "Winner takes all", value: "10000", currency: "USD", quantity: 1 }
-        ],
-        createdAt: "2025-08-08T18:46:04.248Z",
-        updatedAt: "2025-08-08T18:46:04.248Z",
-      };
-      
-      if (url.includes('/my-status')) {
-        return res.json({ isParticipating: false, status: null, stakeAmount: 0, socialTasks: {} });
+  // Campaign detail and my-status
+  if (req.method === 'GET' && (url.startsWith('/api/campaigns/') || url.startsWith('/campaigns/'))) {
+    try {
+      const match = url.match(/^\/(?:api\/)?campaigns\/([^\/]+)(?:\/(my-status))?$/);
+      if (!match) {
+        return res.status(404).json({ error: 'Not found' });
       }
-      
+      const idParam = match[1];
+      const trailing = match[2];
+
+      // GET my-status
+      if (trailing === 'my-status') {
+        // Static status response
+        res.setHeader('Cache-Control', 'no-store');
+        return res.json({ joined: false, isWinner: false, hasClaimed: false, canClaim: false });
+      }
+
+      // GET by id or contractId
+      const all = getAllCampaigns();
+      const asNumber = Number(idParam);
+      const campaign = all.find(c => c.id === idParam || (!Number.isNaN(asNumber) && c.contractId === asNumber));
+      if (!campaign) {
+        return res.status(404).json({ error: 'Not found' });
+      }
       res.setHeader('Cache-Control', 'no-store');
       return res.json({ campaign });
+    } catch (err) {
+      console.error('GET /campaigns/:id error:', err);
+      return res.status(500).json({ error: 'Internal Server Error' });
     }
   }
   
