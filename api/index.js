@@ -2,7 +2,7 @@
 import { getDatabase } from './lib/mongodb.js';
 export const config = { runtime: 'nodejs' };
 
-export default function handler(req, res) {
+export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
@@ -95,7 +95,13 @@ export default function handler(req, res) {
       });
     } catch (err) {
       console.error('GET /campaigns error:', err);
-      return res.status(500).json({ error: 'Internal Server Error' });
+      // Fail-open: return base campaigns to avoid frontend 500s if DB is unavailable
+      const campaigns = getBaseCampaigns();
+      res.setHeader('Cache-Control', 'no-store');
+      return res.json({
+        campaigns,
+        pagination: { page: 1, limit: 10, total: campaigns.length, totalPages: 1 }
+      });
     }
   }
   
