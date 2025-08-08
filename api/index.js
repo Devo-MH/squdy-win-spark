@@ -106,6 +106,20 @@ app.post(['/api/campaigns','/campaigns'], (req, res) => {
   return handleCreateCampaign(req, res);
 });
 
+// Temporary compatibility endpoint to bypass POST issues on Vercel routing
+app.get('/api/create-campaign', (req, res) => {
+  const data = {
+    name: req.query.name,
+    description: req.query.description,
+    softCap: Number(req.query.softCap),
+    hardCap: Number(req.query.hardCap),
+    ticketAmount: Number(req.query.ticketAmount),
+    startDate: req.query.startDate,
+    endDate: req.query.endDate,
+  };
+  return handleCreateCampaign({ body: data }, res);
+});
+
 // Debug route to verify Vercel routing for this path
 app.get(['/api/admin/campaigns','/admin/campaigns','/api/admin-create-campaign'], (req, res) => {
   return res.status(200).json({ ok: true, path: '/api/admin/campaigns', note: 'GET available for routing verification' });
