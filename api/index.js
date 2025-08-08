@@ -463,3 +463,17 @@ app.post('/api/auth', (req, res) => {
 });
 
 export default app;
+
+// Temporary admin diagnostic: verify MongoDB insert works (will be removed for production)
+// Path kept outside Express app export to ensure Vercel picks it up correctly with this file-based function
+app.get('/api/admin/db-test', async (req, res) => {
+  try {
+    const col = await getCampaignsCollection();
+    const doc = { _type: 'diagnostic', createdAt: new Date().toISOString() };
+    const result = await col.insertOne(doc);
+    res.set('Cache-Control', 'no-store');
+    return res.json({ ok: true, insertedId: String(result.insertedId) });
+  } catch (e) {
+    return res.json({ ok: false, hasUri: !!process.env.MONGODB_URI, error: String(e && e.message), stack: String(e && e.stack) });
+  }
+});
