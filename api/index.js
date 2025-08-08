@@ -118,13 +118,15 @@ app.get(['/api/campaigns','/campaigns'], async (req, res) => {
       campaigns = campaignsInMemory.slice(0, limit);
     }
     
-    // For demo purposes, always ensure at least one campaign appears
+    // MongoDB should now be working with proper MONGODB_URI
+    // Only use demo campaigns as absolute fallback if still no campaigns found
     if (campaigns.length === 0) {
+      console.log('No campaigns found in MongoDB, using demo fallback');
       campaigns = [{
-        id: 999,
-        contractId: 999,
-        name: "Demo Campaign (Persistent)",
-        description: "A demo campaign that always appears for testing",
+        id: 998,
+        contractId: 998,
+        name: "Demo Fallback Campaign",
+        description: "This appears when no campaigns exist in MongoDB",
         imageUrl: "https://images.unsplash.com/photo-1640340434855-6084b1f4901c?w=800&h=400&fit=crop",
         softCap: 10000,
         hardCap: 50000,
@@ -133,8 +135,8 @@ app.get(['/api/campaigns','/campaigns'], async (req, res) => {
         startDate: new Date().toISOString(),
         endDate: new Date(Date.now() + 7*24*60*60*1000).toISOString(),
         status: "active",
-        participantCount: 42,
-        prizes: ["1st Prize: 50% of pool", "2nd Prize: 30% of pool", "3rd Prize: 20% of pool"],
+        participantCount: 25,
+        prizes: ["Demo prize pool"],
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       }];
