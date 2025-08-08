@@ -117,6 +117,28 @@ app.get(['/api/campaigns','/campaigns'], async (req, res) => {
     if (campaigns.length === 0) {
       campaigns = campaignsInMemory.slice(0, limit);
     }
+    
+    // For demo purposes, always ensure at least one campaign appears
+    if (campaigns.length === 0) {
+      campaigns = [{
+        id: 999,
+        contractId: 999,
+        name: "Demo Campaign (Persistent)",
+        description: "A demo campaign that always appears for testing",
+        imageUrl: "https://images.unsplash.com/photo-1640340434855-6084b1f4901c?w=800&h=400&fit=crop",
+        softCap: 10000,
+        hardCap: 50000,
+        ticketAmount: 100,
+        currentAmount: 15000,
+        startDate: new Date().toISOString(),
+        endDate: new Date(Date.now() + 7*24*60*60*1000).toISOString(),
+        status: "active",
+        participantCount: 42,
+        prizes: ["1st Prize: 50% of pool", "2nd Prize: 30% of pool", "3rd Prize: 20% of pool"],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      }];
+    }
 
     res.set('Cache-Control', 'no-store');
     res.json({
