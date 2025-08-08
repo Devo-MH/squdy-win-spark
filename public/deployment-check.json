@@ -1,8 +1,8 @@
 {
-  "timestamp": "2025-08-07T13:53:00Z",
-  "deployment": "ethers-v5-safe-helpers",
-  "bundle": "index-BCO6VkWc.js",
-  "fix": "safe-parseUnits-helpers",
+  "timestamp": "2025-08-08T12:38:00Z",
+  "deployment": "force-vercel-deploy-admin-stats-shim",
+  "bundle": "index-force-vercel-123.js",
+  "fix": "admin-stats-shim",
   "status": "deployed",
-  "cache_buster": true
+  "cache_buster": "12:38"
 }
