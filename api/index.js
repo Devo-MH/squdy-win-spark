@@ -85,7 +85,7 @@ export default async function handler(req, res) {
   }
   
   // Campaigns list
-  if ((url === '/api/campaigns' || url === '/campaigns') && req.method === 'GET') {
+  if (req.method === 'GET' && /^\/(?:api\/)?campaigns\/?$/.test(url)) {
     try {
       const db = await getDb();
       const collection = db.collection('campaigns');
@@ -166,7 +166,7 @@ export default async function handler(req, res) {
   }
   
   // Create campaign (persist to MongoDB)
-  if (req.method === 'POST' && (url.includes('/admin/campaigns') || url === '/api/campaigns' || url === '/campaigns')) {
+  if (req.method === 'POST' && (url.includes('/admin/campaigns') || /^\/(?:api\/)?campaigns\/?$/.test(url))) {
     try {
       // Parse request body (handle both object and string)
       let body = req.body;
