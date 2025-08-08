@@ -4,6 +4,7 @@ import cors from 'cors';
 import { ethers } from 'ethers';
 import { randomBytes } from 'crypto';
 import { getDatabase } from './lib/mongodb.js';
+import { ObjectId } from 'mongodb';
 
 const app = express();
 
@@ -91,23 +92,21 @@ app.get(['/api/campaigns','/campaigns'], async (req, res) => {
     const page = 1;
 
     const col = await getCampaignsCollection();
-    const filter = { name: { $exists: true, $ne: null } };
-    const total = await col.countDocuments(filter);
-    let campaigns = [];
+    const raw = await col
+      .find({})
+      .sort({ createdAt: -1, _id: -1 })
+      .limit(limit)
+      .toArray();
 
-    if (total > 0) {
-      const raw = await col
-        .find(filter)
-        .sort({ createdAt: -1 })
-        .limit(limit)
-        .toArray();
-
-      // Normalize results so UI always has usable fields
-      campaigns = raw.map((c, idx) => ({
-        id: (c._id && c._id.toString) ? c._id.toString() : String(c.id ?? idx),
-        contractId: typeof c.contractId === 'number' && Number.isFinite(c.contractId)
-          ? c.contractId
-          : 1000 + idx,
+    // Normalize results so UI always has usable fields
+    let campaigns = raw.map((c, idx) => {
+      const fallbackId = 1000 + idx;
+      const normalizedContractId = typeof c.contractId === 'number' && Number.isFinite(c.contractId)
+        ? c.contractId
+        : (typeof c.contractId === 'string' && !isNaN(Number(c.contractId)) ? Number(c.contractId) : fallbackId);
+      return {
+        id: (c._id && c._id.toString) ? c._id.toString() : String(normalizedContractId),
+        contractId: normalizedContractId,
         name: c.name ?? 'Untitled Campaign',
         description: c.description ?? '',
         imageUrl: c.imageUrl || 'https://images.unsplash.com/photo-1640340434855-6084b1f4901c?w=800&h=400&fit=crop',
@@ -122,8 +121,8 @@ app.get(['/api/campaigns','/campaigns'], async (req, res) => {
         prizes: Array.isArray(c.prizes) ? c.prizes : [],
         createdAt: c.createdAt || new Date().toISOString(),
         updatedAt: c.updatedAt || new Date().toISOString(),
-      }));
-    }
+      };
+    });
     
     // If no valid campaigns from MongoDB, use in-memory as fallback
     if (campaigns.length === 0) {
@@ -157,7 +156,7 @@ app.get(['/api/campaigns','/campaigns'], async (req, res) => {
     res.set('Cache-Control', 'no-store');
     res.json({
       campaigns,
-      pagination: { page, limit, total: total || campaignsInMemory.length, totalPages: 1 }
+      pagination: { page, limit, total: campaigns.length, totalPages: 1 }
     });
   } catch (e) {
     console.error('List campaigns error, using fallback:', e);
@@ -383,18 +382,50 @@ app.options(['/api/admin/campaigns','/admin/campaigns','/api/admin-create-campai
 
 // Single campaign
 app.get(['/api/campaigns/:id','/campaigns/:id'], async (req, res) => {
-  const id = Number(req.params.id);
+  const rawId = req.params.id;
   try {
     const col = await getCampaignsCollection();
-    const byContract = await col.findOne({ contractId: id });
-    if (byContract) {
+    let campaign = null;
+
+    if (ObjectId.isValid(rawId)) {
+      campaign = await col.findOne({ _id: new ObjectId(rawId) });
+    }
+    if (!campaign && !isNaN(Number(rawId))) {
+      campaign = await col.findOne({ contractId: Number(rawId) });
+      if (!campaign) {
+        campaign = await col.findOne({ id: Number(rawId) });
+      }
+    }
+
+    if (campaign) {
+      const normalized = {
+        id: (campaign._id && campaign._id.toString) ? campaign._id.toString() : String(campaign.id || campaign.contractId || rawId),
+        contractId: typeof campaign.contractId === 'number' && Number.isFinite(campaign.contractId)
+          ? campaign.contractId
+          : (typeof campaign.contractId === 'string' && !isNaN(Number(campaign.contractId)) ? Number(campaign.contractId) : Number(campaign.id) || 0),
+        name: campaign.name ?? 'Untitled Campaign',
+        description: campaign.description ?? '',
+        imageUrl: campaign.imageUrl || 'https://images.unsplash.com/photo-1640340434855-6084b1f4901c?w=800&h=400&fit=crop',
+        status: campaign.status || 'active',
+        currentAmount: Number(campaign.currentAmount || 0),
+        hardCap: Number(campaign.hardCap || 0),
+        participantCount: Number(campaign.participantCount || 0),
+        softCap: Number(campaign.softCap || 0),
+        ticketAmount: Number(campaign.ticketAmount || 0),
+        startDate: campaign.startDate || new Date().toISOString(),
+        endDate: campaign.endDate || new Date(Date.now() + 7*24*60*60*1000).toISOString(),
+        prizes: Array.isArray(campaign.prizes) ? campaign.prizes : [],
+        createdAt: campaign.createdAt || new Date().toISOString(),
+        updatedAt: campaign.updatedAt || new Date().toISOString(),
+      };
       res.set('Cache-Control', 'no-store');
-      return res.json({ campaign: byContract });
+      return res.json({ campaign: normalized });
     }
   } catch (e) {
     console.error('Read single campaign DB error:', e);
   }
-  const fallback = campaignsInMemory.find(c => c.id === id || c.contractId === id);
+  const numId = Number(rawId);
+  const fallback = campaignsInMemory.find(c => c.id === numId || c.contractId === numId);
   if (!fallback) return res.status(404).json({ error: 'Campaign not found' });
   res.set('Cache-Control', 'no-store');
   return res.json({ campaign: fallback });
