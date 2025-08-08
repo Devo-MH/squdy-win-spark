@@ -69,8 +69,8 @@ app.get(['/api/admin/stats','/admin/stats'], async (req, res) => {
   }
 });
 
-// Admin create campaign (mock; ephemeral)
-app.post(['/api/admin/campaigns','/admin/campaigns'], (req, res) => {
+// Admin create campaign (mock; ephemeral) - include alternate path to avoid any platform routing quirks
+app.post(['/api/admin/campaigns','/admin/campaigns','/api/admin-create-campaign'], (req, res) => {
   const data = req.body || {};
   if (!data.name || !data.description || !data.softCap || !data.hardCap || !data.ticketAmount) {
     return res.status(400).json({ error: 'Missing required fields' });
@@ -98,12 +98,12 @@ app.post(['/api/admin/campaigns','/admin/campaigns'], (req, res) => {
 });
 
 // Debug route to verify Vercel routing for this path
-app.get(['/api/admin/campaigns','/admin/campaigns'], (req, res) => {
+app.get(['/api/admin/campaigns','/admin/campaigns','/api/admin-create-campaign'], (req, res) => {
   return res.status(200).json({ ok: true, path: '/api/admin/campaigns', note: 'GET available for routing verification' });
 });
 
 // Allow CORS preflight on admin campaigns path
-app.options(['/api/admin/campaigns','/admin/campaigns'], (req, res) => {
+app.options(['/api/admin/campaigns','/admin/campaigns','/api/admin-create-campaign'], (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
