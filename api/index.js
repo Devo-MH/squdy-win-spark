@@ -97,6 +97,19 @@ app.post(['/api/admin/campaigns','/admin/campaigns'], (req, res) => {
   return res.status(201).json({ message: 'Campaign created (mock)', campaign: newCampaign });
 });
 
+// Debug route to verify Vercel routing for this path
+app.get(['/api/admin/campaigns','/admin/campaigns'], (req, res) => {
+  return res.status(200).json({ ok: true, path: '/api/admin/campaigns', note: 'GET available for routing verification' });
+});
+
+// Allow CORS preflight on admin campaigns path
+app.options(['/api/admin/campaigns','/admin/campaigns'], (req, res) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  return res.status(200).end();
+});
+
 // Single campaign
 app.get(['/api/campaigns/:id','/campaigns/:id'], (req, res) => {
   const id = Number(req.params.id);
