@@ -62,6 +62,7 @@ app.get(['/api/campaigns','/campaigns'], async (req, res) => {
       campaigns = campaignsInMemory.slice(0, limit);
     }
 
+    res.set('Cache-Control', 'no-store');
     res.json({
       campaigns,
       pagination: { page, limit, total: total || campaignsInMemory.length, totalPages: 1 }
@@ -152,6 +153,7 @@ async function handleCreateCampaign(req, res) {
     // Keep in-memory fallback updated (useful if DB temporarily unavailable later)
     campaignsInMemory = [newCampaign, ...campaignsInMemory];
 
+    res.set('Cache-Control', 'no-store');
     return res.status(201).json({ message: 'Campaign created', campaign: newCampaign });
   } catch (e) {
     console.error('Create campaign error, falling back to memory:', e);
@@ -174,6 +176,7 @@ async function handleCreateCampaign(req, res) {
       updatedAt: nowIso,
     };
     campaignsInMemory = [newCampaign, ...campaignsInMemory];
+    res.set('Cache-Control', 'no-store');
     return res.status(201).json({ message: 'Campaign created (fallback)', campaign: newCampaign });
   }
 }
@@ -220,12 +223,16 @@ app.get(['/api/campaigns/:id','/campaigns/:id'], async (req, res) => {
   try {
     const col = await getCampaignsCollection();
     const byContract = await col.findOne({ contractId: id });
-    if (byContract) return res.json({ campaign: byContract });
+    if (byContract) {
+      res.set('Cache-Control', 'no-store');
+      return res.json({ campaign: byContract });
+    }
   } catch (e) {
     console.error('Read single campaign DB error:', e);
   }
   const fallback = campaignsInMemory.find(c => c.id === id || c.contractId === id);
   if (!fallback) return res.status(404).json({ error: 'Campaign not found' });
+  res.set('Cache-Control', 'no-store');
   return res.json({ campaign: fallback });
 });
 
