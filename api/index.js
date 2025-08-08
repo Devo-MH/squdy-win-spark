@@ -72,8 +72,10 @@ app.get(['/api/campaigns','/campaigns'], async (req, res) => {
           imageUrl: c.imageUrl || 'https://images.unsplash.com/photo-1640340434855-6084b1f4901c?w=800&h=400&fit=crop',
           ...c,
         }));
-    } else {
-      // Fallback to demo campaigns if DB empty
+    }
+    
+    // If no valid campaigns from MongoDB, use in-memory as fallback
+    if (campaigns.length === 0) {
       campaigns = campaignsInMemory.slice(0, limit);
     }
 
@@ -83,8 +85,14 @@ app.get(['/api/campaigns','/campaigns'], async (req, res) => {
       pagination: { page, limit, total: total || campaignsInMemory.length, totalPages: 1 }
     });
   } catch (e) {
-    console.error('List campaigns error:', e);
-    res.status(500).json({ error: 'Internal server error' });
+    console.error('List campaigns error, using fallback:', e);
+    // Fallback to in-memory campaigns on any error
+    const campaigns = campaignsInMemory.slice(0, parseInt(req.query.limit || '10', 10));
+    res.set('Cache-Control', 'no-store');
+    res.json({
+      campaigns,
+      pagination: { page: 1, limit: 10, total: campaignsInMemory.length, totalPages: 1 }
+    });
   }
 });
 
