@@ -150,7 +150,26 @@ export default async function handler(req, res) {
       return res.json({ campaign });
     } catch (err) {
       console.error('GET /campaigns/:id error:', err);
-      return res.status(500).json({ error: 'Internal Server Error' });
+      // Fail-open behavior:
+      try {
+        // If it was a my-status request, always return static object
+        if (/\/my-status$/.test(url)) {
+          res.setHeader('Cache-Control', 'no-store');
+          return res.json({ joined: false, isWinner: false, hasClaimed: false, canClaim: false });
+        }
+        // Otherwise, attempt fallback to base campaigns
+        const base = getBaseCampaigns();
+        const asNumber = Number(url.split('/').filter(Boolean).pop());
+        const fallback = base.find(c => (!Number.isNaN(asNumber) && c.contractId === asNumber));
+        if (fallback) {
+          res.setHeader('Cache-Control', 'no-store');
+          return res.json({ campaign: fallback });
+        }
+        return res.status(404).json({ error: 'Not found' });
+      } catch (fallbackErr) {
+        console.error('Fallback in GET /campaigns/:id failed:', fallbackErr);
+        return res.status(500).json({ error: 'Internal Server Error' });
+      }
     }
   }
   
