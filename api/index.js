@@ -1,14 +1,17 @@
 // Ultra-minimal production API
+let sessionCampaigns = []; // Store created campaigns in this session
+
 export default function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
 
-  const url = req.url;
+  // Parse URL without query params
+  const url = new URL(req.url, `http://${req.headers.host}`).pathname;
   
   // Health
   if (url === '/api/health' || url === '/health') {
@@ -20,8 +23,8 @@ export default function handler(req, res) {
   }
   
   // Campaigns list
-  if (url.startsWith('/api/campaigns') && !url.includes('/campaigns/')) {
-    const campaigns = [
+  if ((url === '/api/campaigns' || url === '/campaigns') && req.method === 'GET') {
+    const baseCampaigns = [
       {
         id: "689645ee0b152227c14038fe",
         contractId: 1001,
@@ -71,10 +74,13 @@ export default function handler(req, res) {
       }
     ];
     
+    // Combine session campaigns (created this session) with base campaigns
+    const allCampaigns = [...sessionCampaigns, ...baseCampaigns];
+    
     res.setHeader('Cache-Control', 'no-store');
     return res.json({
-      campaigns,
-      pagination: { page: 1, limit: 10, total: campaigns.length, totalPages: 1 }
+      campaigns: allCampaigns,
+      pagination: { page: 1, limit: 10, total: allCampaigns.length, totalPages: 1 }
     });
   }
   
@@ -128,28 +134,41 @@ export default function handler(req, res) {
   }
   
   // Create campaign
-  if (req.method === 'POST' && url.includes('/admin/campaigns')) {
+  if (req.method === 'POST' && (url.includes('/admin/campaigns') || url === '/api/campaigns' || url === '/campaigns')) {
+    // Parse request body (handle both object and string)
+    let body = req.body;
+    if (typeof body === 'string') {
+      try {
+        body = JSON.parse(body);
+      } catch (e) {
+        return res.status(400).json({ error: 'Invalid JSON in request body' });
+      }
+    }
+    
     const newCampaign = {
       id: `created_${Date.now()}`,
       contractId: Date.now() % 10000,
-      name: req.body?.name || 'New Campaign',
-      description: req.body?.description || '',
+      name: body?.name || 'New Campaign',
+      description: body?.description || '',
       imageUrl: 'https://images.unsplash.com/photo-1640340434855-6084b1f4901c?w=800&h=400&fit=crop',
       status: 'active',
       currentAmount: 0,
-      hardCap: Number(req.body?.hardCap || 0),
+      hardCap: Number(body?.hardCap || 0),
       participantCount: 0,
-      softCap: Number(req.body?.softCap || 0),
-      ticketAmount: Number(req.body?.ticketAmount || 0),
-      totalValue: Number(req.body?.hardCap || 0),
+      softCap: Number(body?.softCap || 0),
+      ticketAmount: Number(body?.ticketAmount || 0),
+      totalValue: Number(body?.hardCap || 0),
       progressPercentage: 0,
       daysRemaining: 7,
       startDate: new Date().toISOString(),
       endDate: new Date(Date.now() + 7*24*60*60*1000).toISOString(),
-      prizes: req.body?.prizes || [],
+      prizes: body?.prizes || [],
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
+    
+    // Add to session campaigns so it appears in the list immediately
+    sessionCampaigns.unshift(newCampaign);
     
     res.setHeader('Cache-Control', 'no-store');
     return res.status(201).json({ message: 'Campaign created', campaign: newCampaign });
