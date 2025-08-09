@@ -1,3 +1,16 @@
+// Minimal Hardhat config for flattening (no plugins)
+module.exports = {
+  solidity: {
+    version: '0.8.20',
+    settings: {
+      optimizer: {
+        enabled: false,
+        runs: 200,
+      },
+    },
+  },
+};
+
 require("@nomicfoundation/hardhat-toolbox");
 require("hardhat-deploy");
 require("solidity-coverage");

@@ -79,6 +79,8 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^6.1.0",
+    "@openzeppelin/contracts": "^5.4.0",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
     "@typescript-eslint/eslint-plugin": "^8.15.0",
@@ -88,8 +90,11 @@
     "eslint": "^9.15.0",
     "eslint-plugin-react-hooks": "^5.0.0",
     "eslint-plugin-react-refresh": "^0.4.14",
+    "hardhat": "^2.26.2",
     "postcss": "^8.4.49",
+    "sol-merger": "^4.4.2",
     "tailwindcss": "^3.4.14",
+    "truffle-flattener": "^1.6.0",
     "typescript": "~5.6.3",
     "vite": "^5.4.10",
     "vitest": "^2.1.4"

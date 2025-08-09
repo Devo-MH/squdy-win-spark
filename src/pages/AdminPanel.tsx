@@ -38,6 +38,7 @@ import {
   MessageCircle
 } from "lucide-react";
 import { useState, useEffect } from "react";
+import { AutomatedContractService } from "@/services/automatedContracts";
 import { useNavigate } from "react-router-dom";
 import { useWeb3 } from "@/contexts/Web3Context";
 import { useAuth } from "@/hooks/useAuth";
@@ -57,6 +58,9 @@ const AdminPanel = () => {
   const { account, isConnected, provider, signer } = useWeb3();
   const { isAuthenticated, requireAuth } = useAuth();
   const contractService = useContracts(provider, signer);
+  const ENV_AUTOMATED = (import.meta as any).env?.VITE_USE_AUTOMATED_MANAGER === 'true';
+  const [useAutomated, setUseAutomated] = useState<boolean>(false);
+  const [autoSvc, setAutoSvc] = useState<AutomatedContractService | null>(null);
   const [roleHint, setRoleHint] = useState<string | null>(null);
   const queryClient = useQueryClient();
   
@@ -136,11 +140,41 @@ const AdminPanel = () => {
     }
   }, [isAuthenticated]);
 
+  // Compute flag (URL/localStorage can override env)
+  useEffect(() => {
+    try {
+      let flag = ENV_AUTOMATED;
+      if (typeof window !== 'undefined') {
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('automated') === '1') {
+          flag = true;
+          try { localStorage.setItem('forceAutomated', 'true'); } catch {}
+        }
+        try {
+          if (localStorage.getItem('forceAutomated') === 'true') flag = true;
+        } catch {}
+      }
+      // Fallback: if env var is undefined, enable anyway for testing
+      if (flag === undefined || flag === null) {
+        flag = true;
+        console.log('🔧 Auto-enabling on-chain tools (env var not set)');
+      }
+      setUseAutomated(!!flag);
+    } catch {
+      setUseAutomated(true); // Default to enabled
+    }
+  }, []);
+
   // Check on-chain role status for the connected wallet and show hint if missing
   useEffect(() => {
     (async () => {
       try {
-        if (!contractService || !isConnected) return;
+        if (!isConnected) return;
+        if (useAutomated && provider && signer) {
+          // Initialize Automated manager service for direct on-chain actions
+          setAutoSvc(new AutomatedContractService(provider as any, signer as any));
+        }
+        if (!contractService) return;
         const status = await contractService.getRoleStatus();
         if (!(status.hasAdmin || status.hasOperator || status.isOwner)) {
           setRoleHint('Your wallet lacks admin/operator role on the manager. On-chain creation will revert until granted.');
@@ -149,7 +183,7 @@ const AdminPanel = () => {
         }
       } catch {}
     })();
-  }, [contractService, isConnected]);
+  }, [contractService, isConnected, provider, signer, useAutomated]);
 
   // Real-time updates
   useEffect(() => {
@@ -201,25 +235,41 @@ const AdminPanel = () => {
     }
 
     setIsCreating(true);
-    try {
-      // 1) Create on-chain to get canonical campaignId
-      let onChainId: number | null = null;
       try {
-        if (contractService) {
-          const id = await contractService.createCampaign({
-            name: formData.name,
-            description: formData.description,
-            imageUrl: formData.imageUrl,
-            softCap: formData.softCap,
-            hardCap: formData.hardCap,
-            ticketAmount: formData.ticketAmount,
-            startDate: formData.startDate,
-            endDate: formData.endDate,
-            prizes: formData.prizes.map(p => p.name).filter(Boolean),
-          });
-          onChainId = Number(id);
-        }
-      } catch (e: any) {
+        // 1) Create on-chain to get canonical campaignId
+        let onChainId: number | null = null;
+        try {
+          if (useAutomated && autoSvc) {
+            // Automated manager path
+            const startSec = Math.floor(new Date(formData.startDate).getTime() / 1000);
+            const endSec = Math.floor(new Date(formData.endDate).getTime() / 1000);
+            const createdId = await autoSvc.createCampaign(
+              formData.name,
+              formData.description,
+              formData.imageUrl,
+              formData.softCap,
+              formData.hardCap,
+              formData.ticketAmount,
+              startSec,
+              endSec,
+              formData.prizes.map(p => p.name).filter(Boolean),
+            );
+            onChainId = createdId ? Number(createdId) : null;
+          } else if (contractService) {
+            const id = await contractService.createCampaign({
+              name: formData.name,
+              description: formData.description,
+              imageUrl: formData.imageUrl,
+              softCap: formData.softCap,
+              hardCap: formData.hardCap,
+              ticketAmount: formData.ticketAmount,
+              startDate: formData.startDate,
+              endDate: formData.endDate,
+              prizes: formData.prizes.map(p => p.name).filter(Boolean),
+            });
+            onChainId = Number(id);
+          }
+        } catch (e: any) {
         const message = e?.message || String(e);
         if (/Invalid start date/i.test(message)) {
           toast.error('Invalid start date: set start at least 15–30 minutes in the future');
@@ -1442,6 +1492,291 @@ const AdminPanel = () => {
                   </div>
                 </CardContent>
               </Card>
+
+              {useAutomated && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Zap className="w-5 h-5" />
+                      On-chain Tools (Automated Manager)
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>Approve SQUDY Amount</Label>
+                        <div className="flex gap-2">
+                          <Input
+                            placeholder="10"
+                            onChange={(e) => (e.target as any)._val = e.target.value}
+                          />
+                          <Button
+                            onClick={async (e) => {
+                              const input = (e.currentTarget.previousSibling as HTMLInputElement);
+                              const amt = (input as any)._val || input.value;
+                              if (!autoSvc) return toast.error('Wallet not connected');
+                              try {
+                                const ok = await autoSvc.approveTokens((import.meta as any).env?.VITE_CAMPAIGN_MANAGER_ADDRESS || '', amt || '0');
+                                ok ? toast.success('Approved') : toast.error('Approve failed');
+                              } catch (err: any) { toast.error(err?.message || 'Approve failed'); }
+                            }}
+                          >Approve</Button>
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Stake (campaignId, amount)</Label>
+                        <div className="grid grid-cols-3 gap-2">
+                          <Input placeholder="id" onChange={(e) => (e.target as any)._id = e.target.value} />
+                          <Input placeholder="amount" onChange={(e) => (e.target as any)._amt = e.target.value} />
+                          <Button
+                            onClick={async (e) => {
+                              const grid = e.currentTarget.parentElement as HTMLElement;
+                              const id = (grid.children[0] as any)._id || (grid.children[0] as HTMLInputElement).value;
+                              const amt = (grid.children[1] as any)._amt || (grid.children[1] as HTMLInputElement).value;
+                              if (!autoSvc) return toast.error('Wallet not connected');
+                              try {
+                                const ok = await autoSvc.stakeTokens(Number(id), amt || '0');
+                                ok ? toast.success('Staked') : toast.error('Stake failed');
+                              } catch (err: any) { toast.error(err?.message || 'Stake failed'); }
+                            }}
+                          >Stake</Button>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>Confirm Social (campaignId, user)</Label>
+                        <div className="grid grid-cols-3 gap-2">
+                          <Input placeholder="id" onChange={(e) => (e.target as any)._cid = e.target.value} />
+                          <Input placeholder="0x..." defaultValue={account || ''} onChange={(e) => (e.target as any)._addr = e.target.value} />
+                          <Button
+                            onClick={async (e) => {
+                              const grid = e.currentTarget.parentElement as HTMLElement;
+                              const cid = (grid.children[0] as any)._cid || (grid.children[0] as HTMLInputElement).value;
+                              const addr = (grid.children[1] as any)._addr || (grid.children[1] as HTMLInputElement).value || account;
+                              if (!autoSvc) return toast.error('Wallet not connected');
+                              try {
+                                const ok = await autoSvc.confirmSocialTasks(Number(cid), String(addr));
+                                ok ? toast.success('Social confirmed') : toast.error('Confirm failed');
+                              } catch (err: any) { toast.error(err?.message || 'Confirm failed'); }
+                            }}
+                          >Confirm</Button>
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Winners / Burn (campaignId)</Label>
+                        <div className="grid grid-cols-3 gap-2">
+                          <Input placeholder="id" onChange={(e) => (e.target as any)._cid2 = e.target.value} />
+                          <Button
+                            variant="secondary"
+                            onClick={async (e) => {
+                              const grid = e.currentTarget.parentElement as HTMLElement;
+                              const cid = (grid.children[0] as any)._cid2 || (grid.children[0] as HTMLInputElement).value;
+                              if (!autoSvc) return toast.error('Wallet not connected');
+                              try {
+                                const ok = await autoSvc.selectWinners(Number(cid));
+                                ok ? toast.success('Winners selected') : toast.error('Select failed');
+                              } catch (err: any) { toast.error(err?.message || 'Select failed'); }
+                            }}
+                          >Select Winners</Button>
+                          <Button
+                            variant="destructive"
+                            onClick={async (e) => {
+                              const grid = e.currentTarget.parentElement as HTMLElement;
+                              const cid = (grid.children[0] as any)._cid2 || (grid.children[0] as HTMLInputElement).value;
+                              if (!autoSvc) return toast.error('Wallet not connected');
+                              try {
+                                const ok = await autoSvc.burnTokens(Number(cid));
+                                ok ? toast.success('Tokens burned') : toast.error('Burn failed');
+                              } catch (err: any) { toast.error(err?.message || 'Burn failed'); }
+                            }}
+                          >Burn Tokens</Button>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Emergency Functions Section */}
+                    <div className="border-t pt-4">
+                      <h4 className="text-sm font-semibold mb-3 text-red-600">🚨 Emergency Functions</h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label>Emergency Terminate (campaignId, refund)</Label>
+                          <div className="grid grid-cols-3 gap-2">
+                            <Input placeholder="id" onChange={(e) => (e.target as any)._termId = e.target.value} />
+                            <select 
+                              className="px-3 py-2 border rounded text-sm"
+                              onChange={(e) => (e.target as any)._refund = e.target.value === 'true'}
+                            >
+                              <option value="false">No Refund</option>
+                              <option value="true">With Refund</option>
+                            </select>
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={async (e) => {
+                                const grid = e.currentTarget.parentElement as HTMLElement;
+                                const id = (grid.children[0] as any)._termId || (grid.children[0] as HTMLInputElement).value;
+                                const refund = (grid.children[1] as any)._refund || false;
+                                if (!autoSvc) return toast.error('Wallet not connected');
+                                if (!confirm(`Emergency terminate campaign ${id}${refund ? ' with refunds' : ''}?`)) return;
+                                try {
+                                  await autoSvc.emergencyTerminateCampaign(Number(id), refund);
+                                } catch (err: any) { toast.error(err?.message || 'Terminate failed'); }
+                              }}
+                            >Terminate</Button>
+                          </div>
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <Label>Campaign Pause/Resume (campaignId)</Label>
+                          <div className="grid grid-cols-3 gap-2">
+                            <Input placeholder="id" onChange={(e) => (e.target as any)._pauseId = e.target.value} />
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={async (e) => {
+                                const grid = e.currentTarget.parentElement as HTMLElement;
+                                const id = (grid.children[0] as any)._pauseId || (grid.children[0] as HTMLInputElement).value;
+                                if (!autoSvc) return toast.error('Wallet not connected');
+                                try {
+                                  await autoSvc.pauseCampaign(Number(id));
+                                } catch (err: any) { toast.error(err?.message || 'Pause failed'); }
+                              }}
+                            >⏸️ Pause</Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={async (e) => {
+                                const grid = e.currentTarget.parentElement as HTMLElement;
+                                const id = (grid.children[0] as any)._pauseId || (grid.children[0] as HTMLInputElement).value;
+                                if (!autoSvc) return toast.error('Wallet not connected');
+                                try {
+                                  await autoSvc.resumeCampaign(Number(id));
+                                } catch (err: any) { toast.error(err?.message || 'Resume failed'); }
+                              }}
+                            >▶️ Resume</Button>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                        <div className="space-y-2">
+                          <Label>Emergency Contract Controls</Label>
+                          <div className="flex gap-2">
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={async () => {
+                                if (!autoSvc) return toast.error('Wallet not connected');
+                                if (!confirm('Emergency pause entire contract?')) return;
+                                try {
+                                  await autoSvc.emergencyPauseContract();
+                                } catch (err: any) { toast.error(err?.message || 'Emergency pause failed'); }
+                              }}
+                            >🚨 Emergency Pause</Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={async () => {
+                                if (!autoSvc) return toast.error('Wallet not connected');
+                                if (!confirm('Emergency unpause entire contract?')) return;
+                                try {
+                                  await autoSvc.emergencyUnpauseContract();
+                                } catch (err: any) { toast.error(err?.message || 'Emergency unpause failed'); }
+                              }}
+                            >✅ Emergency Unpause</Button>
+                          </div>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label>Update Campaign End Date (campaignId)</Label>
+                          <div className="grid grid-cols-3 gap-2">
+                            <Input placeholder="id" onChange={(e) => (e.target as any)._updateId = e.target.value} />
+                            <Input 
+                              type="datetime-local" 
+                              onChange={(e) => (e.target as any)._newDate = e.target.value}
+                              className="text-xs"
+                            />
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={async (e) => {
+                                const grid = e.currentTarget.parentElement as HTMLElement;
+                                const id = (grid.children[0] as any)._updateId || (grid.children[0] as HTMLInputElement).value;
+                                const newDate = (grid.children[1] as any)._newDate || (grid.children[1] as HTMLInputElement).value;
+                                if (!autoSvc) return toast.error('Wallet not connected');
+                                if (!newDate) return toast.error('Please select new end date');
+                                try {
+                                  await autoSvc.updateCampaignEndDate(Number(id), new Date(newDate));
+                                } catch (err: any) { toast.error(err?.message || 'Update failed'); }
+                              }}
+                            >📅 Update</Button>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                        <div className="space-y-2">
+                          <Label>Grant Role (address, role)</Label>
+                          <div className="grid grid-cols-3 gap-2">
+                            <Input placeholder="0x..." onChange={(e) => (e.target as any)._grantAddr = e.target.value} />
+                            <select 
+                              className="px-3 py-2 border rounded text-sm"
+                              onChange={(e) => (e.target as any)._grantRole = e.target.value}
+                            >
+                              <option value="ADMIN">ADMIN</option>
+                              <option value="OPERATOR">OPERATOR</option>
+                            </select>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={async (e) => {
+                                const grid = e.currentTarget.parentElement as HTMLElement;
+                                const addr = (grid.children[0] as any)._grantAddr || (grid.children[0] as HTMLInputElement).value;
+                                const role = (grid.children[1] as any)._grantRole || 'ADMIN';
+                                if (!autoSvc) return toast.error('Wallet not connected');
+                                if (!addr) return toast.error('Please enter address');
+                                try {
+                                  await autoSvc.grantRole(role, addr);
+                                } catch (err: any) { toast.error(err?.message || 'Grant failed'); }
+                              }}
+                            >👑 Grant</Button>
+                          </div>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label>Revoke Role (address, role)</Label>
+                          <div className="grid grid-cols-3 gap-2">
+                            <Input placeholder="0x..." onChange={(e) => (e.target as any)._revokeAddr = e.target.value} />
+                            <select 
+                              className="px-3 py-2 border rounded text-sm"
+                              onChange={(e) => (e.target as any)._revokeRole = e.target.value}
+                            >
+                              <option value="ADMIN">ADMIN</option>
+                              <option value="OPERATOR">OPERATOR</option>
+                            </select>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={async (e) => {
+                                const grid = e.currentTarget.parentElement as HTMLElement;
+                                const addr = (grid.children[0] as any)._revokeAddr || (grid.children[0] as HTMLInputElement).value;
+                                const role = (grid.children[1] as any)._revokeRole || 'ADMIN';
+                                if (!autoSvc) return toast.error('Wallet not connected');
+                                if (!addr) return toast.error('Please enter address');
+                                try {
+                                  await autoSvc.revokeRole(role, addr);
+                                } catch (err: any) { toast.error(err?.message || 'Revoke failed'); }
+                              }}
+                            >🚫 Revoke</Button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
             </TabsContent>
           </Tabs>
         </div>

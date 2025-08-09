@@ -26,6 +26,14 @@ const AUTOMATED_CAMPAIGN_MANAGER_ABI = [
   'function grantRole(bytes32 role, address account) external',
   'function revokeRole(bytes32 role, address account) external',
   
+  // Emergency functions
+  'function emergencyTerminateCampaign(uint256 campaignId, bool refundUsers) external',
+  'function emergencyPause() external',
+  'function emergencyUnpause() external',
+  'function pauseCampaign(uint256 campaignId) external',
+  'function resumeCampaign(uint256 campaignId) external',
+  'function updateCampaignEndDate(uint256 campaignId, uint256 newEndDate) external',
+  
   // Constants
   'function ADMIN_ROLE() external view returns (bytes32)',
   'function OPERATOR_ROLE() external view returns (bytes32)',
@@ -37,6 +45,10 @@ const AUTOMATED_CAMPAIGN_MANAGER_ABI = [
   'event WinnersSelected(uint256 indexed campaignId, address[] winners, uint256 blockNumber)',
   'event TokensBurned(uint256 indexed campaignId, uint256 amount)',
   'event CampaignStatusChanged(uint256 indexed campaignId, uint8 status)',
+  'event CampaignTerminated(uint256 indexed campaignId, bool refunded)',
+  'event CampaignPaused(uint256 indexed campaignId)',
+  'event CampaignResumed(uint256 indexed campaignId)',
+  'event CampaignEndDateUpdated(uint256 indexed campaignId, uint256 oldEndDate, uint256 newEndDate)',
 ];
 
 // Real SQUDY Token ABI
@@ -415,6 +427,127 @@ export class AutomatedContractService {
     } catch (error) {
       console.error('Error getting burn stats:', error);
       return null;
+    }
+  }
+
+  // ============ EMERGENCY FUNCTIONS ============
+  
+  async emergencyTerminateCampaign(campaignId: number, refundUsers: boolean): Promise<void> {
+    try {
+      console.log(`🚨 Emergency terminating campaign ${campaignId}, refund: ${refundUsers}`);
+      const tx = await this.campaignManagerContract.emergencyTerminateCampaign(campaignId, refundUsers);
+      await tx.wait();
+      toast.success(`✅ Campaign ${campaignId} terminated${refundUsers ? ' with refunds' : ''}`);
+    } catch (error: any) {
+      console.error('❌ Emergency terminate failed:', error);
+      toast.error(`❌ Emergency terminate failed: ${error.reason || error.message}`);
+      throw error;
+    }
+  }
+
+  async emergencyPauseContract(): Promise<void> {
+    try {
+      console.log('🚨 Emergency pausing entire contract');
+      const tx = await this.campaignManagerContract.emergencyPause();
+      await tx.wait();
+      toast.success('✅ Contract emergency paused');
+    } catch (error: any) {
+      console.error('❌ Emergency pause failed:', error);
+      toast.error(`❌ Emergency pause failed: ${error.reason || error.message}`);
+      throw error;
+    }
+  }
+
+  async emergencyUnpauseContract(): Promise<void> {
+    try {
+      console.log('🚨 Emergency unpausing entire contract');
+      const tx = await this.campaignManagerContract.emergencyUnpause();
+      await tx.wait();
+      toast.success('✅ Contract emergency unpaused');
+    } catch (error: any) {
+      console.error('❌ Emergency unpause failed:', error);
+      toast.error(`❌ Emergency unpause failed: ${error.reason || error.message}`);
+      throw error;
+    }
+  }
+
+  async pauseCampaign(campaignId: number): Promise<void> {
+    try {
+      console.log(`⏸️ Pausing campaign ${campaignId}`);
+      const tx = await this.campaignManagerContract.pauseCampaign(campaignId);
+      await tx.wait();
+      toast.success(`✅ Campaign ${campaignId} paused`);
+    } catch (error: any) {
+      console.error('❌ Pause campaign failed:', error);
+      toast.error(`❌ Pause campaign failed: ${error.reason || error.message}`);
+      throw error;
+    }
+  }
+
+  async resumeCampaign(campaignId: number): Promise<void> {
+    try {
+      console.log(`▶️ Resuming campaign ${campaignId}`);
+      const tx = await this.campaignManagerContract.resumeCampaign(campaignId);
+      await tx.wait();
+      toast.success(`✅ Campaign ${campaignId} resumed`);
+    } catch (error: any) {
+      console.error('❌ Resume campaign failed:', error);
+      toast.error(`❌ Resume campaign failed: ${error.reason || error.message}`);
+      throw error;
+    }
+  }
+
+  async updateCampaignEndDate(campaignId: number, newEndDate: Date): Promise<void> {
+    try {
+      const newEndTimestamp = Math.floor(newEndDate.getTime() / 1000);
+      console.log(`📅 Updating campaign ${campaignId} end date to ${newEndDate}`);
+      const tx = await this.campaignManagerContract.updateCampaignEndDate(campaignId, newEndTimestamp);
+      await tx.wait();
+      toast.success(`✅ Campaign ${campaignId} end date updated`);
+    } catch (error: any) {
+      console.error('❌ Update end date failed:', error);
+      toast.error(`❌ Update end date failed: ${error.reason || error.message}`);
+      throw error;
+    }
+  }
+
+  // ============ ROLE MANAGEMENT ============
+  
+  async grantRole(role: string, account: string): Promise<void> {
+    try {
+      console.log(`👑 Granting role ${role} to ${account}`);
+      const roleHash = role === 'ADMIN' ? await this.campaignManagerContract.ADMIN_ROLE() : await this.campaignManagerContract.OPERATOR_ROLE();
+      const tx = await this.campaignManagerContract.grantRole(roleHash, account);
+      await tx.wait();
+      toast.success(`✅ ${role} role granted to ${account}`);
+    } catch (error: any) {
+      console.error('❌ Grant role failed:', error);
+      toast.error(`❌ Grant role failed: ${error.reason || error.message}`);
+      throw error;
+    }
+  }
+
+  async revokeRole(role: string, account: string): Promise<void> {
+    try {
+      console.log(`🚫 Revoking role ${role} from ${account}`);
+      const roleHash = role === 'ADMIN' ? await this.campaignManagerContract.ADMIN_ROLE() : await this.campaignManagerContract.OPERATOR_ROLE();
+      const tx = await this.campaignManagerContract.revokeRole(roleHash, account);
+      await tx.wait();
+      toast.success(`✅ ${role} role revoked from ${account}`);
+    } catch (error: any) {
+      console.error('❌ Revoke role failed:', error);
+      toast.error(`❌ Revoke role failed: ${error.reason || error.message}`);
+      throw error;
+    }
+  }
+
+  async checkRole(role: string, account: string): Promise<boolean> {
+    try {
+      const roleHash = role === 'ADMIN' ? await this.campaignManagerContract.ADMIN_ROLE() : await this.campaignManagerContract.OPERATOR_ROLE();
+      return await this.campaignManagerContract.hasRole(roleHash, account);
+    } catch (error: any) {
+      console.error('❌ Check role failed:', error);
+      return false;
     }
   }
 }
