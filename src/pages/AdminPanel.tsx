@@ -307,7 +307,7 @@ const AdminPanel = () => {
     return loadingActions[`${campaignId}-${action}`] || false;
   };
 
-  const handleCampaignAction = async (campaignId: number, action: 'activate' | 'pause' | 'close' | 'end-now' | 'select-winners' | 'burn') => {
+  const handleCampaignAction = async (campaignId: number, action: 'activate' | 'pause' | 'close' | 'end-now' | 'select-winners' | 'burn' | 'pause-all' | 'unpause-all') => {
     const auth = await requireAuth();
     if (!auth) return;
 
@@ -322,6 +322,24 @@ const AdminPanel = () => {
         case 'pause':
           await adminAPI.pauseCampaign(campaignId);
           toast.success("Campaign paused successfully!");
+          break;
+        case 'pause-all':
+          if (contractService) {
+            const tx = await contractService.pauseAll();
+            await tx.wait();
+            toast.success('Contract paused');
+          } else {
+            toast.error('Wallet not connected');
+          }
+          break;
+        case 'unpause-all':
+          if (contractService) {
+            const tx = await contractService.unpauseAll();
+            await tx.wait();
+            toast.success('Contract unpaused');
+          } else {
+            toast.error('Wallet not connected');
+          }
           break;
         case 'close':
           await adminAPI.closeCampaign(campaignId);
@@ -752,6 +770,32 @@ const AdminPanel = () => {
                                     <Lock className="w-4 h-4 mr-1" />
                                   )}
                                   Close
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleCampaignAction(campaign.contractId, 'pause-all')}
+                                  disabled={getActionLoading(campaign.contractId, 'pause-all')}
+                                >
+                                  {getActionLoading(campaign.contractId, 'pause-all') ? (
+                                    <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                                  ) : (
+                                    <Pause className="w-4 h-4 mr-1" />
+                                  )}
+                                  Pause All
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleCampaignAction(campaign.contractId, 'unpause-all')}
+                                  disabled={getActionLoading(campaign.contractId, 'unpause-all')}
+                                >
+                                  {getActionLoading(campaign.contractId, 'unpause-all') ? (
+                                    <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                                  ) : (
+                                    <Unlock className="w-4 h-4 mr-1" />
+                                  )}
+                                  Unpause All
                                 </Button>
                                 <Button
                                   variant="secondary"

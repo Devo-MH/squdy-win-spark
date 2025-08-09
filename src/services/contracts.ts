@@ -45,6 +45,9 @@ const CAMPAIGN_MANAGER_ABI = [
   'function selectWinners(uint256 _campaignId, address[] _winners) external',
   'function burnCampaignTokens(uint256 _campaignId) external',
   'function updateCampaignEndDate(uint256 campaignId, uint256 newEndDate) external',
+  'function emergencyPause() external',
+  'function emergencyUnpause() external',
+  'function confirmSocialTasks(uint256 campaignId, address user) external',
   // Optional access-control helpers (not all deployments implement these)
   'function hasRole(bytes32 role, address account) external view returns (bool)',
   'function ADMIN_ROLE() external view returns (bytes32)',
@@ -767,6 +770,39 @@ export class ContractService {
     } catch (error: any) {
       console.error('❌ Update end date failed:', error);
       toast.error(error.message || 'Failed to update campaign end time');
+      throw error;
+    }
+  }
+
+  async pauseAll(): Promise<any> {
+    try {
+      const tx = await (this.campaignManagerContract as any).emergencyPause();
+      toast.info('Pausing all campaign operations...');
+      return tx;
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to pause');
+      throw error;
+    }
+  }
+
+  async unpauseAll(): Promise<any> {
+    try {
+      const tx = await (this.campaignManagerContract as any).emergencyUnpause();
+      toast.info('Resuming campaign operations...');
+      return tx;
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to unpause');
+      throw error;
+    }
+  }
+
+  async confirmUserSocialTasks(campaignId: number, userAddress: string): Promise<any> {
+    try {
+      const tx = await (this.campaignManagerContract as any).confirmSocialTasks(campaignId, userAddress);
+      toast.info('Confirming user social tasks...');
+      return tx;
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to confirm social tasks');
       throw error;
     }
   }
