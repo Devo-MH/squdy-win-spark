@@ -344,6 +344,79 @@ export default async function handler(req, res) {
       }
     });
   }
+
+  // Admin: campaign state/actions (exact endpoints) BEFORE create route
+  // Activate
+  if (req.method === 'POST' && /^\/(?:api\/)?admin\/campaigns\/[a-zA-Z0-9]+\/activate\/?$/.test(url)) {
+    try {
+      const idParam = url.match(/^\/(?:api\/)?admin\/campaigns\/([a-zA-Z0-9]+)\/activate\/?$/)[1];
+      const db = await getDb();
+      await db.collection('campaigns').updateOne(
+        { contractId: /^[0-9]+$/.test(idParam) ? Number(idParam) : idParam },
+        { $set: { status: 'active', updatedAt: new Date().toISOString() } }
+      );
+      return res.json({ message: 'Campaign activated' });
+    } catch (e) {
+      return res.status(500).json({ error: 'Internal Server Error' });
+    }
+  }
+  // Pause
+  if (req.method === 'POST' && /^\/(?:api\/)?admin\/campaigns\/[a-zA-Z0-9]+\/pause\/?$/.test(url)) {
+    try {
+      const idParam = url.match(/^\/(?:api\/)?admin\/campaigns\/([a-zA-Z0-9]+)\/pause\/?$/)[1];
+      const db = await getDb();
+      await db.collection('campaigns').updateOne(
+        { contractId: /^[0-9]+$/.test(idParam) ? Number(idParam) : idParam },
+        { $set: { status: 'paused', updatedAt: new Date().toISOString() } }
+      );
+      return res.json({ message: 'Campaign paused' });
+    } catch (e) {
+      return res.status(500).json({ error: 'Internal Server Error' });
+    }
+  }
+  // Close/finish
+  if (req.method === 'POST' && /^\/(?:api\/)?admin\/campaigns\/[a-zA-Z0-9]+\/close\/?$/.test(url)) {
+    try {
+      const idParam = url.match(/^\/(?:api\/)?admin\/campaigns\/([a-zA-Z0-9]+)\/close\/?$/)[1];
+      const db = await getDb();
+      await db.collection('campaigns').updateOne(
+        { contractId: /^[0-9]+$/.test(idParam) ? Number(idParam) : idParam },
+        { $set: { status: 'finished', updatedAt: new Date().toISOString() } }
+      );
+      return res.json({ message: 'Campaign closed' });
+    } catch (e) {
+      return res.status(500).json({ error: 'Internal Server Error' });
+    }
+  }
+  // Select winners (off-chain placeholder)
+  if (req.method === 'POST' && /^\/(?:api\/)?admin\/campaigns\/[a-zA-Z0-9]+\/select-winners\/?$/.test(url)) {
+    try {
+      const idParam = url.match(/^\/(?:api\/)?admin\/campaigns\/([a-zA-Z0-9]+)\/select-winners\/?$/)[1];
+      const db = await getDb();
+      // Mark status finished to indicate winners selected; store a stub timestamp
+      await db.collection('campaigns').updateOne(
+        { contractId: /^[0-9]+$/.test(idParam) ? Number(idParam) : idParam },
+        { $set: { status: 'finished', winnerSelectionTxHash: 'offchain', updatedAt: new Date().toISOString() } }
+      );
+      return res.json({ message: 'Winners selected', campaignId: idParam });
+    } catch (e) {
+      return res.status(500).json({ error: 'Internal Server Error' });
+    }
+  }
+  // Burn tokens (off-chain placeholder)
+  if (req.method === 'POST' && /^\/(?:api\/)?admin\/campaigns\/[a-zA-Z0-9]+\/burn-tokens\/?$/.test(url)) {
+    try {
+      const idParam = url.match(/^\/(?:api\/)?admin\/campaigns\/([a-zA-Z0-9]+)\/burn-tokens\/?$/)[1];
+      const db = await getDb();
+      await db.collection('campaigns').updateOne(
+        { contractId: /^[0-9]+$/.test(idParam) ? Number(idParam) : idParam },
+        { $set: { status: 'burned', tokensAreBurned: true, updatedAt: new Date().toISOString() } }
+      );
+      return res.json({ message: 'Tokens burned', campaignId: idParam });
+    } catch (e) {
+      return res.status(500).json({ error: 'Internal Server Error' });
+    }
+  }
   
   // Admin: delete single campaign by id or contractId
   if (req.method === 'DELETE' && /^\/(?:api\/)?admin\/campaigns\/[a-zA-Z0-9]+\/?$/.test(url)) {
@@ -427,8 +500,8 @@ export default async function handler(req, res) {
     }
   }
   
-  // Create campaign (persist to MongoDB)
-  if (req.method === 'POST' && (url.includes('/admin/campaigns') || /^\/(?:api\/)?campaigns\/?$/.test(url))) {
+  // Create campaign (persist to MongoDB) - exact base paths only
+  if (req.method === 'POST' && (/^\/(?:api\/)?admin\/campaigns\/?$/.test(url) || /^\/(?:api\/)?campaigns\/?$/.test(url))) {
     try {
       // Parse request body (handle both object and string)
       let body = req.body;
