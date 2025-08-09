@@ -428,8 +428,9 @@ const AdminPanel = () => {
 
   const loadTestData = () => {
     const now = new Date();
-    const startDate = new Date(now.getTime() + 24 * 60 * 60 * 1000); // Tomorrow
-    const endDate = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000); // Next week
+    // Start soon for quick testing; still in the future to satisfy on-chain require
+    const startDate = new Date(now.getTime() + 2 * 60 * 1000); // in 2 minutes
+    const endDate = new Date(startDate.getTime() + 24 * 60 * 60 * 1000); // +1 day
     
     setFormData({
       name: 'Test Campaign ' + Math.floor(Math.random() * 1000),
