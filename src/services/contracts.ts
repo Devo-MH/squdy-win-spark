@@ -34,7 +34,10 @@ const CAMPAIGN_MANAGER_ABI = [
   'function getCampaign(uint256 _campaignId) external view returns (tuple(address creator, string title, string description, uint256 targetAmount, uint256 ticketPrice, uint256 startTime, uint256 endTime, uint256 maxParticipants, bool isActive, bool winnersSelected, uint256 totalParticipants, uint256 prizePool))',
   'function getUserStake(uint256 _campaignId, address _user) external view returns (tuple(uint256 amount, uint256 tickets, uint256 timestamp, bool withdrawn))',
   'function getCampaignParticipants(uint256 _campaignId) external view returns (address[])',
+  // Simple manager signature
   'function createCampaign(string _title, string _description, uint256 _targetAmount, uint256 _ticketPrice, uint256 _startTime, uint256 _endTime, uint256 _maxParticipants, uint256 _prizePool) external returns (uint256)',
+  // Automated/role-based manager signature
+  'function createCampaign(string name, string description, string imageUrl, uint256 softCap, uint256 hardCap, uint256 ticketAmount, uint256 startDate, uint256 endDate, string[] prizes) external returns (uint256)',
   // Support multiple manager variants
   'function stakeTokens(uint256 campaignId, uint256 amount) external',
   'function stakeSQUDY(uint256 campaignId, uint256 amount) external',
