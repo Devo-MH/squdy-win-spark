@@ -81,9 +81,10 @@ export function DiscordTask({
       }
 
       const accessToken = localStorage.getItem('discord_access_token');
-      console.log('[DiscordTask] Discord access token found:', !!accessToken);
+      const allowTokenless = String(import.meta.env.VITE_ALLOW_TOKENLESS_SOCIAL || '').toLowerCase() === 'true';
+      console.log('[DiscordTask] Discord access token found:', !!accessToken, 'allowTokenless:', allowTokenless);
       
-      if (!accessToken) {
+      if (!accessToken && !allowTokenless) {
         console.log('[DiscordTask] No Discord access token found');
         showToast('You must connect your Discord account first. Please authenticate with Discord to verify this task.', 'error');
         setStatus('failed');
@@ -106,7 +107,7 @@ export function DiscordTask({
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${accessToken}`
+          ...(accessToken ? { 'Authorization': `Bearer ${accessToken}` } : {})
         },
         body: JSON.stringify(requestBody)
       });

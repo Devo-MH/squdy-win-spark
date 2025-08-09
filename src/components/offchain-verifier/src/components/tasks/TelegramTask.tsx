@@ -134,9 +134,10 @@ export function TelegramTask({
       }
 
       const accessToken = localStorage.getItem('telegram_access_token');
-      console.log('[TelegramTask] Telegram access token found:', !!accessToken);
+      const allowTokenless = String(import.meta.env.VITE_ALLOW_TOKENLESS_SOCIAL || '').toLowerCase() === 'true';
+      console.log('[TelegramTask] Telegram access token found:', !!accessToken, 'allowTokenless:', allowTokenless);
       
-      if (!accessToken) {
+      if (!accessToken && !allowTokenless) {
         console.log('[TelegramTask] No Telegram access token found');
         showToast('You must connect your Telegram account first. Please authenticate with Telegram to verify this task.', 'error');
         setStatus('failed');
@@ -159,7 +160,7 @@ export function TelegramTask({
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${accessToken}`
+          ...(accessToken ? { 'Authorization': `Bearer ${accessToken}` } : {})
         },
         body: JSON.stringify(requestBody)
       });

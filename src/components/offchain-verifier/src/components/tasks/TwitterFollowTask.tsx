@@ -80,9 +80,10 @@ export function TwitterFollowTask({
       }
 
       const accessToken = localStorage.getItem('twitter_access_token');
-      console.log('[TwitterFollowTask] Twitter access token found:', !!accessToken);
+      const allowTokenless = String(import.meta.env.VITE_ALLOW_TOKENLESS_SOCIAL || '').toLowerCase() === 'true';
+      console.log('[TwitterFollowTask] Twitter access token found:', !!accessToken, 'allowTokenless:', allowTokenless);
       
-      if (!accessToken) {
+      if (!accessToken && !allowTokenless) {
         console.log('[TwitterFollowTask] No Twitter access token found');
         showToast('You must connect your Twitter account first. Please authenticate with Twitter to verify this task.', 'error');
         setStatus('failed');
@@ -105,7 +106,7 @@ export function TwitterFollowTask({
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${accessToken}`
+          ...(accessToken ? { 'Authorization': `Bearer ${accessToken}` } : {})
         },
         body: JSON.stringify(requestBody)
       });
