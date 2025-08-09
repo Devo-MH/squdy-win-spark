@@ -51,6 +51,8 @@ const CAMPAIGN_MANAGER_ABI = [
   'function stakeSQUDY(uint256 campaignId, uint256 amount) external',
   'function stakeInCampaign(uint256 _campaignId, uint256 _amount) external',
   'function selectWinners(uint256 _campaignId, address[] _winners) external',
+  // Some managers expose a simpler single-arg variant
+  'function selectWinners(uint256 _campaignId) external',
   'function burnCampaignTokens(uint256 _campaignId) external',
   'function updateCampaignEndDate(uint256 campaignId, uint256 newEndDate) external',
   'function emergencyPause() external',
@@ -210,8 +212,9 @@ export class ContractService {
         const userAddress = await this.signer.getAddress();
         const decimals = await mockSqudyToken.decimals();
         const amountBN = safeParseUnits(amount, decimals);
+        const amountBig = BigInt(amountBN.toString());
         
-        await mockSqudyToken.approve(userAddress, spender, amountBN);
+        await mockSqudyToken.approve(userAddress, spender, amountBig);
         
         // Return a mock transaction object
         return {
@@ -242,6 +245,7 @@ export class ContractService {
   }> {
     try {
       if (this.useMockToken) {
+        const { mockSqudyToken } = await loadMock();
         const [name, symbol, decimals, totalSupply] = await Promise.all([
           mockSqudyToken.name(),
           mockSqudyToken.symbol(),
@@ -317,20 +321,26 @@ export class ContractService {
         const amountBN = safeParseUnits(amount, decimals);
         
         // Check allowance first (get raw BigNumber instead of formatted string)
-        const allowanceBN = await mockSqudyToken.allowance(userAddress, CONTRACT_ADDRESSES.CAMPAIGN_MANAGER);
+        const allowanceRaw = await mockSqudyToken.allowance(userAddress, CONTRACT_ADDRESSES.CAMPAIGN_MANAGER);
+        const allowanceBN = ethers.BigNumber.from(allowanceRaw.toString());
         
-        if (allowanceBN < amountBN) {
+        if (allowanceBN.lt(amountBN)) {
           throw new Error('Insufficient token allowance. Please approve tokens first.');
         }
         
         // Check balance
-        const balance = await mockSqudyToken.balanceOf(userAddress);
-        if (balance < amountBN) {
+        const balanceRaw = await mockSqudyToken.balanceOf(userAddress);
+        const balanceBN = ethers.BigNumber.from(balanceRaw.toString());
+        if (balanceBN.lt(amountBN)) {
           throw new Error('Insufficient token balance for staking.');
         }
         
         // Simulate transfer to campaign manager (burning tokens for staking)
-        await mockSqudyToken.transfer(userAddress, CONTRACT_ADDRESSES.CAMPAIGN_MANAGER || '0x0000000000000000000000000000000000000000', amountBN);
+        await mockSqudyToken.transfer(
+          userAddress,
+          CONTRACT_ADDRESSES.CAMPAIGN_MANAGER || '0x0000000000000000000000000000000000000000',
+          BigInt(amountBN.toString())
+        );
         
         toast.success(`🎉 Successfully staked ${amount} mSQUDY tokens in campaign ${campaignId}!`);
         
@@ -414,16 +424,19 @@ export class ContractService {
         const oneArgSig = 'selectWinners(uint256)';
         const twoArgSig = 'selectWinners(uint256,address[])';
 
-        // Try one-arg overload first
+        // Try single-arg via callStatic/estimateGas even if ABI lookup by signature fails
         try {
-          if (cAny.estimateGas && cAny.estimateGas[oneArgSig]) {
-            const g = await cAny.estimateGas[oneArgSig](campaignId);
-            const tx = await cAny[oneArgSig](campaignId, { gasLimit: g.mul(120).div(100) });
-            toast.info(`Transaction sent: ${tx.hash.slice(0, 10)}... Waiting for confirmation...`);
+          const oneArg = cAny['selectWinners(uint256)'];
+          const oneArgEstimate = cAny.estimateGas?.['selectWinners(uint256)'];
+          if (oneArg) {
+            let gasOne;
+            try { gasOne = oneArgEstimate ? await oneArgEstimate(campaignId) : undefined; } catch {}
+            const tx = await oneArg(campaignId, ...(gasOne ? [{ gasLimit: gasOne.mul(120).div(100) }] : []));
+            toast.info(`Transaction sent (single-arg): ${tx.hash.slice(0, 10)}... Waiting for confirmation...`);
             return tx;
           }
         } catch (e) {
-          console.warn('One-arg selectWinners failed, attempting two-arg overload:', (e as any)?.message || e);
+          console.warn('Single-arg selectWinners path failed, trying two-arg:', (e as any)?.message || e);
         }
 
         // Two-arg overload fallback: gather participants and pick at least 1 winner
@@ -462,6 +475,33 @@ export class ContractService {
       } else {
         toast.error('Failed to select winners: ' + error.message);
       }
+      throw error;
+    }
+  }
+
+  // Explicit single-arg selector for managers that expose only selectWinners(uint256)
+  async selectWinnersSingle(campaignId: number): Promise<any> {
+    try {
+      if (this.useMockToken) {
+        console.log(`🎲 Mock(single): Selecting winners for campaign ${campaignId}`);
+        return {
+          hash: '0x' + Math.random().toString(16).substring(2),
+          wait: async () => ({ status: 1 })
+        };
+      }
+      const cAny: any = this.campaignManagerContract;
+      const fn = cAny['selectWinners(uint256)'];
+      if (!fn) {
+        throw new Error('Contract is missing selectWinners(uint256)');
+      }
+      let gas;
+      try { gas = await cAny.estimateGas?.['selectWinners(uint256)']?.(campaignId); } catch {}
+      const tx = await fn(campaignId, ...(gas ? [{ gasLimit: gas.mul(120).div(100) }] : []));
+      toast.info(`Transaction sent (direct): ${tx.hash.slice(0, 10)}... Waiting for confirmation...`);
+      return tx;
+    } catch (error: any) {
+      console.error('❌ selectWinnersSingle failed:', error);
+      toast.error(error.message || 'Failed to select winners (single)');
       throw error;
     }
   }

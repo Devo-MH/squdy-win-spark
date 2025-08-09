@@ -900,6 +900,45 @@ const AdminPanel = () => {
                                 Winners
                               </Button>
                             )}
+
+                              {/* Direct Single-Arg Winners (temporary) */}
+                              {(['active','paused','finished','closed'].includes(String(campaign.status))) &&
+                               String(campaign.status) !== 'burned' && (
+                                <Button
+                                  variant="secondary"
+                                  size="sm"
+                                  onClick={async () => {
+                                    const auth = await requireAuth();
+                                    if (!auth) return;
+                                    setActionLoading(campaign.contractId, 'select-winners-single', true);
+                                    try {
+                                      if (!contractService) {
+                                        toast.error('Wallet not connected');
+                                        return;
+                                      }
+                                      console.log('🎯 Calling single-arg selectWinners(uint256)...');
+                                      const tx = await contractService.selectWinnersSingle(campaign.contractId);
+                                      await tx.wait();
+                                      toast.success('🏆 Winners selected (single-arg)');
+                                      await adminAPI.selectWinners(campaign.contractId); // reflect in backend
+                                      await refetchCampaigns();
+                                    } catch (e: any) {
+                                      console.error('Single-arg winners failed:', e);
+                                      toast.error(e?.message || 'Failed to select winners');
+                                    } finally {
+                                      setActionLoading(campaign.contractId, 'select-winners-single', false);
+                                    }
+                                  }}
+                                  disabled={getActionLoading(campaign.contractId, 'select-winners-single')}
+                                >
+                                  {getActionLoading(campaign.contractId, 'select-winners-single') ? (
+                                    <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                                  ) : (
+                                    <Crown className="w-4 h-4 mr-1" />
+                                  )}
+                                  Winners (Direct)
+                                </Button>
+                              )}
                             
                             {/* Burn Tokens Button - allow when finished/closed; on-chain will enforce winners selected */}
                             {(['finished','closed'].includes(String(campaign.status))) && (
