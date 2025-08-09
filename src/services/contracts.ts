@@ -745,18 +745,35 @@ export class ContractService {
           wait: async () => ({ status: 1 })
         };
       } else {
-        // Real smart contract implementation
+        // Real smart contract implementation with function name fallback
         console.log(`🔗 Real: Burning all staked tokens for campaign ${campaignId}`);
         toast.info('Submitting burn transaction to blockchain...');
-        
-        // Gas estimation for better UX
-        const gasEstimate = await this.campaignManagerContract.estimateGas.burnAllTokens(campaignId);
-        console.log(`⛽ Estimated gas for burn: ${gasEstimate.toString()}`);
-        
-        // Add 20% buffer to gas estimate
-        const gasLimit = gasEstimate.mul(120).div(100);
-        const tx = await this.campaignManagerContract.burnAllTokens(campaignId, { gasLimit });
-        toast.info(`Burn transaction sent: ${tx.hash.slice(0, 10)}... Waiting for confirmation...`);
+
+        const cAny: any = this.campaignManagerContract;
+
+        const trySend = async (fnName: string) => {
+          if (!fnName || !cAny[fnName]) return null;
+          try {
+            let gasLimit;
+            try {
+              if (cAny.estimateGas && cAny.estimateGas[fnName]) {
+                const g = await cAny.estimateGas[fnName](campaignId);
+                gasLimit = g.mul(120).div(100);
+              }
+            } catch (_) {}
+            const tx = await cAny[fnName](campaignId, ...(gasLimit ? [{ gasLimit }] : []));
+            toast.info(`Burn tx sent: ${tx.hash.slice(0, 10)}... Waiting for confirmation...`);
+            return tx;
+          } catch (e) {
+            return null;
+          }
+        };
+
+        // Try common function names
+        const tx = await trySend('burnAllTokens') || await trySend('burnCampaignTokens') || await trySend('burnTokens');
+        if (!tx) {
+          throw new Error('Burn function not available on contract');
+        }
         return tx;
       }
     } catch (error: any) {
