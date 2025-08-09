@@ -3,6 +3,7 @@ import { toast } from 'sonner';
 import { Task } from '@/components/offchain-verifier/types';
 
 // API Configuration
+const ENABLE_MOCK_FALLBACK = String(import.meta.env.VITE_ENABLE_MOCK_FALLBACK || '').toLowerCase() === 'true';
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 
   (import.meta.env.PROD 
     ? '/api'  // Production: Use relative path for Vercel
@@ -25,10 +26,12 @@ apiClient.interceptors.response.use(
     console.log('🚨 API Error:', error.code, error.message, error.response?.status);
     
     // Handle network errors and provide fallback data
-    if (error.code === 'ERR_NETWORK' || 
+    if (ENABLE_MOCK_FALLBACK && (
+        error.code === 'ERR_NETWORK' || 
         error.code === 'ECONNREFUSED' || 
         error.response?.status === 503 ||
-        error.response?.status === 404) {
+        error.response?.status === 404
+      )) {
       
       console.warn('🔄 Backend API issue, providing fallback');
       
