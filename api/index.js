@@ -219,6 +219,7 @@ export default async function handler(req, res) {
         startDate: body?.startDate || nowIso,
         endDate: body?.endDate || new Date(Date.now() + 7*24*60*60*1000).toISOString(),
         prizes: Array.isArray(body?.prizes) ? body.prizes : [],
+        offchainTasks: Array.isArray(body?.offchainTasks) ? body.offchainTasks : [],
         createdAt: nowIso,
         updatedAt: nowIso,
       };
