@@ -96,9 +96,20 @@ export const CONTRACT_ADDRESSES = {
 
 // Contract service class
 export class ContractService {
+  private roleStatusCache: Map<string, { result: any; timestamp: number }> = new Map();
+  private readonly CACHE_DURATION = 30000; // 30 seconds
+
   // Public helper to check roles quickly in UI
   async getRoleStatus(address?: string): Promise<{ hasAdmin: boolean; hasOperator: boolean; isOwner: boolean }>{
     const user = address || (await this.signer.getAddress());
+    
+    // Check cache first
+    const cacheKey = user.toLowerCase();
+    const cached = this.roleStatusCache.get(cacheKey);
+    if (cached && Date.now() - cached.timestamp < this.CACHE_DURATION) {
+      return cached.result;
+    }
+
     const contractAny = this.campaignManagerContract as any;
     let hasAdmin = false;
     let hasOperator = false;
@@ -119,7 +130,13 @@ export class ContractService {
       const owner = await contractAny.owner?.();
       isOwner = owner ? owner.toLowerCase() === user.toLowerCase() : false;
     } catch {}
-    return { hasAdmin, hasOperator, isOwner };
+    
+    const result = { hasAdmin, hasOperator, isOwner };
+    
+    // Cache the result
+    this.roleStatusCache.set(cacheKey, { result, timestamp: Date.now() });
+    
+    return result;
   }
   private provider: ethers.providers.Web3Provider;
   private signer: ethers.Signer;

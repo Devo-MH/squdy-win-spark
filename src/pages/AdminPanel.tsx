@@ -170,22 +170,35 @@ const AdminPanel = () => {
 
   // Check on-chain role status for the connected wallet and show hint if missing
   useEffect(() => {
+    let mounted = true;
     (async () => {
       try {
-        if (!isConnected) return;
-        if (useAutomated && provider && signer) {
+        if (!isConnected || !mounted) return;
+        if (useAutomated && provider && signer && mounted) {
           // Initialize Automated manager service for direct on-chain actions
           setAutoSvc(new AutomatedContractService(provider as any, signer as any));
         }
-        if (!contractService) return;
+        if (!contractService || !mounted) return;
+        
+        // Rate limit role checks to prevent spam
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        if (!mounted) return;
+        
         const status = await contractService.getRoleStatus();
+        if (!mounted) return;
+        
         if (!(status.hasAdmin || status.hasOperator || status.isOwner)) {
           setRoleHint('Your wallet lacks admin/operator role on the manager. On-chain creation will revert until granted.');
         } else {
           setRoleHint(null);
         }
-      } catch {}
+      } catch (error) {
+        console.warn('Role status check failed:', error);
+        // Don't set error state, just skip the hint
+      }
     })();
+    
+    return () => { mounted = false; };
   }, [contractService, isConnected, provider, signer, useAutomated]);
 
   // Real-time updates
@@ -606,14 +619,14 @@ const AdminPanel = () => {
           <div className="mb-8">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <Shield className="w-8 h-8 text-primary" />
+              <Shield className="w-8 h-8 text-primary" />
                 <div>
                   <h1 className="text-3xl font-bold text-foreground">Admin Panel</h1>
-                  <p className="text-muted-foreground">
+            <p className="text-muted-foreground">
                     Manage campaigns and monitor platform performance
-                  </p>
-                </div>
-              </div>
+            </p>
+          </div>
+                  </div>
               <div className="flex items-center gap-2">
                 <Badge variant="outline" className="bg-green-500/10 text-green-500 border-green-500">
                   <Crown className="w-3 h-3 mr-1" />
@@ -622,7 +635,7 @@ const AdminPanel = () => {
                 <Badge variant="outline">
                   {account?.slice(0, 6)}...{account?.slice(-4)}
                 </Badge>
-              </div>
+                </div>
             </div>
           </div>
 
@@ -661,8 +674,8 @@ const AdminPanel = () => {
                       <p className="text-xs text-muted-foreground">
                         {dashboardStats.activeCampaigns} active
                       </p>
-                    </CardContent>
-                  </Card>
+              </CardContent>
+            </Card>
 
                   <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -685,10 +698,10 @@ const AdminPanel = () => {
                     <CardContent>
                       <div className="text-2xl font-bold">
                         {Number(dashboardStats.totalStaked).toLocaleString()}
-                      </div>
+                  </div>
                       <p className="text-xs text-muted-foreground">SQUDY tokens</p>
-                    </CardContent>
-                  </Card>
+              </CardContent>
+            </Card>
 
                   <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -698,7 +711,7 @@ const AdminPanel = () => {
                     <CardContent>
                       <div className="text-2xl font-bold text-destructive">
                         {Number(dashboardStats.totalBurned).toLocaleString()}
-                      </div>
+                  </div>
                       <p className="text-xs text-muted-foreground">SQUDY tokens</p>
                     </CardContent>
                   </Card>
@@ -713,8 +726,8 @@ const AdminPanel = () => {
                       <CardContent>
                         <Skeleton className="h-8 w-16 mb-2" />
                         <Skeleton className="h-3 w-20" />
-                      </CardContent>
-                    </Card>
+              </CardContent>
+            </Card>
                   ))}
                 </div>
               )}
@@ -794,7 +807,7 @@ const AdminPanel = () => {
                                 target.src = "https://images.unsplash.com/photo-1640340434855-6084b1f4901c?w=400&h=300&fit=crop";
                               }}
                             />
-                            <div>
+                  <div>
                               <h4 className="font-semibold">{campaign.name}</h4>
                               <div className="flex items-center gap-2 mt-1">
                                 <Badge variant={getCampaignStatusBadge(campaign.status)} className="capitalize">
@@ -803,8 +816,8 @@ const AdminPanel = () => {
                                 <span className="text-sm text-muted-foreground">
                                   {campaign.participantCount} participants
                                 </span>
-                              </div>
-                            </div>
+                  </div>
+                </div>
                           </div>
                           
                           <div className="flex items-center gap-2">
@@ -1022,8 +1035,8 @@ const AdminPanel = () => {
                       ))}
                     </div>
                   )}
-                </CardContent>
-              </Card>
+              </CardContent>
+            </Card>
             </TabsContent>
 
             {/* Create Tab */}
@@ -1031,10 +1044,10 @@ const AdminPanel = () => {
               <Card>
                 <CardHeader>
                   <div className="flex items-center justify-between">
-                    <CardTitle className="flex items-center gap-2">
+                  <CardTitle className="flex items-center gap-2">
                       <Plus className="w-5 h-5" />
-                      Create New Campaign
-                    </CardTitle>
+                    Create New Campaign
+                  </CardTitle>
                     <Button
                       type="button"
                       variant="outline"
@@ -1057,8 +1070,8 @@ const AdminPanel = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="name">Campaign Name *</Label>
-                      <Input
-                        id="name"
+                      <Input 
+                        id="name" 
                         value={formData.name}
                         onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                         placeholder="Enter campaign name"
@@ -1067,7 +1080,7 @@ const AdminPanel = () => {
                     
                     <div className="space-y-2">
                       <Label htmlFor="imageUrl">Image URL</Label>
-                      <Input
+                      <Input 
                         id="imageUrl"
                         value={formData.imageUrl}
                         onChange={(e) => setFormData(prev => ({ ...prev, imageUrl: e.target.value }))}
@@ -1078,8 +1091,8 @@ const AdminPanel = () => {
 
                   <div className="space-y-2">
                     <Label htmlFor="description">Description *</Label>
-                    <Textarea
-                      id="description"
+                    <Textarea 
+                      id="description" 
                       value={formData.description}
                       onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
                       placeholder="Describe your campaign"
@@ -1091,9 +1104,9 @@ const AdminPanel = () => {
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="softCap">Soft Cap (SQUDY) *</Label>
-                      <Input
-                        id="softCap"
-                        type="number"
+                      <Input 
+                        id="softCap" 
+                        type="number" 
                         value={formData.softCap}
                         onChange={(e) => setFormData(prev => ({ ...prev, softCap: e.target.value }))}
                         placeholder="10000"
@@ -1102,9 +1115,9 @@ const AdminPanel = () => {
                     
                     <div className="space-y-2">
                       <Label htmlFor="hardCap">Hard Cap (SQUDY) *</Label>
-                      <Input
-                        id="hardCap"
-                        type="number"
+                      <Input 
+                        id="hardCap" 
+                        type="number" 
                         value={formData.hardCap}
                         onChange={(e) => setFormData(prev => ({ ...prev, hardCap: e.target.value }))}
                         placeholder="100000"
@@ -1113,19 +1126,19 @@ const AdminPanel = () => {
                     
                     <div className="space-y-2">
                       <Label htmlFor="ticketAmount">Ticket Price (SQUDY) *</Label>
-                      <Input
-                        id="ticketAmount"
-                        type="number"
+                      <Input 
+                        id="ticketAmount" 
+                        type="number" 
                         value={formData.ticketAmount}
                         onChange={(e) => setFormData(prev => ({ ...prev, ticketAmount: e.target.value }))}
-                        placeholder="100"
+                        placeholder="100" 
                       />
                     </div>
                   </div>
 
                   {/* Dates */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
+                  <div className="space-y-2">
                       <Label htmlFor="startDate" className="flex items-center gap-2">
                         <Calendar className="w-4 h-4" />
                         Start Date *
@@ -1136,12 +1149,12 @@ const AdminPanel = () => {
                         value={formData.startDate}
                         onChange={(e) => setFormData(prev => ({ ...prev, startDate: e.target.value }))}
                         className="text-sm"
-                      />
-                      <p className="text-xs text-muted-foreground">
+                    />
+                    <p className="text-xs text-muted-foreground">
                         Campaign will start at this date and time
-                      </p>
-                    </div>
-                    
+                    </p>
+                  </div>
+
                     <div className="space-y-2">
                       <Label htmlFor="endDate" className="flex items-center gap-2">
                         <Calendar className="w-4 h-4" />
@@ -1328,7 +1341,7 @@ const AdminPanel = () => {
                               )}
                             </div>
                             
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                               <div className="space-y-2">
                                 <Label>Task Type *</Label>
                                 <Select 
@@ -1370,26 +1383,26 @@ const AdminPanel = () => {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                               <div className="space-y-2">
                                 <Label>Label *</Label>
-                                <Input
+                      <Input 
                                   placeholder="e.g., Follow @SqudyOfficial"
                                   value={task.label}
                                   onChange={(e) => updateTask(index, 'label', e.target.value)}
-                                />
+                      />
                               </div>
                               
                               <div className="space-y-2">
                                 <Label>URL</Label>
-                                <Input
+                      <Input 
                                   placeholder="https://twitter.com/SqudyOfficial"
                                   value={task.url || ''}
                                   onChange={(e) => updateTask(index, 'url', e.target.value)}
-                                />
+                      />
                               </div>
                             </div>
                             
                             <div className="space-y-2">
                               <Label>Description</Label>
-                              <Input
+                      <Input 
                                 placeholder="Brief description of what participants need to do"
                                 value={task.description || ''}
                                 onChange={(e) => updateTask(index, 'description', e.target.value)}
@@ -1402,12 +1415,12 @@ const AdminPanel = () => {
                                 {task.type === 'twitter_follow' && (
                                   <div className="space-y-2">
                                     <Label>Twitter Handle</Label>
-                                    <Input
+                      <Input 
                                       placeholder="SqudyOfficial (without @)"
                                       value={task.targetAccount || ''}
                                       onChange={(e) => updateTask(index, 'targetAccount', e.target.value)}
-                                    />
-                                  </div>
+                      />
+                    </div>
                                 )}
                                 {(task.type === 'twitter_like' || task.type === 'twitter_retweet') && (
                                   <div className="space-y-2">
@@ -1417,20 +1430,20 @@ const AdminPanel = () => {
                                       value={task.tweetId || ''}
                                       onChange={(e) => updateTask(index, 'tweetId', e.target.value)}
                                     />
-                                  </div>
+                  </div>
                                 )}
                               </div>
                             )}
-                            
+
                             {task.type === 'join_telegram' && (
-                              <div className="space-y-2">
+                  <div className="space-y-2">
                                 <Label>Telegram Channel/Group</Label>
-                                <Input
+                    <Input 
                                   placeholder="SqudyCommunity (channel name)"
                                   value={task.value || ''}
                                   onChange={(e) => updateTask(index, 'value', e.target.value)}
-                                />
-                              </div>
+                    />
+                  </div>
                             )}
                             
                             {task.type === 'discord_join' && (
@@ -1441,9 +1454,9 @@ const AdminPanel = () => {
                                   value={task.value || ''}
                                   onChange={(e) => updateTask(index, 'value', e.target.value)}
                                 />
-                              </div>
+                      </div>
                             )}
-                          </div>
+                    </div>
                         ))}
                       </div>
                     )}
@@ -1498,15 +1511,15 @@ const AdminPanel = () => {
 
               {useAutomated && (
                 <Card>
-                  <CardHeader>
+                <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <Zap className="w-5 h-5" />
                       On-chain Tools (Automated Manager)
                     </CardTitle>
-                  </CardHeader>
+                </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
+                  <div className="space-y-2">
                         <Label>Approve SQUDY Amount</Label>
                         <div className="flex gap-2">
                           <Input
@@ -1524,8 +1537,8 @@ const AdminPanel = () => {
                               } catch (err: any) { toast.error(err?.message || 'Approve failed'); }
                             }}
                           >Approve</Button>
-                        </div>
-                      </div>
+                    </div>
+                    </div>
                       <div className="space-y-2">
                         <Label>Stake (campaignId, amount)</Label>
                         <div className="grid grid-cols-3 gap-2">
@@ -1543,8 +1556,8 @@ const AdminPanel = () => {
                               } catch (err: any) { toast.error(err?.message || 'Stake failed'); }
                             }}
                           >Stake</Button>
-                        </div>
-                      </div>
+                    </div>
+                  </div>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1565,8 +1578,8 @@ const AdminPanel = () => {
                               } catch (err: any) { toast.error(err?.message || 'Confirm failed'); }
                             }}
                           >Confirm</Button>
-                        </div>
-                      </div>
+            </div>
+          </div>
                       <div className="space-y-2">
                         <Label>Winners / Burn (campaignId)</Label>
                         <div className="grid grid-cols-3 gap-2">
