@@ -183,6 +183,28 @@ const AdminPanel = () => {
 
     setIsCreating(true);
     try {
+      // 1) Create on-chain to get canonical campaignId
+      let onChainId: number | null = null;
+      try {
+        if (contractService) {
+          const id = await contractService.createCampaign({
+            name: formData.name,
+            description: formData.description,
+            imageUrl: formData.imageUrl,
+            softCap: formData.softCap,
+            hardCap: formData.hardCap,
+            ticketAmount: formData.ticketAmount,
+            startDate: formData.startDate,
+            endDate: formData.endDate,
+            prizes: formData.prizes.map(p => p.name).filter(Boolean),
+          });
+          onChainId = Number(id);
+        }
+      } catch (e) {
+        console.error('On-chain create failed; falling back to off-chain only:', e);
+      }
+
+      // 2) Persist off-chain (include onChainId if available)
       const created = await adminAPI.createCampaign({
         name: formData.name,
         description: formData.description,
@@ -194,6 +216,8 @@ const AdminPanel = () => {
         endDate: formData.endDate,
         prizes: formData.prizes.filter(p => p.name && p.value),
         offchainTasks: formData.offchainTasks.filter(t => t.label && t.type),
+        // if onChainId exists, let backend store it as contractId
+        contractId: onChainId ?? undefined,
       });
 
       setShowCreateForm(false);
@@ -201,7 +225,7 @@ const AdminPanel = () => {
       // Optimistic UI: show the new campaign immediately
       if (created?.campaign) {
         prependCampaignOptimistic({
-          contractId: created.campaign.contractId,
+          contractId: created.campaign.contractId ?? onChainId ?? Date.now(),
           name: created.campaign.name,
           description: created.campaign.description || '',
           imageUrl: created.campaign.imageUrl || 'https://images.unsplash.com/photo-1640340434855-6084b1f4901c?w=400&h=300&fit=crop',

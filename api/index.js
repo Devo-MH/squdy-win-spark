@@ -203,7 +203,7 @@ export default async function handler(req, res) {
       const nowIso = new Date().toISOString();
       const newCampaign = {
         id: `created_${Date.now()}`,
-        contractId: Math.floor(Math.random() * 1e9),
+        contractId: Number.isFinite(Number(body?.contractId)) ? Number(body.contractId) : Math.floor(Math.random() * 1e9),
         name: body?.name || 'New Campaign',
         description: body?.description || '',
         imageUrl: body?.imageUrl || 'https://images.unsplash.com/photo-1640340434855-6084b1f4901c?w=800&h=400&fit=crop',

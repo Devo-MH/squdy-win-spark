@@ -385,6 +385,91 @@ export class ContractService {
     }
   }
 
+  // Create campaign on-chain and return the created campaignId
+  async createCampaign(data: {
+    name: string;
+    description: string;
+    imageUrl?: string;
+    softCap: string | number;
+    hardCap: string | number;
+    ticketAmount: string | number;
+    startDate: string; // ISO or datetime-local
+    endDate: string;   // ISO or datetime-local
+    prizes?: string[];
+  }): Promise<number> {
+    try {
+      const startTs = Math.floor(new Date(data.startDate).getTime() / 1000);
+      const endTs = Math.floor(new Date(data.endDate).getTime() / 1000);
+      const decimals = this.useMockToken ? 18 : await this.squdyTokenContract!.decimals();
+      const softCapBN = safeParseUnits(String(data.softCap), decimals);
+      const hardCapBN = safeParseUnits(String(data.hardCap), decimals);
+      const ticketAmountBN = safeParseUnits(String(data.ticketAmount), decimals);
+
+      const contractAny = this.campaignManagerContract as any;
+
+      // Try automated signature first: (name, description, imageUrl, softCap, hardCap, ticketAmount, start, end, prizes)
+      let tx;
+      try {
+        tx = await contractAny.createCampaign(
+          data.name,
+          data.description,
+          data.imageUrl || '',
+          softCapBN,
+          hardCapBN,
+          ticketAmountBN,
+          startTs,
+          endTs,
+          Array.isArray(data.prizes) ? data.prizes : []
+        );
+      } catch (e) {
+        // Fallback: simple signature (title, description, targetAmount, ticketPrice, startTime, endTime, maxParticipants, prizePool)
+        // Map hardCap->targetAmount, ticketAmount->ticketPrice, use large maxParticipants, prizePool=hardCap
+        tx = await contractAny.createCampaign(
+          data.name,
+          data.description,
+          hardCapBN,
+          ticketAmountBN,
+          startTs,
+          endTs,
+          1000000,
+          hardCapBN
+        );
+      }
+
+      const receipt = await tx.wait();
+
+      // Try to parse CampaignCreated event for id
+      const logs = receipt.logs || [];
+      for (const log of logs) {
+        try {
+          const parsed = this.campaignManagerContract.interface.parseLog(log);
+          if (parsed && parsed.name === 'CampaignCreated') {
+            const idArg = parsed.args?.[0];
+            if (idArg != null) {
+              return Number(idArg.toString());
+            }
+          }
+        } catch (_) {
+          // ignore parse errors
+        }
+      }
+
+      // As a fallback, try reading a counter
+      try {
+        const counter = await (contractAny.getCampaignCount?.() || contractAny.campaignCounter?.());
+        if (counter) {
+          const value = typeof counter.toNumber === 'function' ? counter.toNumber() : Number(counter);
+          return value - 1 >= 0 ? value - 1 : value;
+        }
+      } catch (_) {}
+
+      throw new Error('Could not determine created campaign id from transaction');
+    } catch (error) {
+      console.error('Error creating on-chain campaign:', error);
+      throw error;
+    }
+  }
+
   async burnAllTokens(campaignId: number): Promise<any> {
     try {
       if (this.useMockToken) {
