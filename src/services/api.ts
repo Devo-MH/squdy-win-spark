@@ -582,6 +582,22 @@ export const adminAPI = {
     const response = await apiClient.post(`/admin/campaigns/${id}/burn-tokens`);
     return response.data;
   },
+
+  // Delete single campaign by id/contractId
+  deleteCampaign: async (id: number | string) => {
+    const response = await apiClient.delete(`/admin/campaigns/${id}`);
+    return response.data;
+  },
+
+  // Bulk delete: pass ids array or set all=true
+  deleteCampaigns: async (options: { ids?: Array<number|string>; all?: boolean }) => {
+    if (options.all) {
+      const response = await apiClient.delete(`/admin/campaigns?all=true`);
+      return response.data;
+    }
+    const response = await apiClient.delete(`/admin/campaigns`, { data: { ids: options.ids || [] } });
+    return response.data;
+  },
 };
 
 // Helper function to store wallet authentication

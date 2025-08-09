@@ -7,7 +7,7 @@ export const config = { runtime: 'nodejs' };
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   
   if (req.method === 'OPTIONS') {
@@ -287,6 +287,88 @@ export default async function handler(req, res) {
         database: { status: 'connected', lastCheck: new Date().toISOString() },
       }
     });
+  }
+  
+  // Admin: delete single campaign by id or contractId
+  if (req.method === 'DELETE' && /^\/(?:api\/)?admin\/campaigns\/[a-zA-Z0-9]+\/?$/.test(url)) {
+    try {
+      const match = url.match(/^\/(?:api\/)?admin\/campaigns\/([a-zA-Z0-9]+)\/?$/);
+      const idParam = match ? match[1] : null;
+      if (!idParam) return res.status(400).json({ error: 'Invalid campaign id' });
+
+      const db = await getDb();
+      const campaigns = db.collection('campaigns');
+      const participations = db.collection('participations');
+      const verifications = db.collection('verifications');
+
+      const asNumber = /^[0-9]+$/.test(idParam) ? Number(idParam) : null;
+      let deleteFilter = {};
+      if (asNumber != null) {
+        deleteFilter = { $or: [ { contractId: asNumber }, { id: String(asNumber) } ] };
+      } else if (/^[a-fA-F0-9]{24}$/.test(idParam)) {
+        const { ObjectId } = await import('mongodb');
+        deleteFilter = { _id: new ObjectId(idParam) };
+      } else {
+        deleteFilter = { $or: [ { id: idParam }, { contractId: idParam } ] };
+      }
+
+      const deleted = await campaigns.deleteMany(deleteFilter);
+      // Cascade cleanup of participations and verifications
+      const campaignKey = asNumber != null ? asNumber : idParam;
+      await participations.deleteMany({ campaignId: campaignKey });
+      await verifications.deleteMany({ campaignId: campaignKey });
+
+      return res.json({ success: true, deletedCount: deleted.deletedCount || 0 });
+    } catch (err) {
+      console.error('DELETE /admin/campaigns/:id error:', err);
+      return res.status(500).json({ error: 'Internal Server Error' });
+    }
+  }
+
+  // Admin: bulk delete campaigns (by ids or all=true)
+  if (req.method === 'DELETE' && /^\/(?:api\/)?admin\/campaigns\/?$/.test(url)) {
+    try {
+      let body = req.body;
+      if (typeof body === 'string') {
+        try { body = JSON.parse(body); } catch (_) { body = {}; }
+      }
+      const query = new URL(req.url, `http://${req.headers.host || 'localhost'}`).searchParams;
+      const deleteAll = query.get('all') === 'true' || body?.all === true;
+      const ids = Array.isArray(body?.ids) ? body.ids : [];
+
+      const db = await getDb();
+      const campaigns = db.collection('campaigns');
+      const participations = db.collection('participations');
+      const verifications = db.collection('verifications');
+
+      let deletedCount = 0;
+      if (deleteAll) {
+        const result = await campaigns.deleteMany({});
+        deletedCount = result.deletedCount || 0;
+        await participations.deleteMany({});
+        await verifications.deleteMany({});
+      } else if (ids.length > 0) {
+        // Support numeric contractId and string id
+        const numericIds = ids.filter((v) => /^[0-9]+$/.test(String(v))).map((v) => Number(v));
+        const stringIds = ids.map((v) => String(v));
+        const result = await campaigns.deleteMany({
+          $or: [
+            { contractId: { $in: numericIds } },
+            { id: { $in: stringIds } }
+          ]
+        });
+        deletedCount = result.deletedCount || 0;
+        await participations.deleteMany({ campaignId: { $in: [...numericIds, ...stringIds] } });
+        await verifications.deleteMany({ campaignId: { $in: [...numericIds, ...stringIds] } });
+      } else {
+        return res.status(400).json({ error: 'Provide all=true or ids array' });
+      }
+
+      return res.json({ success: true, deletedCount });
+    } catch (err) {
+      console.error('DELETE /admin/campaigns error:', err);
+      return res.status(500).json({ error: 'Internal Server Error' });
+    }
   }
   
   // Create campaign (persist to MongoDB)

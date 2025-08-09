@@ -657,13 +657,38 @@ const AdminPanel = () => {
             </TabsContent>
 
             {/* Campaigns Tab */}
-            <TabsContent value="campaigns" className="space-y-6">
+              <TabsContent value="campaigns" className="space-y-6">
               <Card>
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Target className="w-5 h-5" />
-                    Campaign Management
-                  </CardTitle>
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="flex items-center gap-2">
+                        <Target className="w-5 h-5" />
+                        Campaign Management
+                      </CardTitle>
+                      {campaigns.length > 0 && (
+                        <div className="flex gap-2">
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={async () => {
+                              const auth = await requireAuth();
+                              if (!auth) return;
+                              if (!confirm('Delete ALL campaigns and related data? This cannot be undone.')) return;
+                              try {
+                                const res = await adminAPI.deleteCampaigns({ all: true });
+                                toast.success(`Deleted ${res.deletedCount || 0} campaigns`);
+                                await refetchCampaigns();
+                              } catch (e: any) {
+                                toast.error(e?.response?.data?.error || 'Failed to delete all campaigns');
+                              }
+                            }}
+                          >
+                            <Trash2 className="w-4 h-4 mr-1" />
+                            Delete All
+                          </Button>
+                        </div>
+                      )}
+                    </div>
                 </CardHeader>
                 <CardContent>
                   {campaignsLoading ? (
@@ -726,6 +751,25 @@ const AdminPanel = () => {
                             >
                               <Eye className="w-4 h-4 mr-1" />
                               View
+                            </Button>
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={async () => {
+                                const auth = await requireAuth();
+                                if (!auth) return;
+                                if (!confirm(`Delete campaign ${campaign.name}?`)) return;
+                                try {
+                                  const res = await adminAPI.deleteCampaign(campaign.contractId);
+                                  toast.success(`Deleted (${res.deletedCount || 1})`);
+                                  await refetchCampaigns();
+                                } catch (e: any) {
+                                  toast.error(e?.response?.data?.error || 'Failed to delete campaign');
+                                }
+                              }}
+                            >
+                              <Trash2 className="w-4 h-4 mr-1" />
+                              Delete
                             </Button>
                             
                             {campaign.status === 'pending' && (
