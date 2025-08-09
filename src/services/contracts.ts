@@ -82,6 +82,31 @@ export const CONTRACT_ADDRESSES = {
 
 // Contract service class
 export class ContractService {
+  // Public helper to check roles quickly in UI
+  async getRoleStatus(address?: string): Promise<{ hasAdmin: boolean; hasOperator: boolean; isOwner: boolean }>{
+    const user = address || (await this.signer.getAddress());
+    const contractAny = this.campaignManagerContract as any;
+    let hasAdmin = false;
+    let hasOperator = false;
+    let isOwner = false;
+    try {
+      const adminRole = await contractAny.ADMIN_ROLE?.();
+      if (adminRole) {
+        hasAdmin = Boolean(await contractAny.hasRole?.(adminRole, user));
+      }
+    } catch {}
+    try {
+      const operatorRole = await contractAny.OPERATOR_ROLE?.();
+      if (operatorRole) {
+        hasOperator = Boolean(await contractAny.hasRole?.(operatorRole, user));
+      }
+    } catch {}
+    try {
+      const owner = await contractAny.owner?.();
+      isOwner = owner ? owner.toLowerCase() === user.toLowerCase() : false;
+    } catch {}
+    return { hasAdmin, hasOperator, isOwner };
+  }
   private provider: ethers.providers.Web3Provider;
   private signer: ethers.Signer;
   private squdyTokenContract: ethers.Contract | null = null;
@@ -457,13 +482,46 @@ export class ContractService {
         // ignore if not implemented
       }
 
+      // Prepare overload-aware invocations
+      const automatedSig = 'createCampaign(string,string,string,uint256,uint256,uint256,uint256,uint256,string[])';
+      const simpleSig = 'createCampaign(string,string,uint256,uint256,uint256,uint256,uint256,uint256)';
+      const cAny: any = this.campaignManagerContract;
+
       // Try automated signature first: (name, description, imageUrl, softCap, hardCap, ticketAmount, start, end, prizes)
       let tx;
       try {
         // Simulate first to surface revert reason
         try {
-          if (this.campaignManagerContract.callStatic && (this.campaignManagerContract as any).callStatic.createCampaign) {
-            await (this.campaignManagerContract as any).callStatic.createCampaign(
+          if (cAny.callStatic && cAny.callStatic[automatedSig]) {
+            await cAny.callStatic[automatedSig](
+              data.name,
+              data.description,
+              data.imageUrl || '',
+              softCapBN,
+              hardCapBN,
+              ticketAmountBN,
+              startTs,
+              endTs,
+              Array.isArray(data.prizes) ? data.prizes : []
+            );
+          } else {
+            throw new Error('SIGNATURE_MISMATCH');
+          }
+        } catch (simErr: any) {
+          const raw = simErr?.error?.message || simErr?.data?.message || simErr?.message || '';
+          const msg = raw || 'Simulation reverted';
+          // Only allow fallback if the error clearly indicates a signature mismatch
+          const signatureMismatch = msg === 'SIGNATURE_MISMATCH' || /no matching function|matching function|too (few|many) arguments|missing arguments|fragment|is not a function/i.test(msg);
+          if (!signatureMismatch) {
+            throw new Error(msg);
+          }
+          // If signature mismatch, jump to fallback by rethrowing a sentinel
+          throw Object.assign(new Error('SIGNATURE_MISMATCH'), { __fallback: true });
+        }
+        // Gas pre-estimation for clearer error reporting
+        try {
+          if (cAny.estimateGas && cAny.estimateGas[automatedSig]) {
+            await cAny.estimateGas[automatedSig](
               data.name,
               data.description,
               data.imageUrl || '',
@@ -475,30 +533,6 @@ export class ContractService {
               Array.isArray(data.prizes) ? data.prizes : []
             );
           }
-        } catch (simErr: any) {
-          const raw = simErr?.error?.message || simErr?.data?.message || simErr?.message || '';
-          const msg = raw || 'Simulation reverted';
-          // Only allow fallback if the error clearly indicates a signature mismatch
-          const signatureMismatch = /no matching function|matching function|too (few|many) arguments|missing arguments|fragment/i.test(msg);
-          if (!signatureMismatch) {
-            throw new Error(msg);
-          }
-          // If signature mismatch, jump to fallback by rethrowing a sentinel
-          throw Object.assign(new Error('SIGNATURE_MISMATCH'), { __fallback: true });
-        }
-        // Gas pre-estimation for clearer error reporting
-        try {
-          await this.campaignManagerContract.estimateGas.createCampaign(
-            data.name,
-            data.description,
-            data.imageUrl || '',
-            softCapBN,
-            hardCapBN,
-            ticketAmountBN,
-            startTs,
-            endTs,
-            Array.isArray(data.prizes) ? data.prizes : []
-          );
         } catch (estErr: any) {
           // Continue to try sending, ethers will throw if it truly reverts
           console.warn('Gas estimation failed for automated signature; will attempt send:', estErr?.message || estErr);
@@ -506,7 +540,8 @@ export class ContractService {
         // Add 20% gas buffer if estimate succeeded
         const gasLimit1 = await (async () => {
           try {
-            const g = await this.campaignManagerContract.estimateGas.createCampaign(
+            if (!cAny.estimateGas || !cAny.estimateGas[automatedSig]) return undefined;
+            const g = await cAny.estimateGas[automatedSig](
               data.name,
               data.description,
               data.imageUrl || '',
@@ -522,7 +557,8 @@ export class ContractService {
             return undefined;
           }
         })();
-        tx = await contractAny.createCampaign(
+        if (!cAny[automatedSig]) throw Object.assign(new Error('SIGNATURE_MISMATCH'), { __fallback: true });
+        tx = await cAny[automatedSig](
           data.name,
           data.description,
           data.imageUrl || '',
@@ -542,8 +578,27 @@ export class ContractService {
           throw e;
         }
         try {
-          if (this.campaignManagerContract.callStatic && (this.campaignManagerContract as any).callStatic.createCampaign) {
-            await (this.campaignManagerContract as any).callStatic.createCampaign(
+          if (cAny.callStatic && cAny.callStatic[simpleSig]) {
+            await cAny.callStatic[simpleSig](
+              data.name,
+              data.description,
+              hardCapBN,
+              ticketAmountBN,
+              startTs,
+              endTs,
+              1000000,
+              hardCapBN
+            );
+          } else {
+            throw new Error('No matching createCampaign overload on contract');
+          }
+        } catch (simErr2: any) {
+          const msg = simErr2?.error?.message || simErr2?.data?.message || simErr2?.message || 'Simulation reverted';
+          throw new Error(msg);
+        }
+        try {
+          if (cAny.estimateGas && cAny.estimateGas[simpleSig]) {
+            await cAny.estimateGas[simpleSig](
               data.name,
               data.description,
               hardCapBN,
@@ -554,27 +609,13 @@ export class ContractService {
               hardCapBN
             );
           }
-        } catch (simErr2: any) {
-          const msg = simErr2?.error?.message || simErr2?.data?.message || simErr2?.message || 'Simulation reverted';
-          throw new Error(msg);
-        }
-        try {
-          await this.campaignManagerContract.estimateGas.createCampaign(
-            data.name,
-            data.description,
-            hardCapBN,
-            ticketAmountBN,
-            startTs,
-            endTs,
-            1000000,
-            hardCapBN
-          );
         } catch (estErr2: any) {
           console.warn('Gas estimation failed for simple signature; will attempt send:', estErr2?.message || estErr2);
         }
         const gasLimit2 = await (async () => {
           try {
-            const g = await this.campaignManagerContract.estimateGas.createCampaign(
+            if (!cAny.estimateGas || !cAny.estimateGas[simpleSig]) return undefined;
+            const g = await cAny.estimateGas[simpleSig](
               data.name,
               data.description,
               hardCapBN,
@@ -589,7 +630,8 @@ export class ContractService {
             return undefined;
           }
         })();
-        tx = await contractAny.createCampaign(
+        if (!cAny[simpleSig]) throw new Error('No matching createCampaign overload on contract');
+        tx = await cAny[simpleSig](
           data.name,
           data.description,
           hardCapBN,
