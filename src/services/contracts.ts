@@ -44,6 +44,7 @@ const CAMPAIGN_MANAGER_ABI = [
   // Optional access-control helpers (not all deployments implement these)
   'function hasRole(bytes32 role, address account) external view returns (bool)',
   'function ADMIN_ROLE() external view returns (bytes32)',
+  'function OPERATOR_ROLE() external view returns (bytes32)',
   'function owner() external view returns (address)',
   
   // Events
@@ -421,13 +422,22 @@ export class ContractService {
 
       const contractAny = this.campaignManagerContract as any;
 
-      // Preflight: if access control exists, verify caller has admin role
+      // Preflight: if access control exists, verify caller has admin/operator role
       try {
         const adminRole = await contractAny.ADMIN_ROLE?.();
-        if (adminRole) {
-          const has = await contractAny.hasRole?.(adminRole, account);
-          if (has === false) {
-            throw new Error('Your wallet is not authorized to create campaigns (missing ADMIN_ROLE)');
+        const operatorRole = await contractAny.OPERATOR_ROLE?.();
+        if (adminRole || operatorRole) {
+          let authorized = true;
+          if (adminRole) {
+            const hasAdmin = await contractAny.hasRole?.(adminRole, account);
+            authorized = authorized && (hasAdmin !== false);
+          }
+          if (operatorRole) {
+            const hasOp = await contractAny.hasRole?.(operatorRole, account);
+            authorized = authorized || (hasOp === true);
+          }
+          if (!authorized) {
+            throw new Error('Your wallet is not authorized to create campaigns (missing ADMIN/OPERATOR role)');
           }
         }
       } catch (_) {
