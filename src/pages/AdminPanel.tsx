@@ -431,6 +431,12 @@ const AdminPanel = () => {
     // Start soon for quick testing; still in the future to satisfy on-chain require
     const startDate = new Date(now.getTime() + 2 * 60 * 1000); // in 2 minutes
     const endDate = new Date(startDate.getTime() + 24 * 60 * 60 * 1000); // +1 day
+
+    const toLocalInput = (d: Date) => {
+      const tzoffset = d.getTimezoneOffset() * 60000; // offset in ms
+      const local = new Date(d.getTime() - tzoffset);
+      return local.toISOString().slice(0, 16); // YYYY-MM-DDTHH:mm
+    };
     
     setFormData({
       name: 'Test Campaign ' + Math.floor(Math.random() * 1000),
@@ -439,8 +445,8 @@ const AdminPanel = () => {
       softCap: '5000',
       hardCap: '50000',
       ticketAmount: '100',
-      startDate: startDate.toISOString().slice(0, 16), // Format for datetime-local
-      endDate: endDate.toISOString().slice(0, 16),
+      startDate: toLocalInput(startDate), // Proper local value for datetime-local
+      endDate: toLocalInput(endDate),
       prizes: [
         { name: 'First Prize', description: 'Winner takes all', value: '10000', currency: 'USD', quantity: 1 },
         { name: 'Second Prize', description: 'Runner up reward', value: '5000', currency: 'USD', quantity: 1 },
