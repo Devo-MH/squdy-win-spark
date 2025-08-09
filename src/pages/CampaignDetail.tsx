@@ -58,15 +58,14 @@ const CampaignDetail = () => {
   const navigate = useNavigate();
   const socket = useSocket();
   
-  // Validate ID parameter
-  const campaignId = id ? Number(id) : 0;
+  // Validate ID parameter - only process if id exists
+  const campaignId = id && !isNaN(Number(id)) && Number(id) > 0 ? Number(id) : null;
   
-  // If no valid ID, redirect to campaigns page
+  // If no valid ID, redirect to campaigns page (only once)
   useEffect(() => {
-    if (!id || isNaN(campaignId) || campaignId <= 0) {
+    if (id && campaignId === null) {
       console.error('Invalid campaign ID:', id);
       navigate('/campaigns');
-      return;
     }
   }, [id, campaignId, navigate]);
   
@@ -77,18 +76,18 @@ const CampaignDetail = () => {
   // Contract integration
   const contractService = useContracts(provider, signer);
   
-  // API queries
+  // API queries - only run if we have a valid campaign ID
   const { 
     data: campaignData, 
     isLoading: isCampaignLoading, 
     error: campaignError,
     refetch: refetchCampaign 
-  } = useCampaign(campaignId);
+  } = useCampaign(campaignId || 0);
   
   const { 
     data: statusData, 
     refetch: refetchStatus 
-  } = useMyCampaignStatus(campaignId);
+  } = useMyCampaignStatus(campaignId || 0);
   
   // Mutations
   const participateMutation = useParticipateCampaign();
@@ -357,7 +356,7 @@ const CampaignDetail = () => {
   };
 
   // Early returns for error states
-  if (!id || isNaN(campaignId) || campaignId <= 0) {
+  if (!id || campaignId === null) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-background via-background to-secondary/5">
         <Header />

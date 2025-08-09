@@ -40,7 +40,7 @@ export const useCampaign = (id: number) => {
   return useQuery({
     queryKey: campaignKeys.detail(id),
     queryFn: () => campaignAPI.getCampaignById(id),
-    enabled: !!id,
+    enabled: !!id && id > 0,
     staleTime: import.meta.env.DEV ? 1000 * 5 : 1000 * 60 * 1, // 5 seconds in dev, 1 minute in prod
     refetchOnWindowFocus: true, // Refresh when window regains focus
   });
@@ -71,7 +71,7 @@ export const useMyCampaignStatus = (id: number) => {
   return useQuery({
     queryKey: campaignKeys.myStatus(id),
     queryFn: () => campaignAPI.getMyStatus(id),
-    enabled: !!id,
+    enabled: !!id && id > 0,
     staleTime: 1000 * 30, // 30 seconds
     retry: false, // Don't retry if not authenticated
   });
