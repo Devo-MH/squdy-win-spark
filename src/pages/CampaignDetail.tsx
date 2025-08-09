@@ -323,6 +323,18 @@ const CampaignDetail = () => {
     
     if (completed) {
       setCompletedTasks(prev => [...prev.filter(id => id !== taskId), taskId]);
+
+      // Also notify backend to record social task completion (no OAuth required)
+      try {
+        const task = campaignTasks.find(t => t.id === taskId);
+        if (task && localCampaign) {
+          // Map UI task types to backend types if needed
+          const backendType = task.type;
+          handleSocialTask(backendType, 'completed');
+        }
+      } catch (err) {
+        console.warn('Failed to notify backend for task completion', err);
+      }
     } else {
       setCompletedTasks(prev => prev.filter(id => id !== taskId));
     }
