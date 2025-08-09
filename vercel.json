@@ -4,6 +4,10 @@
   "rewrites": [
     { "source": "/health", "destination": "/api/health" },
     { "source": "/wallet-auth/(.*)", "destination": "/api/wallet-auth/$1" },
+    { "source": "/api/campaigns", "destination": "/api/index" },
+    { "source": "/api/campaigns/(.*)", "destination": "/api/index" },
+    { "source": "/api/health", "destination": "/api/index" },
+    { "source": "/api/(.*)", "destination": "/api/index" },
     { "source": "/((?!api/).*)", "destination": "/" }
   ],
   "env": {

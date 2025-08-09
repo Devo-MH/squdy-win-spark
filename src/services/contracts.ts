@@ -121,10 +121,12 @@ export class ContractService {
     this.provider = provider;
     this.signer = signer;
     
-    // Use mock token if contract addresses are demo addresses
-    this.useMockToken = CONTRACT_ADDRESSES.SQUDY_TOKEN === '0x1234567890123456789012345678901234567890' || 
-                       !CONTRACT_ADDRESSES.SQUDY_TOKEN || 
-                       CONTRACT_ADDRESSES.SQUDY_TOKEN === '';
+    // Decide mock mode: explicit env flag OR missing/placeholder address
+    const enableMock = String(import.meta.env.VITE_ENABLE_MOCK_FALLBACK || '').toLowerCase() === 'true';
+    this.useMockToken = enableMock ||
+      CONTRACT_ADDRESSES.SQUDY_TOKEN === '0x1234567890123456789012345678901234567890' || 
+      !CONTRACT_ADDRESSES.SQUDY_TOKEN || 
+      CONTRACT_ADDRESSES.SQUDY_TOKEN === '';
     
     if (!this.useMockToken) {
       this.squdyTokenContract = new ethers.Contract(
