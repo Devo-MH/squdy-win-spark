@@ -200,11 +200,15 @@ const AdminPanel = () => {
           });
           onChainId = Number(id);
         }
-      } catch (e) {
-        console.error('On-chain create failed; falling back to off-chain only:', e);
+      } catch (e: any) {
+        const message = e?.message || String(e);
+        toast.error(message.includes('authorized') ? message : (message.includes('execution reverted') ? message : 'On-chain create failed; please check wallet network, role, token decimals and dates'));
+        console.error('On-chain create failed; aborting off-chain create:', e);
+        setIsCreating(false);
+        return; // Do NOT create off-chain if on-chain failed
       }
 
-      // 2) Persist off-chain (include onChainId if available)
+      // 2) Persist off-chain (must include onChainId)
       const created = await adminAPI.createCampaign({
         name: formData.name,
         description: formData.description,
@@ -216,8 +220,8 @@ const AdminPanel = () => {
         endDate: formData.endDate,
         prizes: formData.prizes.filter(p => p.name && p.value),
         offchainTasks: formData.offchainTasks.filter(t => t.label && t.type),
-        // if onChainId exists, let backend store it as contractId
-        contractId: onChainId ?? undefined,
+        // onChainId must exist to store as contractId
+        contractId: onChainId!,
       });
 
       setShowCreateForm(false);
