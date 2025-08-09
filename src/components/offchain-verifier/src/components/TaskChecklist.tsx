@@ -147,10 +147,12 @@ export function TaskChecklist({
   firstIncompleteTaskRef,
   campaignId,
   onJoinSuccess,
-  backendUrl = 'http://localhost:4000',
+  backendUrl,
   enableSimulation = false,
   customTheme: _customTheme
 }: TaskChecklistProps) {
+  // Resolve backend URL: default to current origin /api
+  const resolvedBackendUrl = backendUrl || ((typeof window !== 'undefined' ? window.location.origin : '') + '/api');
   
   const [verificationStatus, setVerificationStatus] = useState<{ [key: string]: TaskStatus }>({});
 
@@ -232,7 +234,7 @@ export function TaskChecklist({
       Card: DefaultCard,
       Button: DefaultButton,
       Badge: DefaultBadge,
-      backendUrl,
+      backendUrl: resolvedBackendUrl,
       enableMockMode: enableSimulation,
       onToast: (message: string, type: 'success' | 'error') => {
         console.log(`[TOAST ${type.toUpperCase()}] ${message}`);

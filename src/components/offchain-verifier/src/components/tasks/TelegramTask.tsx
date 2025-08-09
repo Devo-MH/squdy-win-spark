@@ -37,7 +37,7 @@ export function TelegramTask({
   Badge,
   Dialog: _Dialog,
   onToast,
-  backendUrl = 'http://localhost:4000',
+  backendUrl = (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000') + '/api',
   enableMockMode = false,
   showQRCode = true
 }: TelegramTaskProps) {

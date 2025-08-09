@@ -28,7 +28,7 @@ export function EmailTask({
   Badge,
   Input,
   onToast,
-  backendUrl = 'http://localhost:4000',
+  backendUrl = (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000') + '/api',
   enableMockMode = false
 }: EmailTaskProps) {
   const [status, setStatus] = useState<TaskStatus>('waiting');

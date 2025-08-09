@@ -468,13 +468,14 @@ const CampaignDetail = () => {
                       <p className="text-sm text-muted-foreground pl-12">
                         Complete all required offchain tasks to join the campaign.
                       </p>
+                      {/* Control simulation via env flag */}
                       <TaskChecklist
                         tasks={campaignTasks}
                         completedTasks={completedTasks}
                         onTaskChange={handleTaskChange}
                         campaignName={localCampaign.name}
                         campaignId={localCampaign.id?.toString()}
-                        enableSimulation={true}
+                        enableSimulation={String(import.meta.env.VITE_ENABLE_MOCK_FALLBACK || '').toLowerCase() === 'true'}
                         highlightFirstIncompleteTask={true}
                       />
                     </div>
