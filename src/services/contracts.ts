@@ -35,6 +35,9 @@ const CAMPAIGN_MANAGER_ABI = [
   'function getUserStake(uint256 _campaignId, address _user) external view returns (tuple(uint256 amount, uint256 tickets, uint256 timestamp, bool withdrawn))',
   'function getCampaignParticipants(uint256 _campaignId) external view returns (address[])',
   'function createCampaign(string _title, string _description, uint256 _targetAmount, uint256 _ticketPrice, uint256 _startTime, uint256 _endTime, uint256 _maxParticipants, uint256 _prizePool) external returns (uint256)',
+  // Support multiple manager variants
+  'function stakeTokens(uint256 campaignId, uint256 amount) external',
+  'function stakeSQUDY(uint256 campaignId, uint256 amount) external',
   'function stakeInCampaign(uint256 _campaignId, uint256 _amount) external',
   'function selectWinners(uint256 _campaignId, address[] _winners) external',
   'function burnCampaignTokens(uint256 _campaignId) external',
@@ -299,7 +302,17 @@ export class ContractService {
           throw new Error('Insufficient token allowance. Please approve tokens first.');
         }
         
-        const tx = await this.campaignManagerContract.stakeSQUDY(campaignId, amountBN);
+        // Support multiple function names across manager versions
+        const stakeFn =
+          (this.campaignManagerContract as any).stakeTokens ||
+          (this.campaignManagerContract as any).stakeSQUDY ||
+          (this.campaignManagerContract as any).stakeInCampaign;
+
+        if (!stakeFn) {
+          throw new Error('Staking function not found on campaign manager contract');
+        }
+
+        const tx = await stakeFn(campaignId, amountBN);
         toast.info('Staking transaction sent. Please wait for confirmation...');
         
         return tx;
