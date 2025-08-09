@@ -476,8 +476,15 @@ export class ContractService {
             );
           }
         } catch (simErr: any) {
-          const msg = simErr?.error?.message || simErr?.data?.message || simErr?.message || 'Simulation reverted';
-          throw new Error(msg);
+          const raw = simErr?.error?.message || simErr?.data?.message || simErr?.message || '';
+          const msg = raw || 'Simulation reverted';
+          // Only allow fallback if the error clearly indicates a signature mismatch
+          const signatureMismatch = /no matching function|matching function|too (few|many) arguments|missing arguments|fragment/i.test(msg);
+          if (!signatureMismatch) {
+            throw new Error(msg);
+          }
+          // If signature mismatch, jump to fallback by rethrowing a sentinel
+          throw Object.assign(new Error('SIGNATURE_MISMATCH'), { __fallback: true });
         }
         // Gas pre-estimation for clearer error reporting
         try {
@@ -527,9 +534,13 @@ export class ContractService {
           Array.isArray(data.prizes) ? data.prizes : [],
           ...(gasLimit1 ? [{ gasLimit: gasLimit1 }] : [])
         );
-      } catch (e) {
+      } catch (e: any) {
         // Fallback: simple signature (title, description, targetAmount, ticketPrice, startTime, endTime, maxParticipants, prizePool)
         // Map hardCap->targetAmount, ticketAmount->ticketPrice, use large maxParticipants, prizePool=hardCap
+        if (!(e && e.__fallback)) {
+          // If the automated path failed for a reason OTHER than signature mismatch, do not fallback.
+          throw e;
+        }
         try {
           if (this.campaignManagerContract.callStatic && (this.campaignManagerContract as any).callStatic.createCampaign) {
             await (this.campaignManagerContract as any).callStatic.createCampaign(
