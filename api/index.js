@@ -125,17 +125,73 @@ export default async function handler(req, res) {
     }
   }
   
-  // Campaign detail and my-status
+  // Campaign detail, participants, winners, and my-status
   if (req.method === 'GET' && (url.startsWith('/api/campaigns/') || url.startsWith('/campaigns/'))) {
     try {
       // Specific matchers (trailing slash tolerated)
       const statusMatch = url.match(/^\/(?:api\/)?campaigns\/([a-zA-Z0-9]+)\/my-status\/?$/);
+      const participantsMatch = url.match(/^\/(?:api\/)?campaigns\/([a-zA-Z0-9]+)\/participants\/?$/);
+      const winnersMatch = url.match(/^\/(?:api\/)?campaigns\/([a-zA-Z0-9]+)\/winners\/?$/);
       const detailMatch = url.match(/^\/(?:api\/)?campaigns\/([a-zA-Z0-9]+)\/?$/);
 
       // /:id/my-status → static object
       if (statusMatch) {
+        try {
+          const idParam = statusMatch[1];
+          const db = await getDb();
+          const participations = db.collection('participations');
+          const urlObj = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
+          const wallet = urlObj.searchParams.get('walletAddress');
+          const idKey = /^[0-9]+$/.test(idParam) ? Number(idParam) : idParam;
+          let joined = false;
+          if (wallet) {
+            const exists = await participations.findOne({ campaignId: idKey, walletAddress: wallet });
+            joined = Boolean(exists);
+          }
+          res.setHeader('Cache-Control', 'no-store');
+          return res.json({ joined, isWinner: false, hasClaimed: false, canClaim: false });
+        } catch (_) {
+          res.setHeader('Cache-Control', 'no-store');
+          return res.json({ joined: false, isWinner: false, hasClaimed: false, canClaim: false });
+        }
+      }
+
+      // /:id/participants → list with pagination
+      if (participantsMatch) {
+        const idParam = participantsMatch[1];
+        const idKey = /^[0-9]+$/.test(idParam) ? Number(idParam) : idParam;
+        const urlObj = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
+        const page = Math.max(1, Number(urlObj.searchParams.get('page') || '1'));
+        const limit = Math.max(1, Math.min(100, Number(urlObj.searchParams.get('limit') || '20')));
+        const skip = (page - 1) * limit;
+        const db = await getDb();
+        const participations = db.collection('participations');
+        const [total, items] = await Promise.all([
+          participations.countDocuments({ campaignId: idKey }),
+          participations.find({ campaignId: idKey }).sort({ createdAt: -1 }).skip(skip).limit(limit).toArray()
+        ]);
+        const participants = items.map(p => ({
+          walletAddress: p.walletAddress,
+          campaignId: String(p.campaignId),
+          socialTasksCompleted: p.socialTasks || {},
+          stakeTxHash: p.stakeTxHash || '',
+          ticketCount: 0,
+          stakedAmount: Number(p.stakeAmount || 0),
+          isWinner: false,
+          prizeIndex: -1,
+          prizeName: '',
+          joinedAt: p.createdAt || new Date().toISOString(),
+          allSocialTasksCompleted: Boolean(p.socialTasks && Object.values(p.socialTasks).every(Boolean)),
+          socialCompletionPercentage: p.socialTasks ? Math.round(100 * (Object.values(p.socialTasks).filter(Boolean).length) / Math.max(1, Object.keys(p.socialTasks).length)) : 0,
+        }));
         res.setHeader('Cache-Control', 'no-store');
-        return res.json({ joined: false, isWinner: false, hasClaimed: false, canClaim: false });
+        return res.json({ participants, pagination: { page, limit, total, totalPages: Math.max(1, Math.ceil(total / limit)) } });
+      }
+
+      // /:id/winners → empty list placeholder for now
+      if (winnersMatch) {
+        res.setHeader('Cache-Control', 'no-store');
+        return res.json({ winners: [] });
       }
 
       // /:id → find in DB by _id or contractId, else fallback
