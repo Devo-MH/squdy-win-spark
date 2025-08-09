@@ -391,8 +391,8 @@ export class AutomatedContractService {
       const receipt = await tx.wait();
       
       // Extract campaign ID from event
-      const campaignCreatedEvent = receipt.logs.find((log: any) => 
-        log.topics[0] === ethers.id("CampaignCreated(uint256,address,string)")
+      const campaignCreatedEvent = (receipt?.logs || []).find((log: any) => 
+        log?.topics?.[0] === ethers.id("CampaignCreated(uint256,address,string)")
       );
       
       if (campaignCreatedEvent) {

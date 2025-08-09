@@ -614,7 +614,7 @@ export class ContractService {
           }
         } catch (simErr: any) {
           const raw = simErr?.error?.message || simErr?.data?.message || simErr?.message || '';
-          const msg = raw || 'Simulation reverted';
+          const msg = String(raw || 'Simulation reverted');
           // Only allow fallback if the error clearly indicates a signature mismatch
           const signatureMismatch = msg === 'SIGNATURE_MISMATCH' || /no matching function|matching function|too (few|many) arguments|missing arguments|fragment|is not a function/i.test(msg);
           if (!signatureMismatch) {
