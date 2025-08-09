@@ -58,6 +58,18 @@ const CampaignDetail = () => {
   const navigate = useNavigate();
   const socket = useSocket();
   
+  // Validate ID parameter
+  const campaignId = id ? Number(id) : 0;
+  
+  // If no valid ID, redirect to campaigns page
+  useEffect(() => {
+    if (!id || isNaN(campaignId) || campaignId <= 0) {
+      console.error('Invalid campaign ID:', id);
+      navigate('/campaigns');
+      return;
+    }
+  }, [id, campaignId, navigate]);
+  
   // Web3 and Auth hooks
   const { account, isConnected, provider, signer } = useWeb3();
   const { isAuthenticated, requireAuth } = useAuth();
@@ -71,12 +83,12 @@ const CampaignDetail = () => {
     isLoading: isCampaignLoading, 
     error: campaignError,
     refetch: refetchCampaign 
-  } = useCampaign(Number(id));
+  } = useCampaign(campaignId);
   
   const { 
     data: statusData, 
     refetch: refetchStatus 
-  } = useMyCampaignStatus(Number(id));
+  } = useMyCampaignStatus(campaignId);
   
   // Mutations
   const participateMutation = useParticipateCampaign();
@@ -98,8 +110,12 @@ const CampaignDetail = () => {
   useEffect(() => {
     if (campaignData?.campaign) {
       setLocalCampaign(campaignData.campaign);
+    } else if (campaignError) {
+      console.error('Campaign error:', campaignError);
+      toast.error('Failed to load campaign');
+      navigate('/campaigns');
     }
-  }, [campaignData]);
+  }, [campaignData, campaignError, navigate]);
 
   // Reset local participation state when server data is available
   useEffect(() => {
@@ -339,6 +355,68 @@ const CampaignDetail = () => {
       setCompletedTasks(prev => prev.filter(id => id !== taskId));
     }
   };
+
+  // Early returns for error states
+  if (!id || isNaN(campaignId) || campaignId <= 0) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-background via-background to-secondary/5">
+        <Header />
+        <div className="pt-24 pb-20">
+          <div className="container mx-auto px-4 max-w-7xl">
+            <div className="text-center">
+              <h1 className="text-2xl font-bold text-destructive mb-4">Invalid Campaign</h1>
+              <p className="text-muted-foreground mb-6">The campaign ID is not valid.</p>
+              <Button onClick={() => navigate('/campaigns')}>
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Back to Campaigns
+              </Button>
+            </div>
+          </div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (campaignError) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-background via-background to-secondary/5">
+        <Header />
+        <div className="pt-24 pb-20">
+          <div className="container mx-auto px-4 max-w-7xl">
+            <div className="text-center">
+              <h1 className="text-2xl font-bold text-destructive mb-4">Campaign Not Found</h1>
+              <p className="text-muted-foreground mb-6">
+                The campaign could not be loaded. It may have been deleted or the ID is incorrect.
+              </p>
+              <Button onClick={() => navigate('/campaigns')}>
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Back to Campaigns
+              </Button>
+            </div>
+          </div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (isCampaignLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-background via-background to-secondary/5">
+        <Header />
+        <div className="pt-24 pb-20">
+          <div className="container mx-auto px-4 max-w-7xl">
+            <div className="text-center">
+              <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" />
+              <p className="text-muted-foreground">Loading campaign...</p>
+            </div>
+          </div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-secondary/5">
