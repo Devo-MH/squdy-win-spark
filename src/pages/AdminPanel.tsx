@@ -187,11 +187,11 @@ const AdminPanel = () => {
       return;
     }
 
-    // Enforce minimum on-chain lead time: start >= now + 15 minutes
+    // Enforce minimal lead time: start >= now + 2 minutes (per contract behavior)
     const now = new Date();
-    const minStart = new Date(now.getTime() + 15 * 60 * 1000);
+    const minStart = new Date(now.getTime() + 2 * 60 * 1000);
     if (new Date(formData.startDate) < minStart) {
-      toast.error("Start date must be at least 15 minutes in the future (contract rule)");
+      toast.error("Start date must be at least 2 minutes in the future");
       return;
     }
 
@@ -466,9 +466,9 @@ const AdminPanel = () => {
 
   const loadTestData = () => {
     const now = new Date();
-    // Start in 20 minutes to satisfy common on-chain min lead time
-    const startDate = new Date(now.getTime() + 20 * 60 * 1000);
-    const endDate = new Date(startDate.getTime() + 60 * 60 * 1000); // +1 hour by default for testing
+    // Start in 3 minutes to satisfy contract's minimal lead time
+    const startDate = new Date(now.getTime() + 3 * 60 * 1000);
+    const endDate = new Date(startDate.getTime() + 15 * 60 * 1000); // +15 minutes
 
     const toLocalInput = (d: Date) => {
       const tzoffset = d.getTimezoneOffset() * 60000; // offset in ms
