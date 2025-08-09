@@ -784,10 +784,9 @@ const AdminPanel = () => {
                               </Button>
                             )}
                             
-                            {/* Select Winners Button - Show for finished/closed campaigns without winners */}
-                            {(campaign.status === 'finished' || campaign.status === 'closed') && 
-                             campaign.status !== 'winners_selected' && 
-                             campaign.status !== 'burned' && (
+                            {/* Select Winners Button - allow admin to run when active/paused/finished/closed (on-chain will enforce timing) */}
+                            {(['active','paused','finished','closed'].includes(String(campaign.status))) &&
+                             String(campaign.status) !== 'burned' && (
                               <Button
                                 variant="outline"
                                 size="sm"
@@ -803,8 +802,8 @@ const AdminPanel = () => {
                               </Button>
                             )}
                             
-                            {/* Burn Tokens Button - Show only after winners are selected */}
-                            {campaign.status === 'winners_selected' && (
+                            {/* Burn Tokens Button - allow when finished/closed; on-chain will enforce winners selected */}
+                            {(['finished','closed'].includes(String(campaign.status))) && (
                               <Button
                                 variant="destructive"
                                 size="sm"
