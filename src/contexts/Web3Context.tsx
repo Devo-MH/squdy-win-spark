@@ -49,9 +49,10 @@ export const SUPPORTED_CHAINS = {
   },
 };
 
-// Get target chain based on environment
-const TARGET_CHAIN = import.meta.env.MODE === 'production' 
-  ? SUPPORTED_CHAINS.MAINNET 
+// Get target chain based on environment variables (prefer explicit VITE_CHAIN_ID)
+const ENV_CHAIN_ID = Number(import.meta.env.VITE_CHAIN_ID || 11155111);
+const TARGET_CHAIN = ENV_CHAIN_ID === SUPPORTED_CHAINS.MAINNET.chainId
+  ? SUPPORTED_CHAINS.MAINNET
   : SUPPORTED_CHAINS.SEPOLIA;
 
 const Web3Context = createContext<Web3ContextType | null>(null);
