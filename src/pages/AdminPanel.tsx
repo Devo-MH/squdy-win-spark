@@ -159,6 +159,9 @@ const AdminPanel = () => {
         flag = true;
         console.log('🔧 Auto-enabling on-chain tools (env var not set)');
       }
+      // FORCE ENABLE FOR DEBUGGING
+      flag = true;
+      console.log('🔧 FORCING on-chain tools enabled for debugging');
       setUseAutomated(!!flag);
     } catch {
       setUseAutomated(true); // Default to enabled
