@@ -229,7 +229,7 @@ export function TaskChecklist({
 
   const renderTaskComponent = (task: Task) => {
     const commonProps = {
-      userAddress: campaignId || 'demo-user',
+      userAddress: (typeof window !== 'undefined' ? (window as any).selectedWalletAddress : undefined) || campaignId || 'demo-user',
       onStatusChange: (status: 'success' | 'failed') => handleTaskComplete(task.id, status === 'success'),
       Card: DefaultCard,
       Button: DefaultButton,
