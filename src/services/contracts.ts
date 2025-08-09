@@ -41,6 +41,10 @@ const CAMPAIGN_MANAGER_ABI = [
   'function stakeInCampaign(uint256 _campaignId, uint256 _amount) external',
   'function selectWinners(uint256 _campaignId, address[] _winners) external',
   'function burnCampaignTokens(uint256 _campaignId) external',
+  // Optional access-control helpers (not all deployments implement these)
+  'function hasRole(bytes32 role, address account) external view returns (bool)',
+  'function ADMIN_ROLE() external view returns (bytes32)',
+  'function owner() external view returns (address)',
   
   // Events
   'event CampaignCreated(uint256 indexed campaignId, address indexed creator, string title)',
@@ -398,6 +402,16 @@ export class ContractService {
     prizes?: string[];
   }): Promise<number> {
     try {
+      const account = await this.signer.getAddress();
+      // Ensure the manager is deployed on this network
+      try {
+        const code = await this.provider.getCode(CONTRACT_ADDRESSES.CAMPAIGN_MANAGER);
+        if (!code || code === '0x') {
+          throw new Error('CampaignManager not deployed on this network. Switch to the correct chain.');
+        }
+      } catch (netErr: any) {
+        // Older ethers may not support getCode on this provider; ignore
+      }
       const startTs = Math.floor(new Date(data.startDate).getTime() / 1000);
       const endTs = Math.floor(new Date(data.endDate).getTime() / 1000);
       const decimals = this.useMockToken ? 18 : await this.squdyTokenContract!.decimals();
@@ -407,9 +421,87 @@ export class ContractService {
 
       const contractAny = this.campaignManagerContract as any;
 
+      // Preflight: if access control exists, verify caller has admin role
+      try {
+        const adminRole = await contractAny.ADMIN_ROLE?.();
+        if (adminRole) {
+          const has = await contractAny.hasRole?.(adminRole, account);
+          if (has === false) {
+            throw new Error('Your wallet is not authorized to create campaigns (missing ADMIN_ROLE)');
+          }
+        }
+      } catch (_) {
+        // ignore if not implemented
+      }
+
+      // Preflight: if Ownable exists, ensure caller is owner
+      try {
+        const owner = await contractAny.owner?.();
+        if (owner && owner.toLowerCase() !== account.toLowerCase()) {
+          throw new Error('Your wallet is not authorized to create campaigns (caller is not the owner)');
+        }
+      } catch (_) {
+        // ignore if not implemented
+      }
+
       // Try automated signature first: (name, description, imageUrl, softCap, hardCap, ticketAmount, start, end, prizes)
       let tx;
       try {
+        // Simulate first to surface revert reason
+        try {
+          if (this.campaignManagerContract.callStatic && (this.campaignManagerContract as any).callStatic.createCampaign) {
+            await (this.campaignManagerContract as any).callStatic.createCampaign(
+              data.name,
+              data.description,
+              data.imageUrl || '',
+              softCapBN,
+              hardCapBN,
+              ticketAmountBN,
+              startTs,
+              endTs,
+              Array.isArray(data.prizes) ? data.prizes : []
+            );
+          }
+        } catch (simErr: any) {
+          const msg = simErr?.error?.message || simErr?.data?.message || simErr?.message || 'Simulation reverted';
+          throw new Error(msg);
+        }
+        // Gas pre-estimation for clearer error reporting
+        try {
+          await this.campaignManagerContract.estimateGas.createCampaign(
+            data.name,
+            data.description,
+            data.imageUrl || '',
+            softCapBN,
+            hardCapBN,
+            ticketAmountBN,
+            startTs,
+            endTs,
+            Array.isArray(data.prizes) ? data.prizes : []
+          );
+        } catch (estErr: any) {
+          // Continue to try sending, ethers will throw if it truly reverts
+          console.warn('Gas estimation failed for automated signature; will attempt send:', estErr?.message || estErr);
+        }
+        // Add 20% gas buffer if estimate succeeded
+        const gasLimit1 = await (async () => {
+          try {
+            const g = await this.campaignManagerContract.estimateGas.createCampaign(
+              data.name,
+              data.description,
+              data.imageUrl || '',
+              softCapBN,
+              hardCapBN,
+              ticketAmountBN,
+              startTs,
+              endTs,
+              Array.isArray(data.prizes) ? data.prizes : []
+            );
+            return g.mul(120).div(100);
+          } catch {
+            return undefined;
+          }
+        })();
         tx = await contractAny.createCampaign(
           data.name,
           data.description,
@@ -419,11 +511,60 @@ export class ContractService {
           ticketAmountBN,
           startTs,
           endTs,
-          Array.isArray(data.prizes) ? data.prizes : []
+          Array.isArray(data.prizes) ? data.prizes : [],
+          ...(gasLimit1 ? [{ gasLimit: gasLimit1 }] : [])
         );
       } catch (e) {
         // Fallback: simple signature (title, description, targetAmount, ticketPrice, startTime, endTime, maxParticipants, prizePool)
         // Map hardCap->targetAmount, ticketAmount->ticketPrice, use large maxParticipants, prizePool=hardCap
+        try {
+          if (this.campaignManagerContract.callStatic && (this.campaignManagerContract as any).callStatic.createCampaign) {
+            await (this.campaignManagerContract as any).callStatic.createCampaign(
+              data.name,
+              data.description,
+              hardCapBN,
+              ticketAmountBN,
+              startTs,
+              endTs,
+              1000000,
+              hardCapBN
+            );
+          }
+        } catch (simErr2: any) {
+          const msg = simErr2?.error?.message || simErr2?.data?.message || simErr2?.message || 'Simulation reverted';
+          throw new Error(msg);
+        }
+        try {
+          await this.campaignManagerContract.estimateGas.createCampaign(
+            data.name,
+            data.description,
+            hardCapBN,
+            ticketAmountBN,
+            startTs,
+            endTs,
+            1000000,
+            hardCapBN
+          );
+        } catch (estErr2: any) {
+          console.warn('Gas estimation failed for simple signature; will attempt send:', estErr2?.message || estErr2);
+        }
+        const gasLimit2 = await (async () => {
+          try {
+            const g = await this.campaignManagerContract.estimateGas.createCampaign(
+              data.name,
+              data.description,
+              hardCapBN,
+              ticketAmountBN,
+              startTs,
+              endTs,
+              1000000,
+              hardCapBN
+            );
+            return g.mul(120).div(100);
+          } catch {
+            return undefined;
+          }
+        })();
         tx = await contractAny.createCampaign(
           data.name,
           data.description,
@@ -432,7 +573,8 @@ export class ContractService {
           startTs,
           endTs,
           1000000,
-          hardCapBN
+          hardCapBN,
+          ...(gasLimit2 ? [{ gasLimit: gasLimit2 }] : [])
         );
       }
 
