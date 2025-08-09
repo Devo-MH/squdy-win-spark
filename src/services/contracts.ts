@@ -44,6 +44,7 @@ const CAMPAIGN_MANAGER_ABI = [
   'function stakeInCampaign(uint256 _campaignId, uint256 _amount) external',
   'function selectWinners(uint256 _campaignId, address[] _winners) external',
   'function burnCampaignTokens(uint256 _campaignId) external',
+  'function updateCampaignEndDate(uint256 campaignId, uint256 newEndDate) external',
   // Optional access-control helpers (not all deployments implement these)
   'function hasRole(bytes32 role, address account) external view returns (bool)',
   'function ADMIN_ROLE() external view returns (bytes32)',
@@ -721,6 +722,20 @@ export class ContractService {
       } else {
         toast.error('Failed to burn tokens: ' + error.message);
       }
+      throw error;
+    }
+  }
+
+  async endCampaignNow(campaignId: number): Promise<any> {
+    try {
+      // Set endDate to now + 30 seconds to pass the end check shortly
+      const newEnd = Math.floor(Date.now() / 1000) + 30;
+      const tx = await (this.campaignManagerContract as any).updateCampaignEndDate(campaignId, newEnd);
+      toast.info('Updating campaign end time...');
+      return tx;
+    } catch (error: any) {
+      console.error('❌ Update end date failed:', error);
+      toast.error(error.message || 'Failed to update campaign end time');
       throw error;
     }
   }

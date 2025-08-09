@@ -307,7 +307,7 @@ const AdminPanel = () => {
     return loadingActions[`${campaignId}-${action}`] || false;
   };
 
-  const handleCampaignAction = async (campaignId: number, action: 'activate' | 'pause' | 'close' | 'select-winners' | 'burn') => {
+  const handleCampaignAction = async (campaignId: number, action: 'activate' | 'pause' | 'close' | 'end-now' | 'select-winners' | 'burn') => {
     const auth = await requireAuth();
     if (!auth) return;
 
@@ -326,6 +326,15 @@ const AdminPanel = () => {
         case 'close':
           await adminAPI.closeCampaign(campaignId);
           toast.success("Campaign closed successfully!");
+          break;
+        case 'end-now':
+          if (contractService) {
+            const tx = await contractService.endCampaignNow(campaignId);
+            await tx.wait();
+            toast.success('Campaign end time updated to near-now. You can select winners shortly.');
+          } else {
+            toast.error('Wallet not connected');
+          }
           break;
         case 'select-winners':
           // Call smart contract first, then update backend
@@ -743,6 +752,19 @@ const AdminPanel = () => {
                                     <Lock className="w-4 h-4 mr-1" />
                                   )}
                                   Close
+                                </Button>
+                                <Button
+                                  variant="secondary"
+                                  size="sm"
+                                  onClick={() => handleCampaignAction(campaign.contractId, 'end-now')}
+                                  disabled={getActionLoading(campaign.contractId, 'end-now')}
+                                >
+                                  {getActionLoading(campaign.contractId, 'end-now') ? (
+                                    <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                                  ) : (
+                                    <Crown className="w-4 h-4 mr-1" />
+                                  )}
+                                  End Now
                                 </Button>
                               </>
                             )}
