@@ -175,6 +175,68 @@ export default async function handler(req, res) {
       return res.status(404).json({ error: 'Not found' });
     }
   }
+
+  // Participate in campaign (off-chain record)
+  if (req.method === 'POST' && /\/campaigns\/[a-zA-Z0-9]+\/participate\/?$/.test(url)) {
+    try {
+      const match = url.match(/\/campaigns\/([a-zA-Z0-9]+)\/participate\/?$/);
+      const idParam = match ? match[1] : null;
+      if (!idParam) return res.status(400).json({ error: 'Invalid campaign id' });
+
+      let body = req.body;
+      if (typeof body === 'string') {
+        try { body = JSON.parse(body); } catch (_) { body = {}; }
+      }
+
+      const db = await getDb();
+      const collection = db.collection('participations');
+      const doc = {
+        campaignId: /^[0-9]+$/.test(idParam) ? Number(idParam) : idParam,
+        walletAddress: body?.walletAddress || body?.address || 'unknown',
+        stakeAmount: Number(body?.stakeAmount || 0),
+        stakeTxHash: body?.stakeTxHash || '',
+        socialTasks: body?.socialTasks || {},
+        createdAt: new Date().toISOString(),
+      };
+      await collection.insertOne(doc);
+      res.setHeader('Cache-Control', 'no-store');
+      return res.json({ success: true, participation: doc });
+    } catch (err) {
+      console.error('POST /campaigns/:id/participate error:', err);
+      return res.status(500).json({ error: 'Internal Server Error' });
+    }
+  }
+
+  // Verify social task (off-chain record)
+  if (req.method === 'POST' && /\/campaigns\/[a-zA-Z0-9]+\/verify-social\/?$/.test(url)) {
+    try {
+      const match = url.match(/\/campaigns\/([a-zA-Z0-9]+)\/verify-social\/?$/);
+      const idParam = match ? match[1] : null;
+      if (!idParam) return res.status(400).json({ error: 'Invalid campaign id' });
+
+      let body = req.body;
+      if (typeof body === 'string') {
+        try { body = JSON.parse(body); } catch (_) { body = {}; }
+      }
+
+      const db = await getDb();
+      const collection = db.collection('verifications');
+      const doc = {
+        campaignId: /^[0-9]+$/.test(idParam) ? Number(idParam) : idParam,
+        walletAddress: body?.walletAddress || body?.address || 'unknown',
+        taskType: body?.taskType || 'unknown',
+        proof: body?.proof || null,
+        verified: true,
+        createdAt: new Date().toISOString(),
+      };
+      await collection.insertOne(doc);
+      res.setHeader('Cache-Control', 'no-store');
+      return res.json({ success: true, verification: doc });
+    } catch (err) {
+      console.error('POST /campaigns/:id/verify-social error:', err);
+      return res.status(500).json({ error: 'Internal Server Error' });
+    }
+  }
   
   // Admin stats
   if (url.includes('/admin/stats')) {
