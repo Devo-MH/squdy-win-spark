@@ -22,7 +22,15 @@ declare global {
     mockTokenToastShown?: boolean;
   }
 }
-import { mockSqudyToken } from './mockSqudyToken';
+// Lazy-load mock token only when needed to avoid side-effects in production
+type MockModule = typeof import('./mockSqudyToken');
+let cachedMockModule: MockModule | null = null;
+async function loadMock(): Promise<MockModule> {
+  if (!cachedMockModule) {
+    cachedMockModule = await import('./mockSqudyToken');
+  }
+  return cachedMockModule;
+}
 
 // Contract ABIs for SimpleSqudyCampaignManager
 const CAMPAIGN_MANAGER_ABI = [
@@ -162,6 +170,7 @@ export class ContractService {
   async getTokenBalance(address: string): Promise<string> {
     try {
       if (this.useMockToken) {
+        const { mockSqudyToken } = await loadMock();
         const balance = await mockSqudyToken.balanceOf(address);
         const decimals = await mockSqudyToken.decimals();
         return safeFormatUnits(balance.toString(), decimals);
@@ -179,6 +188,7 @@ export class ContractService {
   async getTokenAllowance(owner: string, spender: string): Promise<string> {
     try {
       if (this.useMockToken) {
+        const { mockSqudyToken } = await loadMock();
         const allowance = await mockSqudyToken.allowance(owner, spender);
         const decimals = await mockSqudyToken.decimals();
         return ethers.utils.formatUnits(allowance.toString(), decimals);
@@ -196,6 +206,7 @@ export class ContractService {
   async approveToken(spender: string, amount: string): Promise<ethers.ContractTransaction | any> {
     try {
       if (this.useMockToken) {
+        const { mockSqudyToken } = await loadMock();
         const userAddress = await this.signer.getAddress();
         const decimals = await mockSqudyToken.decimals();
         const amountBN = safeParseUnits(amount, decimals);
@@ -300,6 +311,7 @@ export class ContractService {
     try {
       if (this.useMockToken) {
         // Mock staking process
+        const { mockSqudyToken } = await loadMock();
         const userAddress = await this.signer.getAddress();
         const decimals = await mockSqudyToken.decimals();
         const amountBN = safeParseUnits(amount, decimals);
@@ -364,6 +376,7 @@ export class ContractService {
   // Mock token utilities
   async requestTestTokens(amount: string = '1000'): Promise<void> {
     if (this.useMockToken) {
+      const { mockSqudyToken } = await loadMock();
       const userAddress = await this.signer.getAddress();
       mockSqudyToken.mintTokens(userAddress, amount);
     } else {
@@ -721,6 +734,7 @@ export class ContractService {
         
         // In mock mode, we simulate burning by "removing" tokens from circulation
         // The actual burning would transfer tokens to a burn address or reduce total supply
+        const { mockSqudyToken } = await loadMock();
         mockSqudyToken.burnCampaignTokens(campaignId);
         
         toast.success('🔥 All staked tokens have been burned!');
