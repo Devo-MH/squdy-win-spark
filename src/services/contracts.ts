@@ -123,10 +123,8 @@ export class ContractService {
     
     // Decide mock mode: explicit env flag OR missing/placeholder address
     const enableMock = String(import.meta.env.VITE_ENABLE_MOCK_FALLBACK || '').toLowerCase() === 'true';
-    this.useMockToken = enableMock ||
-      CONTRACT_ADDRESSES.SQUDY_TOKEN === '0x1234567890123456789012345678901234567890' || 
-      !CONTRACT_ADDRESSES.SQUDY_TOKEN || 
-      CONTRACT_ADDRESSES.SQUDY_TOKEN === '';
+    // Production safety: only enable mock mode via explicit flag
+    this.useMockToken = enableMock;
     
     if (!this.useMockToken) {
       this.squdyTokenContract = new ethers.Contract(
@@ -166,7 +164,7 @@ export class ContractService {
       if (this.useMockToken) {
         const balance = await mockSqudyToken.balanceOf(address);
         const decimals = await mockSqudyToken.decimals();
-        return safeFormatUnits(balance, decimals);
+        return safeFormatUnits(balance.toString(), decimals);
       } else {
         const balance = await this.squdyTokenContract!.balanceOf(address);
         const decimals = await this.squdyTokenContract!.decimals();
@@ -183,7 +181,7 @@ export class ContractService {
       if (this.useMockToken) {
         const allowance = await mockSqudyToken.allowance(owner, spender);
         const decimals = await mockSqudyToken.decimals();
-        return ethers.utils.formatUnits(allowance, decimals);
+        return ethers.utils.formatUnits(allowance.toString(), decimals);
       } else {
         const allowance = await this.squdyTokenContract!.allowance(owner, spender);
         const decimals = await this.squdyTokenContract!.decimals();

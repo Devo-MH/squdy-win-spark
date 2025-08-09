@@ -302,7 +302,7 @@ const CampaignDetail = () => {
   const ticketsFromStake = calculateTickets(stakeAmount);
   const hasAllowance = parseFloat(allowance) >= parseFloat(stakeAmount || '0');
   const userStatus = statusData?.status;
-  const isParticipating = statusData?.isParticipating || hasJoinedLocally;
+  const isParticipating = statusData?.joined || statusData?.isParticipating || hasJoinedLocally;
   
   // Campaign tasks from admin configuration
   const campaignTasks: Task[] = localCampaign?.offchainTasks || [];
