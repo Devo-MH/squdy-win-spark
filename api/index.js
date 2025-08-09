@@ -90,7 +90,24 @@ export default async function handler(req, res) {
       const db = await getDb();
       const collection = db.collection('campaigns');
       const results = await collection.find({}).sort({ createdAt: -1 }).toArray();
-      const campaigns = (results && results.length > 0) ? results : getBaseCampaigns();
+
+      // Overlay participant counts from participations collection
+      let campaigns = (results && results.length > 0) ? results : getBaseCampaigns();
+      try {
+        const participations = db.collection('participations');
+        const counts = await participations.aggregate([
+          { $group: { _id: '$campaignId', count: { $sum: 1 } } }
+        ]).toArray();
+        const idToCount = new Map(counts.map(c => [String(c._id), c.count]));
+        campaigns = campaigns.map(c => {
+          const key1 = String(c.contractId);
+          const key2 = c._id ? String(c._id) : null;
+          const pc = idToCount.get(key1) ?? (key2 ? idToCount.get(key2) : undefined);
+          return pc != null ? { ...c, participantCount: pc } : c;
+        });
+      } catch (e) {
+        // ignore overlay errors
+      }
       res.setHeader('Cache-Control', 'no-store');
       return res.json({
         campaigns,
@@ -160,6 +177,18 @@ export default async function handler(req, res) {
           return res.status(404).json({ error: 'Not found' });
         }
 
+        // Overlay participant count for this campaign
+        try {
+          const db = await getDb();
+          const participations = db.collection('participations');
+          const idKey = campaign.contractId != null ? campaign.contractId : (campaign._id ? String(campaign._id) : idParam);
+          const count = await participations.countDocuments({ campaignId: idKey });
+          if (Number.isFinite(count)) {
+            campaign.participantCount = count;
+          }
+        } catch (e) {
+          // ignore
+        }
         res.setHeader('Cache-Control', 'no-store');
         return res.json({ campaign });
       }
@@ -199,6 +228,17 @@ export default async function handler(req, res) {
         createdAt: new Date().toISOString(),
       };
       await collection.insertOne(doc);
+      // Update campaign participantCount based on distinct wallets
+      try {
+        const distinctWallets = await collection.distinct('walletAddress', { campaignId: doc.campaignId });
+        const participantCount = Array.isArray(distinctWallets) ? distinctWallets.length : 0;
+        await db.collection('campaigns').updateOne(
+          { contractId: doc.campaignId },
+          { $set: { participantCount } }
+        );
+      } catch (e) {
+        console.warn('Failed to update participantCount:', e);
+      }
       res.setHeader('Cache-Control', 'no-store');
       return res.json({ success: true, participation: doc });
     } catch (err) {
