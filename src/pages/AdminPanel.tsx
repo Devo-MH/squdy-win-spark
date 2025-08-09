@@ -187,8 +187,13 @@ const AdminPanel = () => {
       return;
     }
 
-    // Allow start date to be now or in the past (useful for immediate testing)
-    // Only enforce that end date is after start date below
+    // Enforce minimum on-chain lead time: start >= now + 15 minutes
+    const now = new Date();
+    const minStart = new Date(now.getTime() + 15 * 60 * 1000);
+    if (new Date(formData.startDate) < minStart) {
+      toast.error("Start date must be at least 15 minutes in the future (contract rule)");
+      return;
+    }
 
     if (new Date(formData.endDate) <= new Date(formData.startDate)) {
       toast.error("End date must be after start date");
@@ -216,7 +221,15 @@ const AdminPanel = () => {
         }
       } catch (e: any) {
         const message = e?.message || String(e);
-        toast.error(message.includes('authorized') ? message : (message.includes('execution reverted') ? message : 'On-chain create failed; please check wallet network, role, token decimals and dates'));
+        if (/Invalid start date/i.test(message)) {
+          toast.error('Invalid start date: set start at least 15–30 minutes in the future');
+        } else if (message.includes('authorized')) {
+          toast.error(message);
+        } else if (message.includes('execution reverted')) {
+          toast.error(message);
+        } else {
+          toast.error('On-chain create failed; please check wallet network, role, token decimals and dates');
+        }
         console.error('On-chain create failed; aborting off-chain create:', e);
         setIsCreating(false);
         return; // Do NOT create off-chain if on-chain failed
@@ -453,9 +466,9 @@ const AdminPanel = () => {
 
   const loadTestData = () => {
     const now = new Date();
-    // Start soon for quick testing; still in the future to satisfy on-chain require
-    const startDate = new Date(now.getTime() + 2 * 60 * 1000); // in 2 minutes
-    const endDate = new Date(startDate.getTime() + 24 * 60 * 60 * 1000); // +1 day
+    // Start in 20 minutes to satisfy common on-chain min lead time
+    const startDate = new Date(now.getTime() + 20 * 60 * 1000);
+    const endDate = new Date(startDate.getTime() + 60 * 60 * 1000); // +1 hour by default for testing
 
     const toLocalInput = (d: Date) => {
       const tzoffset = d.getTimezoneOffset() * 60000; // offset in ms
