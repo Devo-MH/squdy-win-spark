@@ -187,10 +187,8 @@ const AdminPanel = () => {
       return;
     }
 
-    if (new Date(formData.startDate) <= new Date()) {
-      toast.error("Start date must be in the future");
-      return;
-    }
+    // Allow start date to be now or in the past (useful for immediate testing)
+    // Only enforce that end date is after start date below
 
     if (new Date(formData.endDate) <= new Date(formData.startDate)) {
       toast.error("End date must be after start date");
