@@ -57,6 +57,7 @@ const AdminPanel = () => {
   const { account, isConnected, provider, signer } = useWeb3();
   const { isAuthenticated, requireAuth } = useAuth();
   const contractService = useContracts(provider, signer);
+  const [roleHint, setRoleHint] = useState<string | null>(null);
   const queryClient = useQueryClient();
   
   // API queries
@@ -134,6 +135,21 @@ const AdminPanel = () => {
       loadDashboardStats();
     }
   }, [isAuthenticated]);
+
+  // Check on-chain role status for the connected wallet and show hint if missing
+  useEffect(() => {
+    (async () => {
+      try {
+        if (!contractService || !isConnected) return;
+        const status = await contractService.getRoleStatus();
+        if (!(status.hasAdmin || status.hasOperator || status.isOwner)) {
+          setRoleHint('Your wallet lacks admin/operator role on the manager. On-chain creation will revert until granted.');
+        } else {
+          setRoleHint(null);
+        }
+      } catch {}
+    })();
+  }, [contractService, isConnected]);
 
   // Real-time updates
   useEffect(() => {
@@ -813,6 +829,11 @@ const AdminPanel = () => {
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-6">
+                  {roleHint && (
+                    <div className="text-sm text-yellow-600">
+                      {roleHint}
+                    </div>
+                  )}
                   {/* Basic Information */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
