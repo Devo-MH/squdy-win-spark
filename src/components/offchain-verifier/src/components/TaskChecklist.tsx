@@ -151,8 +151,8 @@ export function TaskChecklist({
   enableSimulation = false,
   customTheme: _customTheme
 }: TaskChecklistProps) {
-  // Resolve backend URL: default to current origin /api
-  const resolvedBackendUrl = backendUrl || ((typeof window !== 'undefined' ? window.location.origin : '') + '/api');
+  // Resolve backend URL: default to current origin (tasks append /api/... themselves)
+  const resolvedBackendUrl = backendUrl || (typeof window !== 'undefined' ? window.location.origin : '');
   
   const [verificationStatus, setVerificationStatus] = useState<{ [key: string]: TaskStatus }>({});
 
