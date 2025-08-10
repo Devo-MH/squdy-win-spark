@@ -1627,7 +1627,7 @@ const AdminPanel = () => {
                           <div className="grid grid-cols-3 gap-2">
                             <Input placeholder="id" onChange={(e) => (e.target as any)._termId = e.target.value} />
                             <select 
-                              className="px-3 py-2 border rounded text-sm"
+                              className="px-3 py-2 rounded text-sm bg-gray-800 text-white border border-gray-600"
                               onChange={(e) => (e.target as any)._refund = e.target.value === 'true'}
                             >
                               <option value="false">No Refund</option>
@@ -1654,10 +1654,10 @@ const AdminPanel = () => {
                           <Label>Campaign Pause/Resume (campaignId)</Label>
                            <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                              <Input placeholder="id" onChange={(e) => (e.target as any)._pauseId = e.target.value} className="w-full" />
-                             <Button
-                               variant="outline"
-                               size="sm"
-                               className="w-full"
+                            <Button
+                              variant="secondary"
+                              size="sm"
+                              className="w-full bg-yellow-600 text-white hover:bg-yellow-500"
                               onClick={async (e) => {
                                 const grid = e.currentTarget.parentElement as HTMLElement;
                                 const id = (grid.children[0] as any)._pauseId || (grid.children[0] as HTMLInputElement).value;
@@ -1667,10 +1667,10 @@ const AdminPanel = () => {
                                 } catch (err: any) { toast.error(err?.message || 'Pause failed'); }
                               }}
                             >⏸️ Pause</Button>
-                             <Button
-                               variant="outline"
-                               size="sm"
-                               className="w-full"
+                            <Button
+                              variant="secondary"
+                              size="sm"
+                              className="w-full bg-green-600 text-white hover:bg-green-500"
                               onClick={async (e) => {
                                 const grid = e.currentTarget.parentElement as HTMLElement;
                                 const id = (grid.children[0] as any)._pauseId || (grid.children[0] as HTMLInputElement).value;
@@ -1746,15 +1746,15 @@ const AdminPanel = () => {
                           <div className="grid grid-cols-3 gap-2">
                             <Input placeholder="0x..." onChange={(e) => (e.target as any)._grantAddr = e.target.value} />
                             <select 
-                              className="px-3 py-2 border rounded text-sm"
+                              className="px-3 py-2 rounded text-sm bg-gray-800 text-white border border-gray-600"
                               onChange={(e) => (e.target as any)._grantRole = e.target.value}
                             >
                               <option value="ADMIN">ADMIN</option>
                               <option value="OPERATOR">OPERATOR</option>
                             </select>
                             <Button
-                              variant="outline"
-                              size="sm"
+                              variant="secondary"
+                              className="w-full bg-indigo-600 text-white hover:bg-indigo-500"
                               onClick={async (e) => {
                                 const grid = e.currentTarget.parentElement as HTMLElement;
                                 const addr = (grid.children[0] as any)._grantAddr || (grid.children[0] as HTMLInputElement).value;
@@ -1774,15 +1774,15 @@ const AdminPanel = () => {
                           <div className="grid grid-cols-3 gap-2">
                             <Input placeholder="0x..." onChange={(e) => (e.target as any)._revokeAddr = e.target.value} />
                             <select 
-                              className="px-3 py-2 border rounded text-sm"
+                              className="px-3 py-2 rounded text-sm bg-gray-800 text-white border border-gray-600"
                               onChange={(e) => (e.target as any)._revokeRole = e.target.value}
                             >
                               <option value="ADMIN">ADMIN</option>
                               <option value="OPERATOR">OPERATOR</option>
                             </select>
                             <Button
-                              variant="outline"
-                              size="sm"
+                              variant="secondary"
+                              className="w-full bg-rose-600 text-white hover:bg-rose-500"
                               onClick={async (e) => {
                                 const grid = e.currentTarget.parentElement as HTMLElement;
                                 const addr = (grid.children[0] as any)._revokeAddr || (grid.children[0] as HTMLInputElement).value;
