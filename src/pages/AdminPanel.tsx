@@ -1516,32 +1516,10 @@ const AdminPanel = () => {
                       <Zap className="w-5 h-5 text-sky-400" />
                       On-chain Tools (Automated Manager)
                     </CardTitle>
-                  </CardHeader>
+                </CardHeader>
                   <CardContent className="space-y-6 p-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label className="text-zinc-300">Transfer SQUDY (to, amount)</Label>
-                        <div className="grid grid-cols-3 gap-2">
-                          <Input placeholder="0xRecipient" onChange={(e) => (e.target as any)._to = e.target.value} />
-                          <Input placeholder="amount" onChange={(e) => (e.target as any)._amt = e.target.value} />
-                          <Button
-                            className="bg-indigo-600 text-white hover:bg-indigo-500"
-                            size="sm"
-                            onClick={async (e) => {
-                              const grid = e.currentTarget.parentElement as HTMLElement;
-                              const to = (grid.children[0] as any)._to || (grid.children[0] as HTMLInputElement).value;
-                              const amt = (grid.children[1] as any)._amt || (grid.children[1] as HTMLInputElement).value;
-                              if (!autoSvc) return toast.error('Wallet not connected');
-                              if (!to || !amt) return toast.error('Enter recipient and amount');
-                              try {
-                                const ok = await autoSvc.transferTokens(to, amt);
-                                if (!ok) throw new Error('Transfer failed');
-                              } catch (err: any) { toast.error(err?.message || 'Transfer failed'); }
-                            }}
-                          >Send</Button>
-                        </div>
-                      </div>
-                      <div className="space-y-2">
+                  <div className="space-y-2">
                         <Label className="text-zinc-300">Faucet (admin → to, amount)</Label>
                         <div className="grid grid-cols-3 gap-2">
                           <Input placeholder="0xRecipient" onChange={(e) => (e.target as any)._fTo = e.target.value} />
@@ -1568,8 +1546,8 @@ const AdminPanel = () => {
                               }
                             }}
                           >Faucet</Button>
-                        </div>
-                      </div>
+                    </div>
+                    </div>
                   <div className="space-y-2">
                         <Label className="text-zinc-300">Approve SQUDY Amount</Label>
                         <div className="flex gap-2">
@@ -1591,7 +1569,7 @@ const AdminPanel = () => {
                             className="w-32 bg-indigo-600 text-white hover:bg-indigo-500"
                           >Approve</Button>
                     </div>
-                    </div>
+                  </div>
                       <div className="space-y-2">
                         <Label className="text-zinc-300">Stake (campaignId, amount)</Label>
                          <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
