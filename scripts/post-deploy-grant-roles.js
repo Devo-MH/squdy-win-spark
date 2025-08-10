@@ -1,4 +1,5 @@
-const { ethers } = require('hardhat');
+import hre from 'hardhat';
+const { ethers } = hre;
 
 async function main() {
   const tokenAddress = process.env.TOKEN_ADDRESS;
