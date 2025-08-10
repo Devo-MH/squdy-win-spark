@@ -389,19 +389,46 @@ export class AutomatedContractService {
       );
 
       const receipt = await tx.wait();
-      
-      // Extract campaign ID from event (defensive iteration, no Array.find)
+
+      // Compute the event topic hash with ethers v5/v6 compatibility
+      const keccak = (ethers as any).id || (ethers as any).utils?.id;
+      const eventTopic = keccak ? keccak("CampaignCreated(uint256,address,string)") : null;
+
+      // Extract campaign ID from event (defensive iteration)
       const logs = Array.isArray(receipt?.logs) ? receipt.logs : [];
       for (const log of logs) {
         try {
-          if (log?.topics?.[0] === ethers.id("CampaignCreated(uint256,address,string)")) {
-            return Number(log.topics[1]);
+          // Try by topic match
+          if (eventTopic && log?.topics?.[0] === eventTopic) {
+            const idBn = (ethers as any).BigNumber?.from
+              ? (ethers as any).BigNumber.from(log.topics[1])
+              : (ethers as any).BigNumber?.from?.(log.topics[1]);
+            if (idBn) return Number(idBn.toString());
+            // Fallback to JS parse if BigNumber is unavailable
+            return parseInt(log.topics[1], 16);
+          }
+          // Fallback: try interface.parseLog if available
+          if ((this.campaignManagerContract as any)?.interface?.parseLog) {
+            const parsed = (this.campaignManagerContract as any).interface.parseLog(log);
+            if (parsed && parsed.name === 'CampaignCreated' && parsed.args?.[0] != null) {
+              return Number(parsed.args[0].toString());
+            }
           }
         } catch {
           // ignore parsing errors
         }
       }
-      
+
+      // Last-resort fallback: query counter from contract
+      try {
+        const getTotal = (this.campaignManagerContract as any).getTotalCampaigns || (this.campaignManagerContract as any).getCampaignCount;
+        if (getTotal) {
+          const total = await getTotal();
+          const asNum = Number(total?.toString?.() ?? total);
+          if (!Number.isNaN(asNum) && asNum > 0) return asNum;
+        }
+      } catch {}
+
       return null;
     } catch (error) {
       console.error('Error creating campaign:', error);
