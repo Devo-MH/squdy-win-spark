@@ -1525,6 +1525,7 @@ const AdminPanel = () => {
                           <Input
                             placeholder="10"
                             onChange={(e) => (e.target as any)._val = e.target.value}
+                            className="w-full"
                           />
                           <Button
                             onClick={async (e) => {
@@ -1536,14 +1537,15 @@ const AdminPanel = () => {
                                 ok ? toast.success('Approved') : toast.error('Approve failed');
                               } catch (err: any) { toast.error(err?.message || 'Approve failed'); }
                             }}
+                            className="w-32 bg-indigo-600 text-white hover:bg-indigo-500"
                           >Approve</Button>
                     </div>
                     </div>
                       <div className="space-y-2">
                         <Label>Stake (campaignId, amount)</Label>
-                        <div className="grid grid-cols-3 gap-2">
-                          <Input placeholder="id" onChange={(e) => (e.target as any)._id = e.target.value} />
-                          <Input placeholder="amount" onChange={(e) => (e.target as any)._amt = e.target.value} />
+                         <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                           <Input placeholder="id" onChange={(e) => (e.target as any)._id = e.target.value} className="w-full" />
+                           <Input placeholder="amount" onChange={(e) => (e.target as any)._amt = e.target.value} className="w-full" />
                           <Button
                             onClick={async (e) => {
                               const grid = e.currentTarget.parentElement as HTMLElement;
@@ -1555,6 +1557,7 @@ const AdminPanel = () => {
                                 ok ? toast.success('Staked') : toast.error('Stake failed');
                               } catch (err: any) { toast.error(err?.message || 'Stake failed'); }
                             }}
+                            className="w-full bg-purple-600 text-white hover:bg-purple-500"
                           >Stake</Button>
                     </div>
                   </div>
@@ -1563,9 +1566,9 @@ const AdminPanel = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label>Confirm Social (campaignId, user)</Label>
-                        <div className="grid grid-cols-3 gap-2">
-                          <Input placeholder="id" onChange={(e) => (e.target as any)._cid = e.target.value} />
-                          <Input placeholder="0x..." defaultValue={account || ''} onChange={(e) => (e.target as any)._addr = e.target.value} />
+                         <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                           <Input placeholder="id" onChange={(e) => (e.target as any)._cid = e.target.value} className="w-full" />
+                           <Input placeholder="0x..." defaultValue={account || ''} onChange={(e) => (e.target as any)._addr = e.target.value} className="w-full" />
                           <Button
                             onClick={async (e) => {
                               const grid = e.currentTarget.parentElement as HTMLElement;
@@ -1577,13 +1580,14 @@ const AdminPanel = () => {
                                 ok ? toast.success('Social confirmed') : toast.error('Confirm failed');
                               } catch (err: any) { toast.error(err?.message || 'Confirm failed'); }
                             }}
+                            className="w-full bg-emerald-600 text-white hover:bg-emerald-500"
                           >Confirm</Button>
             </div>
           </div>
                       <div className="space-y-2">
                         <Label>Winners / Burn (campaignId)</Label>
-                        <div className="grid grid-cols-3 gap-2">
-                          <Input placeholder="id" onChange={(e) => (e.target as any)._cid2 = e.target.value} />
+                         <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                           <Input placeholder="id" onChange={(e) => (e.target as any)._cid2 = e.target.value} className="w-full" />
                           <Button
                             variant="secondary"
                             onClick={async (e) => {
@@ -1595,6 +1599,7 @@ const AdminPanel = () => {
                                 ok ? toast.success('Winners selected') : toast.error('Select failed');
                               } catch (err: any) { toast.error(err?.message || 'Select failed'); }
                             }}
+                            className="w-full bg-sky-600 text-white hover:bg-sky-500"
                           >Select Winners</Button>
                           <Button
                             variant="destructive"
@@ -1607,6 +1612,7 @@ const AdminPanel = () => {
                                 ok ? toast.success('Tokens burned') : toast.error('Burn failed');
                               } catch (err: any) { toast.error(err?.message || 'Burn failed'); }
                             }}
+                            className="w-full"
                           >Burn Tokens</Button>
                         </div>
                       </div>
@@ -1646,11 +1652,12 @@ const AdminPanel = () => {
                         
                         <div className="space-y-2">
                           <Label>Campaign Pause/Resume (campaignId)</Label>
-                          <div className="grid grid-cols-3 gap-2">
-                            <Input placeholder="id" onChange={(e) => (e.target as any)._pauseId = e.target.value} />
-                            <Button
-                              variant="outline"
-                              size="sm"
+                           <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                             <Input placeholder="id" onChange={(e) => (e.target as any)._pauseId = e.target.value} className="w-full" />
+                             <Button
+                               variant="outline"
+                               size="sm"
+                               className="w-full"
                               onClick={async (e) => {
                                 const grid = e.currentTarget.parentElement as HTMLElement;
                                 const id = (grid.children[0] as any)._pauseId || (grid.children[0] as HTMLInputElement).value;
@@ -1660,9 +1667,10 @@ const AdminPanel = () => {
                                 } catch (err: any) { toast.error(err?.message || 'Pause failed'); }
                               }}
                             >⏸️ Pause</Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
+                             <Button
+                               variant="outline"
+                               size="sm"
+                               className="w-full"
                               onClick={async (e) => {
                                 const grid = e.currentTarget.parentElement as HTMLElement;
                                 const id = (grid.children[0] as any)._pauseId || (grid.children[0] as HTMLInputElement).value;
@@ -1707,16 +1715,16 @@ const AdminPanel = () => {
 
                         <div className="space-y-2">
                           <Label>Update Campaign End Date (campaignId)</Label>
-                          <div className="grid grid-cols-3 gap-2">
-                            <Input placeholder="id" onChange={(e) => (e.target as any)._updateId = e.target.value} />
+                           <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                             <Input placeholder="id" onChange={(e) => (e.target as any)._updateId = e.target.value} className="w-full" />
                             <Input 
                               type="datetime-local" 
                               onChange={(e) => (e.target as any)._newDate = e.target.value}
-                              className="text-xs"
+                               className="text-xs w-full"
                             />
                             <Button
-                              variant="outline"
-                              size="sm"
+                               variant="secondary"
+                               className="w-full bg-amber-600 text-white hover:bg-amber-500"
                               onClick={async (e) => {
                                 const grid = e.currentTarget.parentElement as HTMLElement;
                                 const id = (grid.children[0] as any)._updateId || (grid.children[0] as HTMLInputElement).value;
@@ -1727,7 +1735,7 @@ const AdminPanel = () => {
                                   await autoSvc.updateCampaignEndDate(Number(id), new Date(newDate));
                                 } catch (err: any) { toast.error(err?.message || 'Update failed'); }
                               }}
-                            >📅 Update</Button>
+                             >📅 Update</Button>
                           </div>
                         </div>
                       </div>
