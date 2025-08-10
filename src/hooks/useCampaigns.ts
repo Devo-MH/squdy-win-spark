@@ -36,11 +36,12 @@ export const useCampaigns = (params?: {
   });
 };
 
-export const useCampaign = (id: number) => {
+export const useCampaign = (id: number | string) => {
+  const isValidId = typeof id === 'string' ? id.length > 0 : (typeof id === 'number' && id > 0);
   return useQuery({
     queryKey: campaignKeys.detail(id),
     queryFn: () => campaignAPI.getCampaignById(id),
-    enabled: !!id && id > 0,
+    enabled: isValidId,
     staleTime: import.meta.env.DEV ? 1000 * 5 : 1000 * 60 * 1, // 5 seconds in dev, 1 minute in prod
     refetchOnWindowFocus: true, // Refresh when window regains focus
   });
@@ -67,11 +68,12 @@ export const useCampaignWinners = (id: number) => {
   });
 };
 
-export const useMyCampaignStatus = (id: number) => {
+export const useMyCampaignStatus = (id: number | string) => {
+  const isValidId = typeof id === 'string' ? id.length > 0 : (typeof id === 'number' && id > 0);
   return useQuery({
     queryKey: campaignKeys.myStatus(id),
     queryFn: () => campaignAPI.getMyStatus(id),
-    enabled: !!id && id > 0,
+    enabled: isValidId,
     staleTime: 1000 * 30, // 30 seconds
     retry: false, // Don't retry if not authenticated
   });

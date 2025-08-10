@@ -478,7 +478,7 @@ export const campaignAPI = {
     return response.data;
   },
 
-  getCampaignById: async (id: number): Promise<{ campaign: Campaign }> => {
+  getCampaignById: async (id: number | string): Promise<{ campaign: Campaign }> => {
     const response = await apiClient.get(`/campaigns/${id}`);
     return response.data;
   },
@@ -512,7 +512,7 @@ export const campaignAPI = {
     return response.data;
   },
 
-  getMyStatus: async (id: number) => {
+  getMyStatus: async (id: number | string) => {
     const response = await apiClient.get(`/campaigns/${id}/my-status`);
     return response.data;
   },

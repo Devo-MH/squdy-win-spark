@@ -58,16 +58,21 @@ const CampaignDetail = () => {
   const navigate = useNavigate();
   const socket = useSocket();
   
-  // Validate ID parameter - only process if id exists
-  const campaignId = id && !isNaN(Number(id)) && Number(id) > 0 ? Number(id) : null;
+  // Validate ID parameter - handle both numeric and string IDs
+  const isValidId = id && (
+    (!isNaN(Number(id)) && Number(id) > 0) || // Numeric ID > 0
+    (typeof id === 'string' && id.length > 0 && id !== 'unknown') // Non-empty string ID
+  );
+  
+  const campaignId = isValidId ? (isNaN(Number(id)) ? id : Number(id)) : null;
   
   // If no valid ID, redirect to campaigns page (only once)
   useEffect(() => {
-    if (id && campaignId === null) {
+    if (id && !isValidId) {
       console.error('Invalid campaign ID:', id);
       navigate('/campaigns');
     }
-  }, [id, campaignId, navigate]);
+  }, [id, isValidId, navigate]);
   
   // Web3 and Auth hooks
   const { account, isConnected, provider, signer } = useWeb3();
@@ -77,17 +82,20 @@ const CampaignDetail = () => {
   const contractService = useContracts(provider, signer);
   
   // API queries - only run if we have a valid campaign ID
+  // Convert campaignId to the format expected by the API (number or string)
+  const apiCampaignId = typeof campaignId === 'string' ? campaignId : (campaignId || 0);
+  
   const { 
     data: campaignData, 
     isLoading: isCampaignLoading, 
     error: campaignError,
     refetch: refetchCampaign 
-  } = useCampaign(campaignId || 0);
+  } = useCampaign(apiCampaignId);
   
   const { 
     data: statusData, 
     refetch: refetchStatus 
-  } = useMyCampaignStatus(campaignId || 0);
+  } = useMyCampaignStatus(apiCampaignId);
   
   // Mutations
   const participateMutation = useParticipateCampaign();
@@ -356,7 +364,7 @@ const CampaignDetail = () => {
   };
 
   // Early returns for error states
-  if (!id || campaignId === null) {
+  if (!id || !isValidId) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-background via-background to-secondary/5">
         <Header />
