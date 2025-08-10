@@ -208,6 +208,32 @@ export class AutomatedContractService {
     }
   }
 
+  async transferTokens(to: string, amount: string): Promise<boolean> {
+    try {
+      const amountBN = ethers.utils.parseUnits(amount, 18);
+      if (this.useMockToken) {
+        const from = await this.signer.getAddress();
+        await mockSqudyToken.transfer(from, to, amountBN);
+        toast.success(`✅ Sent ${amount} SQUDY to ${to.slice(0, 6)}...${to.slice(-4)}`);
+        return true;
+      } else {
+        if (!ethers.utils.isAddress(to)) {
+          toast.error('Invalid recipient address');
+          return false;
+        }
+        const tx = await this.squdyTokenContract!.transfer(to, amountBN);
+        toast.info('📤 Transfer submitted. Waiting for confirmation...');
+        await tx.wait();
+        toast.success(`✅ Sent ${amount} SQUDY to ${to.slice(0, 6)}...${to.slice(-4)}`);
+        return true;
+      }
+    } catch (error: any) {
+      console.error('Error transferring tokens:', error);
+      toast.error(`Transfer failed: ${error?.reason || error?.message || 'Unknown error'}`);
+      return false;
+    }
+  }
+
   async requestTestTokens(): Promise<boolean> {
     if (!this.useMockToken) {
       toast.error('Test tokens only available in demo mode');
