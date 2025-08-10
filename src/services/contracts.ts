@@ -591,6 +591,11 @@ export class ContractService {
       const automatedSig = 'createCampaign(string,string,string,uint256,uint256,uint256,uint256,uint256,string[])';
       const simpleSig = 'createCampaign(string,string,uint256,uint256,uint256,uint256,uint256,uint256)';
       const cAny: any = this.campaignManagerContract;
+      
+      // Validate contract and interface
+      if (!cAny || !cAny.interface) {
+        throw new Error('Campaign manager contract not properly initialized');
+      }
 
       // Try automated signature first: (name, description, imageUrl, softCap, hardCap, ticketAmount, start, end, prizes)
       let tx;
@@ -752,17 +757,27 @@ export class ContractService {
       const receipt = await tx.wait();
 
       // Try to parse CampaignCreated event for id
-      const logs = receipt.logs || [];
+      if (!receipt || !receipt.logs) {
+        throw new Error('Transaction receipt is invalid or missing logs');
+      }
+      
+      const logs = Array.isArray(receipt.logs) ? receipt.logs : [];
       for (const log of logs) {
+        if (!log) continue;
         try {
+          if (!this.campaignManagerContract?.interface?.parseLog) {
+            console.warn('Contract interface parseLog not available');
+            continue;
+          }
           const parsed = this.campaignManagerContract.interface.parseLog(log);
-          if (parsed && parsed.name === 'CampaignCreated') {
-            const idArg = parsed.args?.[0];
+          if (parsed && parsed.name === 'CampaignCreated' && parsed.args) {
+            const idArg = parsed.args[0];
             if (idArg != null) {
               return Number(idArg.toString());
             }
           }
-        } catch (_) {
+        } catch (parseErr) {
+          console.warn('Failed to parse log:', parseErr);
           // ignore parse errors
         }
       }
