@@ -3,6 +3,7 @@ pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
 // import "./ISqudyToken.sol"; // Not needed for implementation
@@ -15,8 +16,10 @@ import "@openzeppelin/contracts/utils/Pausable.sol";
 contract SqudyToken is ERC20, ERC20Burnable, Ownable, Pausable {
     
     // ============ CONSTANTS ============
-    uint256 public constant INITIAL_SUPPLY = 1_000_000_000 * 10**18; // 1 billion tokens
-    uint256 public constant MAX_SUPPLY = INITIAL_SUPPLY; // No minting after initial
+    // Max cap for the token supply (1B)
+    uint256 public constant MAX_SUPPLY = 1_000_000_000 * 10**18;
+    // Initial supply minted to owner on deploy (100M)
+    uint256 public constant INITIAL_SUPPLY = 100_000_000 * 10**18;
     
     // ============ STATE VARIABLES ============
     mapping(address => bool) public authorizedBurners; // Contracts that can burn tokens
@@ -84,6 +87,42 @@ contract SqudyToken is ERC20, ERC20Burnable, Ownable, Pausable {
         emit TokensBurnedByCampaign(msg.sender, amount);
     }
     
+    // ============ MINT / RESCUE (OWNER) ============
+
+    /**
+     * @dev Mint new tokens up to MAX_SUPPLY cap. Testnet utility and controlled issuance.
+     */
+    function mint(address to, uint256 amount) external onlyOwner whenNotPaused {
+        require(to != address(0), "Invalid recipient");
+        require(totalSupply() + amount <= MAX_SUPPLY, "Cap exceeded");
+        _mint(to, amount);
+    }
+
+    /**
+     * @dev Recover ERC20 tokens mistakenly sent to this contract.
+     */
+    function recoverERC20(address token, address to, uint256 amount) external onlyOwner {
+        require(to != address(0), "Invalid recipient");
+        IERC20(token).transfer(to, amount);
+    }
+
+    /**
+     * @dev Recover this token mistakenly sent to its own address.
+     */
+    function recoverOwnTokens(address to, uint256 amount) external onlyOwner {
+        require(to != address(0), "Invalid recipient");
+        require(balanceOf(address(this)) >= amount, "Insufficient contract balance");
+        _transfer(address(this), to, amount);
+    }
+
+    /**
+     * @dev Recover native ETH accidentally sent to this contract.
+     */
+    function recoverETH(address payable to) external onlyOwner {
+        require(to != address(0), "Invalid recipient");
+        to.transfer(address(this).balance);
+    }
+
     /**
      * @dev Enhanced burn function that tracks total burned
      */
