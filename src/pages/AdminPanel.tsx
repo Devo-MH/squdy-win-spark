@@ -1510,17 +1510,17 @@ const AdminPanel = () => {
               </Card>
 
               {useAutomated && (
-                <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Zap className="w-5 h-5" />
+                <Card className="border border-white/10 shadow-xl">
+                  <CardHeader className="bg-gradient-to-r from-zinc-900 to-zinc-800 border-b border-white/10 rounded-t-xl">
+                    <CardTitle className="flex items-center gap-2 text-zinc-100">
+                      <Zap className="w-5 h-5 text-sky-400" />
                       On-chain Tools (Automated Manager)
                     </CardTitle>
-                </CardHeader>
-                  <CardContent className="space-y-4">
+                  </CardHeader>
+                  <CardContent className="space-y-6 p-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                        <Label>Approve SQUDY Amount</Label>
+                        <Label className="text-zinc-300">Approve SQUDY Amount</Label>
                         <div className="flex gap-2">
                           <Input
                             placeholder="10"
@@ -1542,7 +1542,7 @@ const AdminPanel = () => {
                     </div>
                     </div>
                       <div className="space-y-2">
-                        <Label>Stake (campaignId, amount)</Label>
+                        <Label className="text-zinc-300">Stake (campaignId, amount)</Label>
                          <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                            <Input placeholder="id" onChange={(e) => (e.target as any)._id = e.target.value} className="w-full" />
                            <Input placeholder="amount" onChange={(e) => (e.target as any)._amt = e.target.value} className="w-full" />
@@ -1565,7 +1565,7 @@ const AdminPanel = () => {
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label>Confirm Social (campaignId, user)</Label>
+                        <Label className="text-zinc-300">Confirm Social (campaignId, user)</Label>
                          <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                            <Input placeholder="id" onChange={(e) => (e.target as any)._cid = e.target.value} className="w-full" />
                            <Input placeholder="0x..." defaultValue={account || ''} onChange={(e) => (e.target as any)._addr = e.target.value} className="w-full" />
@@ -1585,7 +1585,7 @@ const AdminPanel = () => {
             </div>
           </div>
                       <div className="space-y-2">
-                        <Label>Winners / Burn (campaignId)</Label>
+                        <Label className="text-zinc-300">Winners / Burn (campaignId)</Label>
                          <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                            <Input placeholder="id" onChange={(e) => (e.target as any)._cid2 = e.target.value} className="w-full" />
                           <Button
@@ -1619,11 +1619,11 @@ const AdminPanel = () => {
                     </div>
 
                     {/* Emergency Functions Section */}
-                    <div className="border-t pt-4">
-                      <h4 className="text-sm font-semibold mb-3 text-red-600">🚨 Emergency Functions</h4>
+                     <div className="border-t border-white/10 pt-6">
+                      <h4 className="text-sm font-semibold mb-3 text-rose-400 tracking-wide">🚨 Emergency Functions</h4>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
-                          <Label>Emergency Terminate (campaignId, refund)</Label>
+                          <Label className="text-zinc-300">Emergency Terminate (campaignId, refund)</Label>
                           <div className="grid grid-cols-3 gap-2">
                             <Input placeholder="id" onChange={(e) => (e.target as any)._termId = e.target.value} />
                             <select 
@@ -1651,7 +1651,7 @@ const AdminPanel = () => {
                         </div>
                         
                         <div className="space-y-2">
-                          <Label>Campaign Pause/Resume (campaignId)</Label>
+                          <Label className="text-zinc-300">Campaign Pause/Resume (campaignId)</Label>
                            <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                              <Input placeholder="id" onChange={(e) => (e.target as any)._pauseId = e.target.value} className="w-full" />
                             <Button
@@ -1686,7 +1686,7 @@ const AdminPanel = () => {
 
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                         <div className="space-y-2">
-                          <Label>Emergency Contract Controls</Label>
+                          <Label className="text-zinc-300">Emergency Contract Controls</Label>
                           <div className="flex gap-2">
                             <Button
                               variant="destructive"
@@ -1714,7 +1714,7 @@ const AdminPanel = () => {
                         </div>
 
                         <div className="space-y-2">
-                          <Label>Update Campaign End Date (campaignId)</Label>
+                          <Label className="text-zinc-300">Update Campaign End Date (campaignId)</Label>
                            <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                              <Input placeholder="id" onChange={(e) => (e.target as any)._updateId = e.target.value} className="w-full" />
                             <Input 
@@ -1742,7 +1742,7 @@ const AdminPanel = () => {
 
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                         <div className="space-y-2">
-                          <Label>Grant Role (address, role)</Label>
+                          <Label className="text-zinc-300">Grant Role (address, role)</Label>
                           <div className="grid grid-cols-3 gap-2">
                             <Input placeholder="0x..." onChange={(e) => (e.target as any)._grantAddr = e.target.value} />
                             <select 
@@ -1770,7 +1770,7 @@ const AdminPanel = () => {
                         </div>
 
                         <div className="space-y-2">
-                          <Label>Revoke Role (address, role)</Label>
+                          <Label className="text-zinc-300">Revoke Role (address, role)</Label>
                           <div className="grid grid-cols-3 gap-2">
                             <Input placeholder="0x..." onChange={(e) => (e.target as any)._revokeAddr = e.target.value} />
                             <select 
