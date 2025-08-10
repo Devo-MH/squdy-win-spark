@@ -191,33 +191,50 @@ const CampaignCard = ({ campaign }: CampaignCardProps) => {
         )}
 
         {/* Action Button */}
-        <Link 
-          to={`/campaigns/${localCampaign.contractId || localCampaign.id || 'unknown'}`} 
-          className="block"
-          onClick={(e) => {
-            console.log('Campaign card clicked:', { 
-              contractId: localCampaign.contractId, 
-              id: localCampaign.id,
-              campaign: localCampaign 
-            });
-            if (!localCampaign.contractId && !localCampaign.id) {
-              e.preventDefault();
-              console.error('No valid campaign ID found');
-              alert('Error: No valid campaign ID found. Check console for details.');
-            } else {
-              console.log(`Navigating to: /campaigns/${localCampaign.contractId || localCampaign.id}`);
-            }
-          }}
-        >
+        {Number(localCampaign.contractId) > 0 ? (
+          <Link 
+            to={`/campaigns/${localCampaign.contractId}`} 
+            className="block"
+            onClick={() => {
+              console.log('Campaign card clicked:', { 
+                contractId: localCampaign.contractId, 
+                id: localCampaign.id,
+                campaign: localCampaign 
+              });
+              console.log(`Navigating to: /campaigns/${localCampaign.contractId}`);
+            }}
+          >
+            <Button 
+              variant={isActive ? "neon" : "outline"} 
+              className="w-full"
+              disabled={!isActive && !isFinished}
+            >
+              {isActive ? (
+                <>
+                  <Flame className="w-4 h-4" />
+                  Join Campaign
+                </>
+              ) : isFinished ? (
+                "View Results"
+              ) : (
+                "Coming Soon"
+              )}
+            </Button>
+          </Link>
+        ) : (
           <Button 
             variant={isActive ? "neon" : "outline"} 
             className="w-full"
-            disabled={!isActive && !isFinished}
+            disabled
+            onClick={() => {
+              console.warn('Campaign not ready: missing contractId', localCampaign);
+              alert('This campaign is still syncing. Please refresh in a few seconds.');
+            }}
           >
             {isActive ? (
               <>
                 <Flame className="w-4 h-4" />
-                Join Campaign
+                Syncing...
               </>
             ) : isFinished ? (
               "View Results"
@@ -225,7 +242,7 @@ const CampaignCard = ({ campaign }: CampaignCardProps) => {
               "Coming Soon"
             )}
           </Button>
-        </Link>
+        )}
       </CardContent>
     </Card>
   );
