@@ -221,6 +221,12 @@ export class AutomatedContractService {
           toast.error('Invalid recipient address');
           return false;
         }
+        const from = await this.signer.getAddress();
+        const balance = await this.squdyTokenContract!.balanceOf(from);
+        if (balance.lt(amountBN)) {
+          toast.error('Insufficient SQUDY balance');
+          return false;
+        }
         const tx = await this.squdyTokenContract!.transfer(to, amountBN);
         toast.info('📤 Transfer submitted. Waiting for confirmation...');
         await tx.wait();
