@@ -14,6 +14,8 @@
     "sepolia:summary": "node scripts/sepolia-summary.cjs",
     "sepolia:test": "node scripts/test-sepolia-deployment.cjs",
     "sepolia:admin": "node scripts/grant-admin-roles-sepolia.cjs",
+    "deploy:token": "hardhat run scripts/deploy-squdy-token-v2.js --network sepolia",
+    "deploy:roles": "hardhat run scripts/post-deploy-grant-roles.js --network sepolia",
     "api:local": "node local-server.mjs",
     "api:test": "node testCampaignAPI.js"
   },
