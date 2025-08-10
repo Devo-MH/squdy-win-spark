@@ -191,7 +191,24 @@ const CampaignCard = ({ campaign }: CampaignCardProps) => {
         )}
 
         {/* Action Button */}
-        <Link to={`/campaigns/${localCampaign.contractId}`} className="block">
+        <Link 
+          to={`/campaigns/${localCampaign.contractId || localCampaign.id || 'unknown'}`} 
+          className="block"
+          onClick={(e) => {
+            console.log('Campaign card clicked:', { 
+              contractId: localCampaign.contractId, 
+              id: localCampaign.id,
+              campaign: localCampaign 
+            });
+            if (!localCampaign.contractId && !localCampaign.id) {
+              e.preventDefault();
+              console.error('No valid campaign ID found');
+              alert('Error: No valid campaign ID found. Check console for details.');
+            } else {
+              console.log(`Navigating to: /campaigns/${localCampaign.contractId || localCampaign.id}`);
+            }
+          }}
+        >
           <Button 
             variant={isActive ? "neon" : "outline"} 
             className="w-full"
