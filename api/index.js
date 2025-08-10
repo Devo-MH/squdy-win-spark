@@ -342,6 +342,7 @@ export default async function handler(req, res) {
         try { body = JSON.parse(body); } catch (_) { body = {}; }
       }
       const allowTokenless = (process.env.VITE_ALLOW_TOKENLESS_SOCIAL || 'false').toLowerCase() === 'true';
+      const autoConfirm = (process.env.FEATURE_AUTO_CONFIRM_ONCHAIN || 'false').toLowerCase() === 'true';
 
       // Optionally persist a lightweight verification log
       try {
@@ -353,6 +354,40 @@ export default async function handler(req, res) {
           createdAt: new Date().toISOString(),
         });
       } catch (_) {}
+
+      // Auto-confirm on-chain using relayer when enabled
+      if (autoConfirm) {
+        try {
+          const { default: ethersMod } = await import('ethers');
+          const ethers = ethersMod;
+          const pk = process.env.RELAYER_PRIVATE_KEY;
+          const rpc = process.env.RPC_URL || process.env.VITE_RPC_URL;
+          const manager = process.env.VITE_CAMPAIGN_MANAGER_ADDRESS || process.env.CAMPAIGN_MANAGER_ADDRESS;
+          const chainId = Number(process.env.CHAIN_ID || process.env.VITE_CHAIN_ID || 11155111);
+          const campaignId = Number(body?.campaignId || body?.task?.campaignId);
+          const user = String(body?.userAddress || body?.task?.userAddress || '').trim();
+
+          if (pk && rpc && manager && user && !Number.isNaN(campaignId)) {
+            const provider = new ethers.providers.JsonRpcProvider(rpc, { chainId });
+            const signer = new ethers.Wallet(pk, provider);
+            const abi = [
+              'function confirmSocialTasks(uint256,address) external',
+              'function getParticipant(uint256,address) view returns (tuple(uint256,uint256,bool,uint256))'
+            ];
+            const contract = new ethers.Contract(manager, abi, signer);
+            try {
+              const p = await contract.getParticipant(campaignId, user);
+              const already = (p && (p.hasCompletedSocial === true || p[2] === true));
+              if (!already) {
+                const tx = await contract.confirmSocialTasks(campaignId, user);
+                await tx.wait();
+              }
+            } catch (_) {}
+          }
+        } catch (e) {
+          console.error('auto-confirm failed:', e?.message || e);
+        }
+      }
 
       res.setHeader('Cache-Control', 'no-store');
       return res.json({ success: true, data: { verified: true, timestamp: Date.now() } });
