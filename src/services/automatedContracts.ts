@@ -390,13 +390,16 @@ export class AutomatedContractService {
 
       const receipt = await tx.wait();
       
-      // Extract campaign ID from event
-      const campaignCreatedEvent = (receipt?.logs || []).find((log: any) => 
-        log?.topics?.[0] === ethers.id("CampaignCreated(uint256,address,string)")
-      );
-      
-      if (campaignCreatedEvent) {
-        return Number(campaignCreatedEvent.topics[1]);
+      // Extract campaign ID from event (defensive iteration, no Array.find)
+      const logs = Array.isArray(receipt?.logs) ? receipt.logs : [];
+      for (const log of logs) {
+        try {
+          if (log?.topics?.[0] === ethers.id("CampaignCreated(uint256,address,string)")) {
+            return Number(log.topics[1]);
+          }
+        } catch {
+          // ignore parsing errors
+        }
       }
       
       return null;
