@@ -1541,6 +1541,35 @@ const AdminPanel = () => {
                           >Send</Button>
                         </div>
                       </div>
+                      <div className="space-y-2">
+                        <Label className="text-zinc-300">Faucet (admin → to, amount)</Label>
+                        <div className="grid grid-cols-3 gap-2">
+                          <Input placeholder="0xRecipient" onChange={(e) => (e.target as any)._fTo = e.target.value} />
+                          <Input placeholder="amount" defaultValue="100" onChange={(e) => (e.target as any)._fAmt = e.target.value} />
+                          <Button
+                            className="bg-amber-600 text-white hover:bg-amber-500"
+                            size="sm"
+                            onClick={async (e) => {
+                              const grid = e.currentTarget.parentElement as HTMLElement;
+                              const to = (grid.children[0] as any)._fTo || (grid.children[0] as HTMLInputElement).value;
+                              const amt = (grid.children[1] as any)._fAmt || (grid.children[1] as HTMLInputElement).value;
+                              if (!to || !amt) return toast.error('Enter recipient and amount');
+                              try {
+                                const resp = await fetch('/api/admin/faucet', {
+                                  method: 'POST',
+                                  headers: { 'Content-Type': 'application/json' },
+                                  body: JSON.stringify({ to, amount: amt })
+                                });
+                                const data = await resp.json();
+                                if (!resp.ok || !data?.success) throw new Error(data?.error || 'Faucet failed');
+                                toast.success('Faucet sent. Tx: ' + String(data.txHash).slice(0, 10) + '...');
+                              } catch (err: any) {
+                                toast.error(err?.message || 'Faucet failed');
+                              }
+                            }}
+                          >Faucet</Button>
+                        </div>
+                      </div>
                   <div className="space-y-2">
                         <Label className="text-zinc-300">Approve SQUDY Amount</Label>
                         <div className="flex gap-2">
