@@ -1148,7 +1148,8 @@ const AdminPanel = () => {
                         type="datetime-local"
                         value={formData.startDate}
                         onChange={(e) => setFormData(prev => ({ ...prev, startDate: e.target.value }))}
-                        className="text-sm"
+                        className="text-sm cursor-pointer"
+                        onFocus={(e) => (e.currentTarget as any).showPicker?.()}
                     />
                     <p className="text-xs text-muted-foreground">
                         Campaign will start at this date and time
@@ -1165,7 +1166,8 @@ const AdminPanel = () => {
                         type="datetime-local"
                         value={formData.endDate}
                         onChange={(e) => setFormData(prev => ({ ...prev, endDate: e.target.value }))}
-                        className="text-sm"
+                        className="text-sm cursor-pointer"
+                        onFocus={(e) => (e.currentTarget as any).showPicker?.()}
                       />
                       <p className="text-xs text-muted-foreground">
                         Campaign will end at this date and time
@@ -1541,7 +1543,7 @@ const AdminPanel = () => {
                             className="w-32 bg-indigo-600 text-white hover:bg-indigo-500"
                           >Approve</Button>
                     </div>
-                  </div>
+                    </div>
                       <div className="space-y-2">
                         <Label className="text-zinc-300">Stake (campaignId, amount)</Label>
                          <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
@@ -1718,11 +1720,12 @@ const AdminPanel = () => {
                           <Label className="text-zinc-300">Update Campaign End Date (campaignId)</Label>
                            <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                              <Input placeholder="id" onChange={(e) => (e.target as any)._updateId = e.target.value} className="w-full" />
-                            <Input 
-                              type="datetime-local" 
-                              onChange={(e) => (e.target as any)._newDate = e.target.value}
-                               className="text-xs w-full"
-                            />
+                             <Input 
+                               type="datetime-local" 
+                               onChange={(e) => (e.target as any)._newDate = e.target.value}
+                               className="text-xs w-full cursor-pointer"
+                               onFocus={(e) => (e.currentTarget as any).showPicker?.()}
+                             />
                             <Button
                                variant="secondary"
                                className="w-full bg-amber-600 text-white hover:bg-amber-500"
