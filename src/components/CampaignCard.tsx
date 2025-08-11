@@ -20,6 +20,7 @@ const CampaignCard = ({ campaign }: CampaignCardProps) => {
   const progress = formatProgress(localCampaign.currentAmount, localCampaign.hardCap);
   const isActive = localCampaign.status === "active";
   const isFinished = localCampaign.status === "finished" || localCampaign.status === "burned";
+  const hasWinners = Array.isArray((localCampaign as any).winners) && (localCampaign as any).winners.length > 0;
   const timeLeft = formatTimeLeft(localCampaign.endDate);
 
   // Listen for real-time updates
@@ -187,6 +188,26 @@ const CampaignCard = ({ campaign }: CampaignCardProps) => {
             <span className="text-red-400 font-medium">
               {Number(localCampaign.totalBurned).toLocaleString()} SQUDY burned
             </span>
+          </div>
+        )}
+
+        {/* Winners preview */}
+        {hasWinners && (
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 text-sm">
+              <Trophy className="w-4 h-4 text-campaign-success" />
+              <span className="font-medium text-foreground">Winners</span>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {((localCampaign as any).winners as string[]).slice(0, 3).map((addr, i) => (
+                <Badge key={i} variant="outline" className="text-xs">
+                  {addr.slice(0, 6)}...{addr.slice(-4)}
+                </Badge>
+              ))}
+              {((localCampaign as any).winners as string[]).length > 3 && (
+                <Badge variant="outline" className="text-xs">+{((localCampaign as any).winners as string[]).length - 3} more</Badge>
+              )}
+            </div>
           </div>
         )}
 
