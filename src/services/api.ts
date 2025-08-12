@@ -1,6 +1,6 @@
 import axios, { AxiosInstance, AxiosResponse } from 'axios';
 import { toast } from 'sonner';
-import { Task } from '@/components/offchain-verifier/types';
+import { Task } from '@/components/offchain-verifier/src/types';
 
 // API Configuration
 const ENABLE_MOCK_FALLBACK = String(import.meta.env.VITE_ENABLE_MOCK_FALLBACK || '').toLowerCase() === 'true';

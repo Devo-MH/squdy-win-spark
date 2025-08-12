@@ -47,7 +47,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { adminAPI, Campaign } from "@/services/api";
 import { useSocket } from "@/services/socket";
 import { useContracts } from "@/services/contracts";
-import { Task } from "@/components/offchain-verifier/types";
+import { Task } from "@/components/offchain-verifier/src/types";
 import { toast } from "sonner";
 
 const AdminPanel = () => {

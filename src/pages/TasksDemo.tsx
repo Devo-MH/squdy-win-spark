@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { TaskChecklist } from '@/components/offchain-verifier';
-import { Task } from '@/components/offchain-verifier/types';
+import { TaskChecklist } from '@/components/offchain-verifier/src/components/TaskChecklist';
+import { Task } from '@/components/offchain-verifier/src/types';
 import { Button } from '@/components/ui/button';
 
 const TasksDemo: React.FC = () => {
