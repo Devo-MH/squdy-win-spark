@@ -45,8 +45,9 @@ import {
 import { useContracts, CONTRACT_ADDRESSES } from "@/services/contracts";
 import { useSocket } from "@/services/socket";
 import { MockTokenBanner } from "@/components/MockTokenBanner";
-import { TaskChecklist } from "@/components/offchain-verifier";
-import { Task } from "@/components/offchain-verifier/types";
+// Import directly to avoid re-export cycles from the package index
+import { TaskChecklist } from "@/components/offchain-verifier/src/components/TaskChecklist";
+import { Task } from "@/components/offchain-verifier/src/types";
 import { toast } from "sonner";
 import { CampaignHeader } from "@/components/campaign/CampaignHeader";
 import { CampaignStats } from "@/components/campaign/CampaignStats";
