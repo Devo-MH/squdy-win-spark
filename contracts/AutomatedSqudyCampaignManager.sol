@@ -515,4 +515,22 @@ contract AutomatedSqudyCampaignManager is AccessControl, ReentrancyGuard, Pausab
         
         emit CampaignEndDateUpdated(campaignId, oldEndDate, newEndDate);
     }
+
+    /**
+     * @dev Admin convenience: force a campaign to be considered ended immediately
+     * Sets endDate to block.timestamp - 1 without changing other fields
+     */
+    function endCampaignNow(uint256 campaignId)
+        external
+        onlyRole(ADMIN_ROLE)
+        campaignExists(campaignId)
+    {
+        Campaign storage campaign = campaigns[campaignId];
+        require(campaign.status == CampaignStatus.Active || campaign.status == CampaignStatus.Paused, "Campaign not active/paused");
+        uint256 oldEndDate = campaign.endDate;
+        if (oldEndDate > block.timestamp - 1) {
+            campaign.endDate = block.timestamp - 1;
+            emit CampaignEndDateUpdated(campaignId, oldEndDate, campaign.endDate);
+        }
+    }
 }

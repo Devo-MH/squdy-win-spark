@@ -545,8 +545,8 @@
       ]
     },
     "/Users/dina/squdy-win-spark/contracts/AutomatedSqudyCampaignManager.sol": {
-      "lastModificationDate": 1755025603122,
-      "contentHash": "107d492be7050411364d4bc80dbe4881",
+      "lastModificationDate": 1755030757187,
+      "contentHash": "9b58be2504e842ea9f2cb2eef0b0abc6",
       "sourceName": "contracts/AutomatedSqudyCampaignManager.sol",
       "solcConfig": {
         "version": "0.8.20",
