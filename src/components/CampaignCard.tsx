@@ -18,8 +18,19 @@ const CampaignCard = ({ campaign }: CampaignCardProps) => {
   const [localCampaign, setLocalCampaign] = useState(campaign);
   
   const progress = formatProgress(localCampaign.currentAmount, localCampaign.hardCap);
-  const isActive = localCampaign.status === "active";
-  const isFinished = localCampaign.status === "finished" || localCampaign.status === "burned";
+  const nowMs = Date.now();
+  const startMs = new Date(localCampaign.startDate).getTime();
+  const endMs = new Date(localCampaign.endDate).getTime();
+  const ended = Number.isFinite(endMs) && endMs <= nowMs;
+  const started = Number.isFinite(startMs) && startMs <= nowMs;
+  const winnersExist = Array.isArray((localCampaign as any).winners) && (localCampaign as any).winners.length > 0;
+  const derivedStatus = (() => {
+    if (!started) return 'pending';
+    if (ended) return localCampaign.status === 'burned' ? 'burned' : (winnersExist ? 'finished' : 'ended');
+    return 'active';
+  })();
+  const isActive = derivedStatus === 'active';
+  const isFinished = derivedStatus === 'finished' || derivedStatus === 'burned' || derivedStatus === 'ended';
   const hasWinners = Array.isArray((localCampaign as any).winners) && (localCampaign as any).winners.length > 0;
   const timeLeft = formatTimeLeft(localCampaign.endDate);
 
@@ -63,10 +74,10 @@ const CampaignCard = ({ campaign }: CampaignCardProps) => {
             }}
           />
           <Badge 
-            variant={getCampaignStatusBadge(localCampaign.status)}
+            variant={getCampaignStatusBadge(derivedStatus)}
             className="absolute top-2 right-2 capitalize animate-pulse-glow"
           >
-            {localCampaign.status}
+            {derivedStatus}
           </Badge>
           {localCampaign.status === 'burned' && (
             <Badge 
@@ -160,9 +171,9 @@ const CampaignCard = ({ campaign }: CampaignCardProps) => {
               )}
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">{isActive ? 'Time Left' : 'End Date'}</p>
+              <p className="text-sm text-muted-foreground">{isActive ? 'Time Left' : 'Ended'}</p>
               <p className={`text-sm font-bold ${isActive ? 'text-campaign-success' : 'text-muted-foreground'}`}>
-                {isActive ? timeLeft : new Date(localCampaign.endDate).toLocaleDateString()}
+                {isActive ? timeLeft : new Date(localCampaign.endDate).toLocaleString()}
               </p>
             </div>
           </div>
