@@ -96,6 +96,18 @@ const CampaignDetail = () => {
     data: statusData, 
     refetch: refetchStatus 
   } = useMyCampaignStatus(apiCampaignId);
+
+  // Periodic refetch while campaign is active or just ended
+  useEffect(() => {
+    if (!localCampaign) return;
+    const shouldPoll = localCampaign.status === 'active' || localCampaign.status === 'finished' || localCampaign.status === 'pending';
+    if (!shouldPoll) return;
+    const interval = setInterval(() => {
+      refetchCampaign();
+      refetchStatus();
+    }, 7000);
+    return () => clearInterval(interval);
+  }, [localCampaign?.status, refetchCampaign, refetchStatus]);
   
   // Mutations
   const participateMutation = useParticipateCampaign();
@@ -250,9 +262,11 @@ const CampaignDetail = () => {
       setHasStaked(true);
       setStakeAmount('');
       
-      // Refresh wallet data
+      // Refresh wallet + campaign state
       const newBalance = await contractService.getTokenBalance(account!);
       setSqudyBalance(newBalance);
+      refetchCampaign();
+      refetchStatus();
       
       toast.success(`Successfully staked ${amount} SQUDY! Now complete the required tasks to join the campaign.`);
       
