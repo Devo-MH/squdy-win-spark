@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { useState, useEffect, lazy, Suspense } from "react";
+import { useState, useEffect } from "react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
@@ -45,9 +45,8 @@ import {
 import { useContracts, CONTRACT_ADDRESSES } from "@/services/contracts";
 import { useSocket } from "@/services/socket";
 import { MockTokenBanner } from "@/components/MockTokenBanner";
-// Lazy-load to avoid any potential circular import/TDZ at startup
-const TaskChecklist = lazy(() => import("@/components/offchain-verifier/src/components/TaskChecklist").then(m => ({ default: m.TaskChecklist })));
-import type { Task } from "@/components/offchain-verifier/src/types";
+import { TaskChecklist } from "@/components/offchain-verifier";
+import { Task } from "@/components/offchain-verifier/types";
 import { toast } from "sonner";
 import { CampaignHeader } from "@/components/campaign/CampaignHeader";
 import { CampaignStats } from "@/components/campaign/CampaignStats";
@@ -97,18 +96,6 @@ const CampaignDetail = () => {
     data: statusData, 
     refetch: refetchStatus 
   } = useMyCampaignStatus(apiCampaignId);
-
-  // Periodic refetch while campaign is active or just ended
-  useEffect(() => {
-    if (!localCampaign) return;
-    const shouldPoll = localCampaign.status === 'active' || localCampaign.status === 'finished' || localCampaign.status === 'pending';
-    if (!shouldPoll) return;
-    const interval = setInterval(() => {
-      refetchCampaign();
-      refetchStatus();
-    }, 7000);
-    return () => clearInterval(interval);
-  }, [localCampaign?.status, refetchCampaign, refetchStatus]);
   
   // Mutations
   const participateMutation = useParticipateCampaign();
@@ -263,11 +250,9 @@ const CampaignDetail = () => {
       setHasStaked(true);
       setStakeAmount('');
       
-      // Refresh wallet + campaign state
+      // Refresh wallet data
       const newBalance = await contractService.getTokenBalance(account!);
       setSqudyBalance(newBalance);
-      refetchCampaign();
-      refetchStatus();
       
       toast.success(`Successfully staked ${amount} SQUDY! Now complete the required tasks to join the campaign.`);
       
@@ -581,17 +566,15 @@ const CampaignDetail = () => {
                         Complete all required offchain tasks to join the campaign.
                       </p>
                       {/* Control simulation via env flag */}
-                      <Suspense fallback={<div className="text-sm text-muted-foreground">Loading tasks…</div>}>
-                        <TaskChecklist
-                          tasks={campaignTasks}
-                          completedTasks={completedTasks}
-                          onTaskChange={handleTaskChange}
-                          campaignName={localCampaign.name}
-                          campaignId={localCampaign.id?.toString()}
-                          enableSimulation={String(import.meta.env.VITE_ENABLE_MOCK_FALLBACK || '').toLowerCase() === 'true'}
-                          highlightFirstIncompleteTask={true}
-                        />
-                      </Suspense>
+                      <TaskChecklist
+                        tasks={campaignTasks}
+                        completedTasks={completedTasks}
+                        onTaskChange={handleTaskChange}
+                        campaignName={localCampaign.name}
+                        campaignId={localCampaign.id?.toString()}
+                        enableSimulation={String(import.meta.env.VITE_ENABLE_MOCK_FALLBACK || '').toLowerCase() === 'true'}
+                        highlightFirstIncompleteTask={true}
+                      />
                     </div>
                   )}
 

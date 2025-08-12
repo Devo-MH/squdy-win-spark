@@ -20,8 +20,8 @@ export function CampaignStats({
   timeLeft, 
   ticketAmount 
 }: CampaignStatsProps) {
-  const progress = hardCap > 0 ? (currentAmount / hardCap) * 100 : 0;
-  const progressToSoftCap = softCap > 0 ? (currentAmount / softCap) * 100 : 0;
+  const progress = (currentAmount / hardCap) * 100;
+  const progressToSoftCap = (currentAmount / softCap) * 100;
 
   const stats = [
     {
