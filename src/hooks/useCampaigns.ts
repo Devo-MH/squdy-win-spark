@@ -32,7 +32,8 @@ export const useCampaigns = (params?: {
     // Prefer quick freshness in production so newly created campaigns show up fast
     staleTime: import.meta.env.DEV ? 1000 * 10 : 1000 * 15,
     refetchOnWindowFocus: true, // Refresh when window regains focus
-    refetchInterval: import.meta.env.DEV ? 1000 * 30 : false, // Auto-refresh every 30 seconds in dev
+    // Always refresh list periodically so card progress bars keep moving
+    refetchInterval: 1000 * 20,
   });
 };
 
@@ -217,5 +218,6 @@ export const formatTimeLeft = (endDate: string): string => {
 };
 
 export const formatProgress = (current: number, target: number): number => {
+  if (!isFinite(current) || !isFinite(target) || target <= 0) return 0;
   return Math.min(100, (current / target) * 100);
 };
