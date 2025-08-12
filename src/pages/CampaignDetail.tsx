@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useState, useEffect, lazy, Suspense } from "react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
@@ -45,9 +45,9 @@ import {
 import { useContracts, CONTRACT_ADDRESSES } from "@/services/contracts";
 import { useSocket } from "@/services/socket";
 import { MockTokenBanner } from "@/components/MockTokenBanner";
-// Import directly to avoid re-export cycles from the package index
-import { TaskChecklist } from "@/components/offchain-verifier/src/components/TaskChecklist";
-import { Task } from "@/components/offchain-verifier/src/types";
+// Lazy-load to avoid any potential circular import/TDZ at startup
+const TaskChecklist = lazy(() => import("@/components/offchain-verifier/src/components/TaskChecklist").then(m => ({ default: m.TaskChecklist })));
+import type { Task } from "@/components/offchain-verifier/src/types";
 import { toast } from "sonner";
 import { CampaignHeader } from "@/components/campaign/CampaignHeader";
 import { CampaignStats } from "@/components/campaign/CampaignStats";
@@ -581,15 +581,17 @@ const CampaignDetail = () => {
                         Complete all required offchain tasks to join the campaign.
                       </p>
                       {/* Control simulation via env flag */}
-                      <TaskChecklist
-                        tasks={campaignTasks}
-                        completedTasks={completedTasks}
-                        onTaskChange={handleTaskChange}
-                        campaignName={localCampaign.name}
-                        campaignId={localCampaign.id?.toString()}
-                        enableSimulation={String(import.meta.env.VITE_ENABLE_MOCK_FALLBACK || '').toLowerCase() === 'true'}
-                        highlightFirstIncompleteTask={true}
-                      />
+                      <Suspense fallback={<div className="text-sm text-muted-foreground">Loading tasks…</div>}>
+                        <TaskChecklist
+                          tasks={campaignTasks}
+                          completedTasks={completedTasks}
+                          onTaskChange={handleTaskChange}
+                          campaignName={localCampaign.name}
+                          campaignId={localCampaign.id?.toString()}
+                          enableSimulation={String(import.meta.env.VITE_ENABLE_MOCK_FALLBACK || '').toLowerCase() === 'true'}
+                          highlightFirstIncompleteTask={true}
+                        />
+                      </Suspense>
                     </div>
                   )}
 
