@@ -5,6 +5,7 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 // import "./ISqudyToken.sol"; // Using IERC20 instead
 
 /**
@@ -13,6 +14,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
  * @author Squdy Team
  */
 contract AutomatedSqudyCampaignManager is AccessControl, ReentrancyGuard, Pausable {
+    using SafeERC20 for IERC20;
 
     // ============ CONSTANTS ============
     bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
@@ -38,6 +40,7 @@ contract AutomatedSqudyCampaignManager is AccessControl, ReentrancyGuard, Pausab
         uint256 hardCap;
         uint256 ticketAmount;
         uint256 currentAmount;
+        uint256 refundableAmount;
         uint256 startDate;
         uint256 endDate;
         uint256 participantCount;
@@ -54,6 +57,7 @@ contract AutomatedSqudyCampaignManager is AccessControl, ReentrancyGuard, Pausab
         uint256 ticketCount;
         bool hasCompletedSocial;
         uint256 joinedAt;
+        bool hasWithdrawnRefund;
     }
 
     enum CampaignStatus { Pending, Active, Paused, Finished, Cancelled, Burned }
@@ -152,7 +156,6 @@ contract AutomatedSqudyCampaignManager is AccessControl, ReentrancyGuard, Pausab
         require(campaign.status == CampaignStatus.Active, "Campaign not active");
         require(block.timestamp >= campaign.startDate && block.timestamp <= campaign.endDate, "Campaign not in progress");
         require(amount >= campaign.ticketAmount, "Amount below minimum");
-        require(campaign.currentAmount + amount <= campaign.hardCap, "Exceeds hard cap");
 
         Participant storage participant = participants[campaignId][msg.sender];
         
@@ -163,17 +166,26 @@ contract AutomatedSqudyCampaignManager is AccessControl, ReentrancyGuard, Pausab
             participant.joinedAt = block.timestamp;
         }
 
-        // Calculate tickets
-        uint256 ticketCount = amount / campaign.ticketAmount;
-        participant.stakedAmount += amount;
+        // Transfer tokens and compute actual received (fee-on-transfer safe)
+        uint256 balBefore = squdyToken.balanceOf(address(this));
+        squdyToken.safeTransferFrom(msg.sender, address(this), amount);
+        uint256 received = squdyToken.balanceOf(address(this)) - balBefore;
+        require(received >= campaign.ticketAmount, "Amount too small after fees");
+
+        // Enforce hardCap on actual received
+        require(campaign.currentAmount + received <= campaign.hardCap, "Exceeds hard cap");
+
+        // Calculate tickets on actual received
+        uint256 ticketCount = received / campaign.ticketAmount;
+        require(ticketCount > 0, "Insufficient for one ticket");
+
+        // CEI: update state before external effects already done
+        participant.stakedAmount += received;
         participant.ticketCount += ticketCount;
+        campaign.currentAmount += received;
+        campaign.refundableAmount += received;
         
-        campaign.currentAmount += amount;
-        
-        // Transfer tokens from user to contract
-        require(squdyToken.transferFrom(msg.sender, address(this), amount), "Token transfer failed");
-        
-        emit UserStaked(campaignId, msg.sender, amount, ticketCount);
+        emit UserStaked(campaignId, msg.sender, received, ticketCount);
     }
 
     /**
@@ -200,11 +212,9 @@ contract AutomatedSqudyCampaignManager is AccessControl, ReentrancyGuard, Pausab
             winnerCount = eligibleParticipants.length;
         }
 
-        // Generate randomness using multiple entropy sources
+        // Pseudo-randomness (non-VRF): mix prior blockhash to reduce manipulation surface
         uint256 entropy = uint256(keccak256(abi.encodePacked(
-            block.timestamp,
-            block.prevrandao,
-            block.number,
+            blockhash(block.number - 1),
             campaignId,
             campaign.currentAmount,
             _randomSeed++
@@ -242,9 +252,14 @@ contract AutomatedSqudyCampaignManager is AccessControl, ReentrancyGuard, Pausab
         campaign.tokensAreBurned = true;
         campaign.totalBurned = burnAmount;
         campaign.status = CampaignStatus.Burned;
+        campaign.currentAmount = 0;
+        campaign.refundableAmount = 0;
 
-        // Burn tokens by transferring to dead address
-        require(squdyToken.transfer(address(0xdEaD), burnAmount), "Burn failed");
+        // Attempt real burn; fallback to transfer-to-dead if token lacks burn()
+        (bool ok, ) = address(squdyToken).call(abi.encodeWithSignature("burn(uint256)", burnAmount));
+        if (!ok) {
+            squdyToken.safeTransfer(address(0xdEaD), burnAmount);
+        }
 
         emit TokensBurned(campaignId, burnAmount);
         emit CampaignStatusChanged(campaignId, CampaignStatus.Burned);
@@ -397,23 +412,44 @@ contract AutomatedSqudyCampaignManager is AccessControl, ReentrancyGuard, Pausab
         require(campaign.status == CampaignStatus.Active, "Campaign not active");
         
         campaign.status = CampaignStatus.Cancelled;
-        
         if (refundUsers && campaign.currentAmount > 0) {
-            // Refund all participants
-            address[] memory participantList = campaignParticipants[campaignId];
-            for (uint256 i = 0; i < participantList.length; i++) {
-                address participant = participantList[i];
-                Participant storage p = participants[campaignId][participant];
-                if (p.stakedAmount > 0) {
-                    require(squdyToken.transfer(participant, p.stakedAmount), "Refund failed");
-                    p.stakedAmount = 0;
-                    p.ticketCount = 0;
-                }
-            }
+            // Move to claim-based refunds to avoid gas DoS
+            // Funds remain held by contract; users call claimRefund() individually
+        } else if (!refundUsers && campaign.currentAmount > 0) {
+            // Optional: burn immediately if no refunds
+            uint256 amount = campaign.currentAmount;
             campaign.currentAmount = 0;
+            campaign.refundableAmount = 0;
+            (bool ok2, ) = address(squdyToken).call(abi.encodeWithSignature("burn(uint256)", amount));
+            if (!ok2) {
+                squdyToken.safeTransfer(address(0xdEaD), amount);
+            }
+            campaign.totalBurned += amount;
+            emit TokensBurned(campaignId, amount);
         }
         
         emit CampaignTerminated(campaignId, refundUsers);
+    }
+
+    /**
+     * @dev Users claim their refund after a cancelled campaign
+     */
+    function claimRefund(uint256 campaignId) external nonReentrant campaignExists(campaignId) {
+        Campaign storage campaign = campaigns[campaignId];
+        require(campaign.status == CampaignStatus.Cancelled, "Not cancelled");
+        Participant storage p = participants[campaignId][msg.sender];
+        uint256 amount = p.stakedAmount;
+        require(amount > 0, "Nothing to refund");
+        require(!p.hasWithdrawnRefund, "Already refunded");
+        p.hasWithdrawnRefund = true;
+        p.stakedAmount = 0;
+        p.ticketCount = 0;
+        if (campaign.refundableAmount >= amount) {
+            campaign.refundableAmount -= amount;
+        } else {
+            campaign.refundableAmount = 0;
+        }
+        squdyToken.safeTransfer(msg.sender, amount);
     }
 
     /**
@@ -472,7 +508,7 @@ contract AutomatedSqudyCampaignManager is AccessControl, ReentrancyGuard, Pausab
         Campaign storage campaign = campaigns[campaignId];
         require(campaign.status == CampaignStatus.Active || campaign.status == CampaignStatus.Paused, "Campaign not active/paused");
         require(newEndDate > block.timestamp, "End date must be in future");
-        require(newEndDate != campaign.endDate, "Same end date");
+        require(newEndDate > campaign.endDate, "Must extend end date");
         
         uint256 oldEndDate = campaign.endDate;
         campaign.endDate = newEndDate;
