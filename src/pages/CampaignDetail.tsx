@@ -613,7 +613,7 @@ const CampaignDetail = () => {
 
                   {/* Fallback Staking Section for Mobile - Always show if not participating */}
                   {!isParticipating && !isConnected && (
-                    <Card className="bg-orange-500/10 border-orange-500/20">
+                    <Card className="bg-orange-500/10 border-orange-500/20 md:hidden">
                       <CardContent className="p-6 text-center">
                         <div className="p-3 bg-orange-500/20 border border-orange-500/30 rounded-lg w-fit mx-auto mb-4">
                           <AlertTriangle className="w-6 h-6 text-orange-500" />
@@ -699,7 +699,7 @@ const CampaignDetail = () => {
 
                   {/* Connection Status for Non-Connected Users */}
                   {!isConnected && (
-                    <Card className="gradient-card border border-border/50 shadow-xl">
+                    <Card className="gradient-card border border-border/50 shadow-xl hidden md:block">
                       <CardContent className="p-8 text-center">
                         <Wallet className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
                         <h3 className="text-xl font-semibold text-foreground mb-2">Connect Your Wallet</h3>
