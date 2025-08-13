@@ -1,5 +1,6 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
+import { ethers } from "ethers";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
@@ -160,6 +161,53 @@ const CampaignDetail = () => {
     const id = setInterval(refresh, 15000);
     return () => { cancelled = true; clearInterval(id); };
   }, [contractService, localCampaign?.contractId]);
+
+  // Read-only on-chain refresh for progress panel even when wallet not connected
+  useEffect(() => {
+    if (!localCampaign?.contractId) return;
+    let stop = false;
+    const zeroAddress = '0x0000000000000000000000000000000000000000';
+    const run = async () => {
+      try {
+        const managerAddr = (import.meta as any).env?.VITE_CAMPAIGN_MANAGER_ADDRESS;
+        const rpcUrl = (import.meta as any).env?.VITE_RPC_URL;
+        if (!managerAddr) return;
+        const provider = (window as any).ethereum
+          ? new ethers.providers.Web3Provider((window as any).ethereum as any)
+          : (rpcUrl ? new ethers.providers.JsonRpcProvider(rpcUrl) : null);
+        if (!provider) return;
+        const abi = [
+          'function getCampaign(uint256) view returns (tuple(uint256 id, string name, string description, string imageUrl, uint256 softCap, uint256 hardCap, uint256 ticketAmount, uint256 currentAmount, uint256 startDate, uint256 endDate, uint256 participantCount, string[] prizes, address[] winners, uint8 status, bool tokensAreBurned, uint256 totalBurned, uint256 winnerSelectionBlock))',
+          'function campaigns(uint256) view returns (uint256 id, string name, string description, string imageUrl, uint256 softCap, uint256 hardCap, uint256 ticketAmount, uint256 currentAmount, uint256 startDate, uint256 endDate, uint256 participantCount, string[] prizes, address[] winners, uint8 status, bool tokensAreBurned, uint256 totalBurned, uint256 winnerSelectionBlock)'
+        ];
+        const c = new ethers.Contract(managerAddr, abi, provider);
+        let r: any = null;
+        try { r = await c.getCampaign(Number(localCampaign.contractId)); } catch { try { r = await c.campaigns(Number(localCampaign.contractId)); } catch {} }
+        if (!r || stop) return;
+        const fmt = (v: any) => {
+          try { return parseFloat(ethers.utils.formatUnits(v, 18)); } catch { return Number(v?.toString?.() ?? v ?? 0); }
+        };
+        const toNum = (v: any) => {
+          try { return Number(v?.toString?.() ?? v ?? 0); } catch { return 0; }
+        };
+        const winnersClean = Array.isArray(r.winners) ? (r.winners as string[]).filter((w) => (w || '').toLowerCase() !== zeroAddress) : [];
+        setLocalCampaign(prev => prev ? ({
+          ...prev,
+          currentAmount: fmt(r.currentAmount ?? prev.currentAmount),
+          participantCount: Math.max(0, toNum(r.participantCount ?? prev.participantCount)),
+          softCap: fmt(r.softCap ?? prev.softCap),
+          hardCap: fmt(r.hardCap ?? prev.hardCap),
+          winners: winnersClean.length ? winnersClean : (prev.winners || []),
+          tokensAreBurned: Boolean(r.tokensAreBurned ?? (prev as any).tokensAreBurned),
+          totalBurned: fmt(r.totalBurned ?? (prev as any).totalBurned),
+          endDate: r.endDate ? new Date(Number((r as any).endDate) * 1000) : prev.endDate,
+        }) : prev);
+      } catch {}
+    };
+    run();
+    const handle = setInterval(run, 15000);
+    return () => { stop = true; clearInterval(handle); };
+  }, [localCampaign?.contractId]);
 
   // Reset local participation state when server data is available
   useEffect(() => {
