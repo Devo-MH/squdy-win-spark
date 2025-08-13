@@ -7,6 +7,7 @@ import { Link } from "react-router-dom";
 import { Campaign } from "@/services/api";
 import { getCampaignStatusBadge, formatTimeLeft, formatProgress } from "@/hooks/useCampaigns";
 import { useEffect, useState } from "react";
+import { ethers } from "ethers";
 import { useSocket } from "@/services/socket";
 
 interface CampaignCardProps {
@@ -30,6 +31,42 @@ const CampaignCard = ({ campaign }: CampaignCardProps) => {
     };
     const id = setInterval(refresh, 20000);
     return () => { cancelled = true; clearInterval(id); };
+  }, [campaign.contractId]);
+
+  // Optional on-chain light refresh for critical stats when wallet/provider exists
+  useEffect(() => {
+    let stop = false;
+    const run = async () => {
+      try {
+        const addr = (import.meta as any).env?.VITE_CAMPAIGN_MANAGER_ADDRESS;
+        if (!addr || !(window as any).ethereum) return;
+        const provider = new ethers.providers.Web3Provider((window as any).ethereum as any);
+        const abi = [
+          'function getCampaign(uint256) view returns (tuple(uint256 id, string name, string description, string imageUrl, uint256 softCap, uint256 hardCap, uint256 ticketAmount, uint256 currentAmount, uint256 startDate, uint256 endDate, uint256 participantCount, string[] prizes, address[] winners, uint8 status, bool tokensAreBurned, uint256 totalBurned, uint256 winnerSelectionBlock))',
+          'function campaigns(uint256) view returns (uint256 id, string name, string description, string imageUrl, uint256 softCap, uint256 hardCap, uint256 ticketAmount, uint256 currentAmount, uint256 startDate, uint256 endDate, uint256 participantCount, string[] prizes, address[] winners, uint8 status, bool tokensAreBurned, uint256 totalBurned, uint256 winnerSelectionBlock)'
+        ];
+        const c = new ethers.Contract(addr, abi, provider);
+        let r: any = null;
+        try { r = await c.getCampaign(campaign.contractId); } catch { try { r = await c.campaigns(campaign.contractId); } catch {} }
+        if (!r || stop) return;
+        const fmt = (v: any) => {
+          try { return parseFloat(ethers.utils.formatUnits(v, 18)); } catch { return Number(v?.toString?.() ?? v ?? 0); }
+        };
+        const toNum = (v: any) => {
+          try { return Number(v?.toString?.() ?? v ?? 0); } catch { return 0; }
+        };
+        setLocalCampaign(prev => ({
+          ...prev,
+          currentAmount: fmt(r.currentAmount ?? prev.currentAmount),
+          participantCount: toNum(r.participantCount ?? prev.participantCount),
+          hardCap: fmt(r.hardCap ?? prev.hardCap),
+          softCap: fmt(r.softCap ?? prev.softCap),
+        }));
+      } catch {}
+    };
+    const handle = setInterval(run, 25000);
+    run();
+    return () => { stop = true; clearInterval(handle); };
   }, [campaign.contractId]);
   
   const progress = formatProgress(localCampaign.currentAmount, localCampaign.hardCap);
