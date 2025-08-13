@@ -1743,7 +1743,16 @@ const AdminPanel = () => {
                                   if (!isFinished) toast.info('If this reverts: End campaign now first.');
                                 } catch {}
                                 const ok = await autoSvc.selectWinners(Number(cid));
-                                ok ? toast.success('Winners selected') : toast.error('Select failed');
+                                if (ok) {
+                                  toast.success('Winners selected');
+                                  // Refresh queries
+                                  queryClient.invalidateQueries({ queryKey: campaignKeys.detail(Number(cid)) });
+                                  queryClient.invalidateQueries({ queryKey: campaignKeys.winners(Number(cid)) });
+                                  queryClient.invalidateQueries({ queryKey: campaignKeys.lists() });
+                                  refetchCampaigns();
+                                } else {
+                                  toast.error('Select failed');
+                                }
                               } catch (err: any) { toast.error(err?.message || 'Select failed'); }
                               finally { setLoadingActions(prev => ({ ...prev, [`select-${cid}`]: false })); }
                             }}
@@ -1766,7 +1775,16 @@ const AdminPanel = () => {
                                   if (!amount || String(amount) === '0') toast.info('If this reverts: no staked tokens to burn.');
                                 } catch {}
                                 const ok = await autoSvc.burnTokens(Number(cid));
-                                ok ? toast.success('Tokens burned') : toast.error('Burn failed');
+                                if (ok) {
+                                  toast.success('Tokens burned');
+                                  // Refresh queries
+                                  queryClient.invalidateQueries({ queryKey: campaignKeys.detail(Number(cid)) });
+                                  queryClient.invalidateQueries({ queryKey: campaignKeys.winners(Number(cid)) });
+                                  queryClient.invalidateQueries({ queryKey: campaignKeys.lists() });
+                                  refetchCampaigns();
+                                } else {
+                                  toast.error('Burn failed');
+                                }
                               } catch (err: any) { toast.error(err?.message || 'Burn failed'); }
                               finally { setLoadingActions(prev => ({ ...prev, [`burn-${cid}`]: false })); }
                             }}
