@@ -853,22 +853,26 @@ export class ContractService {
         // Preflight checks to avoid blind reverts
         try {
           const state: any = (await (cAny.getCampaign?.(campaignId) || cAny.campaigns?.(campaignId))) || null;
+          console.log('🔍 Campaign state:', state);
           if (state) {
             // Automated manager shape
             if (state.status !== undefined) {
               const status = Number(state.status);
               const tokensAreBurned = Boolean(state.tokensAreBurned ?? false);
               const currentAmount = ethers.BigNumber.from(state.currentAmount ?? 0);
+              console.log('🔍 Status:', status, 'Burned:', tokensAreBurned, 'Amount:', currentAmount.toString());
               if (status !== 3) throw new Error('Cannot burn: winners not selected yet (status != Finished)');
               if (tokensAreBurned) throw new Error('Cannot burn: tokens already burned');
               if (currentAmount.lte(0)) throw new Error('Cannot burn: no staked tokens to burn');
             } else if (state.winnersSelected !== undefined) {
               // Legacy/simple manager shape
               const winnersSelected = Boolean(state.winnersSelected);
+              console.log('🔍 Winners selected:', winnersSelected);
               if (!winnersSelected) throw new Error('Cannot burn: winners not selected yet');
             }
           }
         } catch (preErr: any) {
+          console.error('❌ Preflight check failed:', preErr);
           if (preErr?.message?.startsWith('Cannot burn')) {
             toast.error(preErr.message);
             throw preErr;
@@ -878,14 +882,18 @@ export class ContractService {
         // Optional: token linkage/pause check and auto-rebind
         try {
           const managerTokenAddr = await cAny.squdyToken?.();
+          console.log('🔍 Manager token address:', managerTokenAddr);
           if (managerTokenAddr && this.squdyTokenContract?.address?.toLowerCase() !== managerTokenAddr.toLowerCase()) {
+            console.log('🔍 Rebinding token from', this.squdyTokenContract?.address, 'to', managerTokenAddr);
             this.squdyTokenContract = new ethers.Contract(managerTokenAddr, SQUDY_TOKEN_ABI, this.signer);
           }
           const tAny: any = this.squdyTokenContract;
+          console.log('🔍 Token contract:', tAny?.address);
           // Ensure token is linked to this manager for exemptions/roles
           if (tAny?.campaignManager) {
             const linked = await tAny.campaignManager();
             const mgrAddr = await this.campaignManagerContract.getAddress?.() || (this.campaignManagerContract as any).address;
+            console.log('🔍 Token linked to:', linked, 'Manager:', mgrAddr);
             if (linked && mgrAddr && linked.toLowerCase() !== String(mgrAddr).toLowerCase()) {
               toast.error('Token not linked to this manager. Call setCampaignManager(manager) from token admin.');
               throw new Error('Token not linked to this manager');
@@ -893,9 +901,11 @@ export class ContractService {
           }
           if (tAny?.paused) {
             const isPaused = await tAny.paused();
+            console.log('🔍 Token paused:', isPaused);
             if (isPaused) throw new Error('Token paused: unpause before burning');
           }
         } catch (tokenErr: any) {
+          console.error('❌ Token check failed:', tokenErr);
           if (tokenErr?.message?.includes('paused')) {
             toast.error(tokenErr.message);
             throw tokenErr;
@@ -906,9 +916,12 @@ export class ContractService {
         const tryStatic = async (fnName: string) => {
           if (!fnName || !cAny[fnName] || !cAny.callStatic || !cAny.callStatic[fnName]) return false;
           try {
+            console.log(`🔍 Testing ${fnName} with staticcall...`);
             await cAny.callStatic[fnName](campaignId);
+            console.log(`✅ ${fnName} staticcall succeeded`);
             return true;
           } catch (e: any) {
+            console.error(`❌ ${fnName} staticcall failed:`, e);
             const data = e?.data || e?.error?.data;
             if (typeof data === 'string' && data.startsWith('0x08c379a0')) {
               try {
@@ -923,6 +936,7 @@ export class ContractService {
         };
 
         const staticOk = await tryStatic('burnTokens') || await tryStatic('burnAllTokens') || await tryStatic('burnCampaignTokens');
+        console.log('🔍 Staticcall results:', staticOk);
         if (!staticOk) {
           throw new Error('Burn reverted in simulation. Fix the reason shown and try again.');
         }
@@ -940,6 +954,7 @@ export class ContractService {
               // Estimation failed; set a conservative cap to still surface revert reason
               gasLimit = ethers.BigNumber.from('300000');
             }
+            console.log(`🚀 Sending ${fnName} with gas:`, gasLimit?.toString());
             const tx = await cAny[fnName](campaignId, ...(gasLimit ? [{ gasLimit }] : []));
             toast.info(`Burn tx sent: ${tx.hash.slice(0, 10)}... Waiting for confirmation...`);
             return tx;
