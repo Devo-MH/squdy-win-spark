@@ -200,6 +200,20 @@ export class ContractService {
       }
     } catch (error) {
       console.error('Error getting token balance:', error);
+      // Auto-recover if token address is misconfigured (e.g., pointing at manager)
+      try {
+        const cAny: any = this.campaignManagerContract;
+        if (cAny && typeof cAny.squdyToken === 'function') {
+          const onChainToken: string = await cAny.squdyToken();
+          if (onChainToken && onChainToken !== ethers.constants.AddressZero) {
+            // Rebind token contract to the on-chain address
+            this.squdyTokenContract = new ethers.Contract(onChainToken, SQUDY_TOKEN_ABI, this.signer);
+            const balance = await this.squdyTokenContract.balanceOf(address);
+            const decimals = await this.squdyTokenContract.decimals();
+            return safeFormatUnits(balance, decimals);
+          }
+        }
+      } catch (_) {}
       throw error;
     }
   }
@@ -218,6 +232,19 @@ export class ContractService {
       }
     } catch (error) {
       console.error('Error getting token allowance:', error);
+      // Auto-recover if token address is misconfigured (e.g., pointing at manager)
+      try {
+        const cAny: any = this.campaignManagerContract;
+        if (cAny && typeof cAny.squdyToken === 'function') {
+          const onChainToken: string = await cAny.squdyToken();
+          if (onChainToken && onChainToken !== ethers.constants.AddressZero) {
+            this.squdyTokenContract = new ethers.Contract(onChainToken, SQUDY_TOKEN_ABI, this.signer);
+            const allowance = await this.squdyTokenContract.allowance(owner, spender);
+            const decimals = await this.squdyTokenContract.decimals();
+            return ethers.utils.formatUnits(allowance, decimals);
+          }
+        }
+      } catch (_) {}
       throw error;
     }
   }
@@ -842,7 +869,8 @@ export class ContractService {
         };
 
         // Try common function names
-        const tx = await trySend('burnAllTokens') || await trySend('burnCampaignTokens') || await trySend('burnTokens');
+        // Our manager exposes burnTokens(campaignId). Try that first.
+        const tx = await trySend('burnTokens') || await trySend('burnAllTokens') || await trySend('burnCampaignTokens');
         if (!tx) {
           throw new Error('Burn function not available on contract');
         }
