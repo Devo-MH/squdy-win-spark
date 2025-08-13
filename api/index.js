@@ -3,6 +3,47 @@ async function getDb() {
   const mod = await import('./lib/mongodb.js');
   return mod.getDatabase();
 }
+
+// Blockchain sync function
+async function syncCampaignFromBlockchain(campaignId) {
+  try {
+    const { default: ethersMod } = await import('ethers');
+    const ethers = ethersMod;
+    const rpc = process.env.RPC_URL || process.env.VITE_RPC_URL;
+    const manager = process.env.VITE_CAMPAIGN_MANAGER_ADDRESS || process.env.CAMPAIGN_MANAGER_ADDRESS;
+    const chainId = Number(process.env.CHAIN_ID || process.env.VITE_CHAIN_ID || 11155111);
+    
+    if (!rpc || !manager) {
+      console.warn('Missing RPC or manager address for blockchain sync');
+      return null;
+    }
+    
+    const provider = new ethers.providers.JsonRpcProvider(rpc, { chainId });
+    const abi = [
+      'function getCampaign(uint256) view returns (tuple(uint256 id, string name, string description, string imageUrl, uint256 softCap, uint256 hardCap, uint256 ticketAmount, uint256 currentAmount, uint256 refundableAmount, uint256 startDate, uint256 endDate, uint256 participantCount, string[] prizes, address[] winners, uint8 status, bool tokensAreBurned, uint256 totalBurned, uint256 winnerSelectionBlock))'
+    ];
+    const contract = new ethers.Contract(manager, abi, provider);
+    
+    const result = await contract.getCampaign(campaignId);
+    
+    // Parse the result struct: (id, name, description, imageUrl, softCap, hardCap, ticketAmount, currentAmount, refundableAmount, startDate, endDate, participantCount, prizes, winners, status, tokensAreBurned, totalBurned, winnerSelectionBlock)
+    return {
+      startDate: new Date(Number(result[9]) * 1000).toISOString(),
+      endDate: new Date(Number(result[10]) * 1000).toISOString(),
+      softCap: Number(result[4]),
+      hardCap: Number(result[5]),
+      currentAmount: Number(result[7]),
+      participantCount: Number(result[11]),
+      tokensAreBurned: Boolean(result[14]),
+      totalBurned: Number(result[15]),
+      winners: result[13] || []
+    };
+  } catch (error) {
+    console.error('Blockchain sync failed for campaign', campaignId, ':', error.message);
+    return null;
+  }
+}
+
 export const config = { runtime: 'nodejs' };
 
 export default async function handler(req, res) {
@@ -107,6 +148,37 @@ export default async function handler(req, res) {
         });
       } catch (e) {
         // ignore overlay errors
+      }
+      
+      // Sync blockchain data for real-time stats (async, don't block response)
+      try {
+        for (const campaign of campaigns) {
+          if (campaign.contractId && typeof campaign.contractId === 'number') {
+            // Fire and forget blockchain sync
+            syncCampaignFromBlockchain(campaign.contractId).then(blockchainData => {
+              if (blockchainData) {
+                // Update the database with fresh blockchain data
+                getDb().then(db => {
+                  db.collection('campaigns').updateOne(
+                    { contractId: campaign.contractId },
+                    { 
+                      $set: { 
+                        currentAmount: blockchainData.currentAmount,
+                        participantCount: blockchainData.participantCount,
+                        tokensAreBurned: blockchainData.tokensAreBurned,
+                        totalBurned: blockchainData.totalBurned,
+                        winners: blockchainData.winners,
+                        updatedAt: new Date().toISOString()
+                      } 
+                    }
+                  ).catch(dbErr => console.warn('Failed to update campaign list with blockchain data:', dbErr));
+                });
+              }
+            }).catch(err => console.warn('Blockchain sync failed for campaign list:', err));
+          }
+        }
+      } catch (e) {
+        console.warn('Campaign list blockchain sync failed:', e);
       }
       res.setHeader('Cache-Control', 'no-store');
       return res.json({
@@ -233,17 +305,64 @@ export default async function handler(req, res) {
           return res.status(404).json({ error: 'Not found' });
         }
 
-        // Overlay participant count for this campaign
+        // Sync with blockchain data for real-time stats
         try {
-          const db = await getDb();
-          const participations = db.collection('participations');
-          const idKey = campaign.contractId != null ? campaign.contractId : (campaign._id ? String(campaign._id) : idParam);
-          const count = await participations.countDocuments({ campaignId: idKey });
-          if (Number.isFinite(count)) {
-            campaign.participantCount = count;
+          const blockchainData = await syncCampaignFromBlockchain(campaign.contractId);
+          if (blockchainData) {
+            // Update campaign with blockchain data
+            campaign.currentAmount = blockchainData.currentAmount;
+            campaign.participantCount = blockchainData.participantCount;
+            campaign.tokensAreBurned = blockchainData.tokensAreBurned;
+            campaign.totalBurned = blockchainData.totalBurned;
+            campaign.winners = blockchainData.winners;
+            
+            // Update the database with fresh blockchain data
+            try {
+              const db = await getDb();
+              await db.collection('campaigns').updateOne(
+                { contractId: campaign.contractId },
+                { 
+                  $set: { 
+                    currentAmount: blockchainData.currentAmount,
+                    participantCount: blockchainData.participantCount,
+                    tokensAreBurned: blockchainData.tokensAreBurned,
+                    totalBurned: blockchainData.totalBurned,
+                    winners: blockchainData.winners,
+                    updatedAt: new Date().toISOString()
+                  } 
+                }
+              );
+            } catch (dbErr) {
+              console.warn('Failed to update campaign with blockchain data:', dbErr);
+            }
+          } else {
+            // Fallback to database participant count if blockchain sync fails
+            try {
+              const db = await getDb();
+              const participations = db.collection('participations');
+              const idKey = campaign.contractId != null ? campaign.contractId : (campaign._id ? String(campaign._id) : idParam);
+              const count = await participations.countDocuments({ campaignId: idKey });
+              if (Number.isFinite(count)) {
+                campaign.participantCount = count;
+              }
+            } catch (e) {
+              // ignore
+            }
           }
         } catch (e) {
-          // ignore
+          console.warn('Blockchain sync failed, using database data:', e);
+          // Fallback to database participant count
+          try {
+            const db = await getDb();
+            const participations = db.collection('participations');
+            const idKey = campaign.contractId != null ? campaign.contractId : (campaign._id ? String(campaign._id) : idParam);
+            const count = await participations.countDocuments({ campaignId: idKey });
+            if (Number.isFinite(count)) {
+              campaign.participantCount = count;
+            }
+          } catch (dbErr) {
+            // ignore
+          }
         }
         res.setHeader('Cache-Control', 'no-store');
         return res.json({ campaign });
