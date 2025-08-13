@@ -1915,6 +1915,32 @@ const AdminPanel = () => {
                              >📅 Update</Button>
                           </div>
                         </div>
+                        <div className="space-y-2">
+                          <Label className="text-zinc-300">Extend End Time (campaignId, hours)</Label>
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                            <Input placeholder="id" onChange={(e) => (e.target as any)._extId = e.target.value} className="w-full" />
+                            <Input placeholder="hours" type="number" min="1" step="1" onChange={(e) => (e.target as any)._extHours = e.target.value} className="w-full" />
+                            <Button
+                              variant="secondary"
+                              className="w-full bg-amber-700 text-white hover:bg-amber-600"
+                              onClick={async (e) => {
+                                const grid = e.currentTarget.parentElement as HTMLElement;
+                                const id = (grid.children[0] as any)._extId || (grid.children[0] as HTMLInputElement).value;
+                                const hoursStr = (grid.children[1] as any)._extHours || (grid.children[1] as HTMLInputElement).value;
+                                const hours = Number(hoursStr || '0');
+                                if (!autoSvc) return toast.error('Wallet not connected');
+                                if (!id || !hours || hours <= 0) return toast.error('Enter id and positive hours');
+                                try {
+                                  const current = await autoSvc.getCampaign(Number(id));
+                                  const end = (current as any)?.endDate ? new Date(Number((current as any).endDate) * 1000) : new Date();
+                                  const extended = new Date(end.getTime() + hours * 3600 * 1000);
+                                  await autoSvc.updateCampaignEndDate(Number(id), extended);
+                                  toast.success(`Extended by ${hours}h`);
+                                } catch (err: any) { toast.error(err?.message || 'Extend failed'); }
+                              }}
+                            >⏱️ Extend</Button>
+                          </div>
+                        </div>
                       </div>
 
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
