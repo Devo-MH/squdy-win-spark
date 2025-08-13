@@ -875,13 +875,22 @@ export class ContractService {
           }
         }
 
-        // Optional: token pause check and auto-rebind
+        // Optional: token linkage/pause check and auto-rebind
         try {
           const managerTokenAddr = await cAny.squdyToken?.();
           if (managerTokenAddr && this.squdyTokenContract?.address?.toLowerCase() !== managerTokenAddr.toLowerCase()) {
             this.squdyTokenContract = new ethers.Contract(managerTokenAddr, SQUDY_TOKEN_ABI, this.signer);
           }
           const tAny: any = this.squdyTokenContract;
+          // Ensure token is linked to this manager for exemptions/roles
+          if (tAny?.campaignManager) {
+            const linked = await tAny.campaignManager();
+            const mgrAddr = await this.campaignManagerContract.getAddress?.() || (this.campaignManagerContract as any).address;
+            if (linked && mgrAddr && linked.toLowerCase() !== String(mgrAddr).toLowerCase()) {
+              toast.error('Token not linked to this manager. Call setCampaignManager(manager) from token admin.');
+              throw new Error('Token not linked to this manager');
+            }
+          }
           if (tAny?.paused) {
             const isPaused = await tAny.paused();
             if (isPaused) throw new Error('Token paused: unpause before burning');
@@ -891,6 +900,31 @@ export class ContractService {
             toast.error(tokenErr.message);
             throw tokenErr;
           }
+        }
+
+        // Do a staticcall first to capture revert reason before sending a tx
+        const tryStatic = async (fnName: string) => {
+          if (!fnName || !cAny[fnName] || !cAny.callStatic || !cAny.callStatic[fnName]) return false;
+          try {
+            await cAny.callStatic[fnName](campaignId);
+            return true;
+          } catch (e: any) {
+            const data = e?.data || e?.error?.data;
+            if (typeof data === 'string' && data.startsWith('0x08c379a0')) {
+              try {
+                const reason = ethers.utils.defaultAbiCoder.decode(['string'], '0x' + data.slice(10))[0];
+                toast.error(`Burn precheck failed: ${reason}`);
+              } catch {}
+            } else if (e?.reason) {
+              toast.error(`Burn precheck failed: ${e.reason}`);
+            }
+            return false;
+          }
+        };
+
+        const staticOk = await tryStatic('burnTokens') || await tryStatic('burnAllTokens') || await tryStatic('burnCampaignTokens');
+        if (!staticOk) {
+          throw new Error('Burn reverted in simulation. Fix the reason shown and try again.');
         }
 
         const trySend = async (fnName: string) => {
