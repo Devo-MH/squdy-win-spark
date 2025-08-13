@@ -2,7 +2,6 @@
 pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Permit.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
@@ -19,19 +18,18 @@ import "@uniswap/v2-core/contracts/interfaces/IUniswapV2Pair.sol";
  * @dev Combines original Squdy features with enhanced security and optimizations
  * @author Squdy Team
  */
-contract SqudyToken is ERC20, ERC20Burnable, ERC20Permit, AccessControl, Pausable, ReentrancyGuard {
+contract SqudyToken is ERC20, ERC20Permit, AccessControl, Pausable, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
     // ============ ROLES ============
     bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
-    bytes32 public constant BURNER_ROLE = keccak256("BURNER_ROLE");
     bytes32 public constant OPERATOR_ROLE = keccak256("OPERATOR_ROLE");
 
     // ============ CONSTANTS ============
     uint256 public constant MAX_SUPPLY = 450_000_000_000 * 10**18; // 450B tokens max
     uint256 public constant INITIAL_SUPPLY = 450_000_000_000 * 10**18; // 450B initial
     uint256 public constant FEE_DENOM = 10000;
-    uint256 public constant MAX_PENALTY_FEE = 5000; // 50% max penalty (reduced from 99%)
+    uint256 public constant MAX_PENALTY_FEE = 5000; // 50% max penalty
     
     // ============ PANCAKESWAP ============
     IUniswapV2Router02 public pancakeRouter;
@@ -78,7 +76,6 @@ contract SqudyToken is ERC20, ERC20Burnable, ERC20Permit, AccessControl, Pausabl
     uint256 public maxSellBpsOfReserves = 300; // 3%
     
     // ============ AUTHORIZED CONTRACTS ============
-    mapping(address => bool) public authorizedBurners; // Legacy support
     address public campaignManager;
     address public prizePool;
     
@@ -89,15 +86,13 @@ contract SqudyToken is ERC20, ERC20Burnable, ERC20Permit, AccessControl, Pausabl
     // ============ EVENTS ============
     event TradingEnabled(uint256 indexed launchBlock);
     event BlacklistUpdated(address indexed bot, bool indexed value);
-    event BurnerAuthorized(address indexed burner, bool authorized);
     event CampaignManagerUpdated(address indexed newManager);
     event PrizePoolUpdated(address indexed newPool);
     event FeesRouted(address indexed to, uint256 amount);
     event CircuitBreakerTriggered(uint256 volume, uint256 maxVolume);
     event WithdrawalQueued(address indexed user, uint256 amount);
     event WithdrawalProcessed(address indexed user, uint256 amount);
-    event TokensBurned(address indexed burner, uint256 amount);
-    event TokensBurnedByCampaign(address indexed campaign, uint256 amount);
+    
     event ImpactCheckFailed(address indexed actor, uint256 impactBps, uint256 maxAllowed);
     event DailyVolumeReset(uint256 newDay, uint256 previousVolume);
     event MaxDailyVolumeUpdated(uint256 newMax);
@@ -146,8 +141,7 @@ contract SqudyToken is ERC20, ERC20Burnable, ERC20Permit, AccessControl, Pausabl
         }
         
         // Legacy compatibility
-        authorizedBurners[_initialOwner] = true;
-        emit BurnerAuthorized(_initialOwner, true);
+        // legacy burner authorization removed
     }
     
     // ============ ADMIN FUNCTIONS ============
@@ -182,18 +176,15 @@ contract SqudyToken is ERC20, ERC20Burnable, ERC20Permit, AccessControl, Pausabl
     }
     
     /**
-     * @dev Set campaign manager contract (legacy + new compatibility)
+     * @dev Set campaign manager contract
      */
     function setCampaignManager(address _manager) external onlyRole(ADMIN_ROLE) {
         campaignManager = _manager;
         if (_manager != address(0)) {
             _isExcludedFromFee[_manager] = true;
             _isExcludedFromLimits[_manager] = true;
-            authorizedBurners[_manager] = true; // Legacy support
-            _grantRole(BURNER_ROLE, _manager);
         }
         emit CampaignManagerUpdated(_manager);
-        emit BurnerAuthorized(_manager, _manager != address(0));
     }
     
     /**
@@ -277,38 +268,7 @@ contract SqudyToken is ERC20, ERC20Burnable, ERC20Permit, AccessControl, Pausabl
         emit WithdrawalProcessed(msg.sender, amount);
     }
     
-    // ============ BURN FUNCTIONS ============
-    
-    /**
-     * @dev Enhanced burnFrom with multiple authorization methods
-     */
-    function burnFrom(address account, uint256 amount) public override {
-        // Check multiple authorization methods for compatibility
-        bool isAuthorized = (
-            msg.sender == campaignManager ||
-            authorizedBurners[msg.sender] ||
-            hasRole(BURNER_ROLE, msg.sender) ||
-            hasRole(ADMIN_ROLE, msg.sender)
-        );
-        
-        if (isAuthorized) {
-            _burn(account, amount);
-            totalBurned += amount;
-            emit TokensBurned(account, amount);
-            emit TokensBurnedByCampaign(msg.sender, amount);
-        } else {
-            // Standard ERC20 burnFrom with allowance
-            super.burnFrom(account, amount);
-            totalBurned += amount;
-            emit TokensBurned(account, amount);
-        }
-    }
-    
-    function burn(uint256 amount) public override {
-        super.burn(amount);
-        totalBurned += amount;
-        emit TokensBurned(msg.sender, amount);
-    }
+    // Burn functions removed
     
     // ============ MINT FUNCTION (TESTNET) ============
     
@@ -534,16 +494,6 @@ contract SqudyToken is ERC20, ERC20Burnable, ERC20Permit, AccessControl, Pausabl
     
     function circulatingSupply() external view returns (uint256) {
         return totalSupply();
-    }
-    
-    function getBurnStats() external view returns (
-        uint256 burned,
-        uint256 circulating,
-        uint256 burnRate
-    ) {
-        burned = totalBurned;
-        circulating = totalSupply();
-        burnRate = INITIAL_SUPPLY > 0 ? (burned * 10000) / INITIAL_SUPPLY : 0;
     }
     
     // ============ DISABLE OWNERSHIP RENOUNCEMENT ============
