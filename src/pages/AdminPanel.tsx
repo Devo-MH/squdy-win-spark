@@ -47,7 +47,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { adminAPI, Campaign } from "@/services/api";
 import { useSocket } from "@/services/socket";
 import { useContracts } from "@/services/contracts";
-import { Task } from "@/components/offchain-verifier/types";
+import type { Task } from "@/components/offchain-verifier/src/types";
 import { toast } from "sonner";
 
 const AdminPanel = () => {
@@ -214,11 +214,11 @@ const AdminPanel = () => {
     };
 
     socket.onCampaignCreated(handleCampaignCreated);
-    socket.on('campaign:updated', handleCampaignUpdated);
+    socket.getSocket()?.on?.('campaign:updated', handleCampaignUpdated);
 
     return () => {
       socket.off('campaign:created', handleCampaignCreated);
-      socket.off('campaign:updated', handleCampaignUpdated);
+      socket.getSocket()?.off?.('campaign:updated', handleCampaignUpdated);
     };
   }, [socket, refetchCampaigns]);
 
@@ -1182,6 +1182,7 @@ const AdminPanel = () => {
                       type="button"
                       variant="outline"
                       size="sm"
+                      className="text-zinc-100 border-zinc-600 hover:bg-zinc-800"
                       onClick={() => {
                         const now = new Date();
                         const start = new Date(now.getTime() + 60 * 60 * 1000); // 1 hour from now
@@ -1199,6 +1200,7 @@ const AdminPanel = () => {
                       type="button"
                       variant="outline"
                       size="sm"
+                      className="text-zinc-100 border-zinc-600 hover:bg-zinc-800"
                       onClick={() => {
                         const now = new Date();
                         const start = new Date(now.getTime() + 60 * 60 * 1000); // 1 hour from now
@@ -1216,6 +1218,7 @@ const AdminPanel = () => {
                       type="button"
                       variant="outline"
                       size="sm"
+                      className="text-zinc-100 border-zinc-600 hover:bg-zinc-800"
                       onClick={() => {
                         const now = new Date();
                         const start = new Date(now.getTime() + 60 * 60 * 1000); // 1 hour from now
@@ -1235,7 +1238,7 @@ const AdminPanel = () => {
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
                       <Label>Prizes</Label>
-                      <Button type="button" variant="outline" size="sm" onClick={addPrize}>
+                      <Button type="button" variant="outline" size="sm" className="text-zinc-100 border-zinc-600 hover:bg-zinc-800" onClick={addPrize}>
                         <Plus className="w-4 h-4 mr-1" />
                         Add Prize
                       </Button>
@@ -1312,7 +1315,7 @@ const AdminPanel = () => {
                           Configure social media and engagement tasks that participants must complete
                         </p>
                       </div>
-                      <Button type="button" variant="outline" size="sm" onClick={addTask}>
+                      <Button type="button" variant="outline" size="sm" className="text-zinc-100 border-zinc-600 hover:bg-zinc-800" onClick={addTask}>
                         <Plus className="w-4 h-4 mr-1" />
                         Add Task
                       </Button>
@@ -1483,7 +1486,7 @@ const AdminPanel = () => {
                         </>
                       )}
                     </Button>
-                    <Button variant="outline" onClick={resetForm}>
+                    <Button variant="outline" onClick={resetForm} className="text-zinc-100 border-zinc-600 hover:bg-zinc-800">
                       Reset Form
                     </Button>
                   </div>
@@ -1597,10 +1600,14 @@ const AdminPanel = () => {
                               const grid = e.currentTarget.parentElement as HTMLElement;
                               const cid = (grid.children[0] as any)._cid2 || (grid.children[0] as HTMLInputElement).value;
                               if (!autoSvc) return toast.error('Wallet not connected');
+                              if (!cid) return toast.error('Enter campaign id');
+                              if (!confirm(`Select winners for campaign ${cid}?`)) return;
+                              setLoadingActions(prev => ({ ...prev, [`select-${cid}`]: true }));
                               try {
                                 const ok = await autoSvc.selectWinners(Number(cid));
                                 ok ? toast.success('Winners selected') : toast.error('Select failed');
                               } catch (err: any) { toast.error(err?.message || 'Select failed'); }
+                              finally { setLoadingActions(prev => ({ ...prev, [`select-${cid}`]: false })); }
                             }}
                             className="w-full bg-sky-600 text-white hover:bg-sky-500"
                           >Select Winners</Button>
@@ -1610,10 +1617,14 @@ const AdminPanel = () => {
                               const grid = e.currentTarget.parentElement as HTMLElement;
                               const cid = (grid.children[0] as any)._cid2 || (grid.children[0] as HTMLInputElement).value;
                               if (!autoSvc) return toast.error('Wallet not connected');
+                              if (!cid) return toast.error('Enter campaign id');
+                              if (!confirm(`Burn all staked tokens for campaign ${cid}? This is irreversible.`)) return;
+                              setLoadingActions(prev => ({ ...prev, [`burn-${cid}`]: true }));
                               try {
                                 const ok = await autoSvc.burnTokens(Number(cid));
                                 ok ? toast.success('Tokens burned') : toast.error('Burn failed');
                               } catch (err: any) { toast.error(err?.message || 'Burn failed'); }
+                              finally { setLoadingActions(prev => ({ ...prev, [`burn-${cid}`]: false })); }
                             }}
                             className="w-full"
                           >Burn Tokens</Button>
