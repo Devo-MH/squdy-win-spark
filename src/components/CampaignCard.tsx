@@ -61,7 +61,7 @@ const CampaignCard = ({ campaign }: CampaignCardProps) => {
           participantCount: Math.max(0, toNum(r.participantCount ?? prev.participantCount)),
           hardCap: fmt(r.hardCap ?? prev.hardCap),
           softCap: fmt(r.softCap ?? prev.softCap),
-          winners: Array.isArray(r.winners) ? (r.winners as string[]).filter((w: string) => (w || '').toLowerCase() !== zeroAddress) : (prev as any).winners,
+          winners: Array.isArray(r.winners) && ended ? (r.winners as string[]).filter((w: string) => (w || '').toLowerCase() !== zeroAddress) : (prev as any).winners,
           tokensAreBurned: Boolean(r.tokensAreBurned ?? (prev as any).tokensAreBurned),
           totalBurned: fmt(r.totalBurned ?? (prev as any).totalBurned),
         }));
@@ -91,7 +91,7 @@ const CampaignCard = ({ campaign }: CampaignCardProps) => {
   })();
   const isActive = derivedStatus === 'active';
   const isFinished = ended && (derivedStatus === 'finished' || derivedStatus === 'burned');
-  const hasWinners = winnersClean.length > 0;
+  const hasWinners = ended && winnersClean.length > 0;
   const timeLeft = formatTimeLeft(localCampaign.endDate);
   const startsIn = formatTimeLeft(localCampaign.startDate);
 
@@ -277,7 +277,7 @@ const CampaignCard = ({ campaign }: CampaignCardProps) => {
           </div>
         )}
 
-        {/* Winners preview */}
+        {/* Winners preview - only after campaign has ended and winners exist */}
         {hasWinners && (
           <div className="space-y-2">
             <div className="flex items-center gap-2 text-sm">
@@ -285,13 +285,13 @@ const CampaignCard = ({ campaign }: CampaignCardProps) => {
               <span className="font-medium text-foreground">Winners</span>
             </div>
             <div className="flex flex-wrap gap-2">
-              {((localCampaign as any).winners as string[]).slice(0, 3).map((addr, i) => (
+              {winnersClean.slice(0, 3).map((addr, i) => (
                 <Badge key={i} variant="outline" className="text-xs">
                   {addr.slice(0, 6)}...{addr.slice(-4)}
                 </Badge>
               ))}
-              {((localCampaign as any).winners as string[]).length > 3 && (
-                <Badge variant="outline" className="text-xs">+{((localCampaign as any).winners as string[]).length - 3} more</Badge>
+              {winnersClean.length > 3 && (
+                <Badge variant="outline" className="text-xs">+{winnersClean.length - 3} more</Badge>
               )}
             </div>
           </div>
@@ -310,16 +310,16 @@ const CampaignCard = ({ campaign }: CampaignCardProps) => {
               console.log(`Navigating to: /campaigns/${localCampaign.contractId}`);
             }}
           >
-            <Button 
-              variant={isActive ? "neon" : "outline"} 
-              className="w-full"
-              disabled={!isActive}
-            >
-              {isActive ? (
-                <>
-                  <Flame className="w-4 h-4" />
-                  Join Campaign
-                </>
+          <Button 
+            variant={isActive ? "neon" : "outline"} 
+            className="w-full"
+            disabled={!isActive}
+          >
+            {isActive ? (
+              <>
+                <Flame className="w-4 h-4" />
+                Join Campaign
+              </>
               ) : isFinished ? (
                 "View Results"
               ) : (
