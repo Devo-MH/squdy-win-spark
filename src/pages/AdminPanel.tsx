@@ -1593,6 +1593,68 @@ const AdminPanel = () => {
                     </CardTitle>
                 </CardHeader>
                   <CardContent className="space-y-6 p-6">
+                    {/* Contract addresses quick access */}
+                    <div className="rounded-lg border border-white/10 p-3 bg-zinc-900/50">
+                      <div className="text-xs text-zinc-300 mb-2">Contracts</div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+                        <div className="flex items-center gap-2">
+                          <span className="text-zinc-400 shrink-0">Manager:</span>
+                          <code className="truncate text-zinc-200">{(import.meta as any).env?.VITE_CAMPAIGN_MANAGER_ADDRESS || 'N/A'}</code>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-7 px-2 text-xs text-zinc-100 border-zinc-600 hover:bg-zinc-800"
+                            onClick={async () => {
+                              const addr = (import.meta as any).env?.VITE_CAMPAIGN_MANAGER_ADDRESS || '';
+                              if (!addr) return;
+                              try { await navigator.clipboard.writeText(addr); toast.success('Manager address copied'); } catch {}
+                            }}
+                          >Copy</Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-7 px-2 text-xs text-zinc-100 border-zinc-600 hover:bg-zinc-800"
+                            onClick={async () => {
+                              const addr = (import.meta as any).env?.VITE_CAMPAIGN_MANAGER_ADDRESS || '';
+                              if (!addr) return;
+                              let chainIdHex: string | null = null;
+                              try { chainIdHex = await (window as any).ethereum?.request?.({ method: 'eth_chainId' }); } catch {}
+                              const chainId = chainIdHex ? parseInt(chainIdHex, 16) : Number(import.meta.env.VITE_CHAIN_ID || 11155111);
+                              const base = chainId === 1 ? 'https://etherscan.io' : (chainId === 11155111 ? 'https://sepolia.etherscan.io' : 'https://etherscan.io');
+                              window.open(`${base}/address/${addr}`, '_blank');
+                            }}
+                          >View</Button>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-zinc-400 shrink-0">Token:</span>
+                          <code className="truncate text-zinc-200">{(import.meta as any).env?.VITE_SQUDY_TOKEN_ADDRESS || 'N/A'}</code>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-7 px-2 text-xs text-zinc-100 border-zinc-600 hover:bg-zinc-800"
+                            onClick={async () => {
+                              const addr = (import.meta as any).env?.VITE_SQUDY_TOKEN_ADDRESS || '';
+                              if (!addr) return;
+                              try { await navigator.clipboard.writeText(addr); toast.success('Token address copied'); } catch {}
+                            }}
+                          >Copy</Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-7 px-2 text-xs text-zinc-100 border-zinc-600 hover:bg-zinc-800"
+                            onClick={async () => {
+                              const addr = (import.meta as any).env?.VITE_SQUDY_TOKEN_ADDRESS || '';
+                              if (!addr) return;
+                              let chainIdHex: string | null = null;
+                              try { chainIdHex = await (window as any).ethereum?.request?.({ method: 'eth_chainId' }); } catch {}
+                              const chainId = chainIdHex ? parseInt(chainIdHex, 16) : Number(import.meta.env.VITE_CHAIN_ID || 11155111);
+                              const base = chainId === 1 ? 'https://etherscan.io' : (chainId === 11155111 ? 'https://sepolia.etherscan.io' : 'https://etherscan.io');
+                              window.open(`${base}/token/${addr}`, '_blank');
+                            }}
+                          >View</Button>
+                        </div>
+                      </div>
+                    </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {/* Faucet removed per request; use MetaMask to transfer SQUDY */}
                   <div className="space-y-2">
