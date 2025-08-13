@@ -268,30 +268,20 @@ contract AutomatedSqudyCampaignManager is AccessControl, ReentrancyGuard, Pausab
     // ============ INTERNAL FUNCTIONS ============
 
     /**
-     * @dev Get eligible participants (those who completed social tasks)
+     * @dev Get eligible participants
+     * In the current model, eligibility is defined by successful participation (staking).
+     * Social task verification is handled entirely off-chain and does not gate on-chain selection.
      */
     function getEligibleParticipants(uint256 campaignId) 
         internal 
         view 
         returns (address[] memory) 
     {
-        address[] memory allParticipants = campaignParticipants[campaignId];
-        address[] memory eligible = new address[](allParticipants.length);
-        uint256 eligibleCount = 0;
-
-        for (uint256 i = 0; i < allParticipants.length; i++) {
-            if (participants[campaignId][allParticipants[i]].hasCompletedSocial) {
-                eligible[eligibleCount] = allParticipants[i];
-                eligibleCount++;
-            }
+        address[] storage stored = campaignParticipants[campaignId];
+        address[] memory result = new address[](stored.length);
+        for (uint256 i = 0; i < stored.length; i++) {
+            result[i] = stored[i];
         }
-
-        // Resize array to actual eligible count
-        address[] memory result = new address[](eligibleCount);
-        for (uint256 i = 0; i < eligibleCount; i++) {
-            result[i] = eligible[i];
-        }
-
         return result;
     }
 
