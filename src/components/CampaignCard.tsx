@@ -61,6 +61,9 @@ const CampaignCard = ({ campaign }: CampaignCardProps) => {
           participantCount: toNum(r.participantCount ?? prev.participantCount),
           hardCap: fmt(r.hardCap ?? prev.hardCap),
           softCap: fmt(r.softCap ?? prev.softCap),
+          winners: Array.isArray(r.winners) ? r.winners : (prev as any).winners,
+          tokensAreBurned: Boolean(r.tokensAreBurned ?? (prev as any).tokensAreBurned),
+          totalBurned: fmt(r.totalBurned ?? (prev as any).totalBurned),
         }));
       } catch {}
     };
@@ -76,9 +79,11 @@ const CampaignCard = ({ campaign }: CampaignCardProps) => {
   const ended = Number.isFinite(endMs) && endMs <= nowMs;
   const started = Number.isFinite(startMs) && startMs <= nowMs;
   const winnersExist = Array.isArray((localCampaign as any).winners) && (localCampaign as any).winners.length > 0;
+  const burnedFlag = Boolean((localCampaign as any).tokensAreBurned) || Number((localCampaign as any).totalBurned || 0) > 0;
   const derivedStatus = (() => {
+    if (burnedFlag) return 'burned';
     if (!started) return 'pending';
-    if (ended) return localCampaign.status === 'burned' ? 'burned' : (winnersExist ? 'finished' : 'ended');
+    if (ended) return winnersExist ? 'finished' : 'ended';
     return 'active';
   })();
   const isActive = derivedStatus === 'active';
@@ -193,7 +198,7 @@ const CampaignCard = ({ campaign }: CampaignCardProps) => {
             <div className="p-2 bg-campaign-success/20 rounded-lg">
               <Trophy className="w-4 h-4 text-campaign-success" />
             </div>
-            <p className="text-sm font-medium text-foreground">Prize Pool</p>
+          <p className="text-sm font-medium text-foreground">Prize Pool</p>
           </div>
           <div className="flex flex-wrap gap-1">
             {localCampaign.prizes?.slice(0, 2).map((prize, index) => (
@@ -217,7 +222,7 @@ const CampaignCard = ({ campaign }: CampaignCardProps) => {
           <div className="flex items-center justify-between text-sm">
           <div className="flex items-center gap-3">
             <div className={`p-2 rounded-lg ${isActive ? 'bg-campaign-success/20' : 'bg-muted/50'}`}>
-              {isActive ? (
+          {isActive ? (
                 <Clock className="w-4 h-4 text-campaign-success" />
               ) : (
                 <Calendar className="w-4 h-4 text-muted-foreground" />
