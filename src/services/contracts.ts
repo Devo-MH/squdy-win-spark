@@ -1073,26 +1073,57 @@ export class ContractService {
 
   // Helper methods
   private parseCampaignData(campaign: any): any {
+    const toNum = (v: any): number => {
+      try {
+        if (v == null) return 0;
+        if (typeof v === 'number') return v;
+        if (typeof v === 'string') return Number(v) || 0;
+        if (typeof v.toNumber === 'function') return v.toNumber();
+        return Number(v) || 0;
+      } catch { return 0; }
+    };
+    const fmt18 = (v: any): string => {
+      try { return safeFormatUnits(v ?? '0', 18); } catch { return '0'; }
+    };
+    const getDateMs = (v: any): number => {
+      // Supports seconds (BN), ms number/string, or Date
+      if (v == null) return 0;
+      try {
+        if (typeof v === 'object' && typeof v.toNumber === 'function') return v.toNumber() * 1000;
+        const n = Number(v);
+        if (!Number.isFinite(n)) return 0;
+        // Heuristic: treat > 10^12 as ms already
+        return n > 1e12 ? n : n * 1000;
+      } catch { return 0; }
+    };
+
+    const statusRaw = campaign?.status;
+    const status = typeof statusRaw === 'string' ? statusRaw : this.getStatusString(toNum(statusRaw));
+    const startMs = getDateMs(campaign?.startDate ?? campaign?.startTime);
+    const endMs = getDateMs(campaign?.endDate ?? campaign?.endTime);
+    const createdMs = getDateMs(campaign?.createdAt) || startMs || Date.now();
+    const updatedMs = getDateMs(campaign?.updatedAt) || endMs || createdMs;
+
     return {
-      id: campaign.id.toNumber(),
-      name: campaign.name,
-      description: campaign.description,
-      imageUrl: campaign.imageUrl,
-              softCap: ethers.utils.formatUnits(campaign.softCap, 18),
-        hardCap: ethers.utils.formatUnits(campaign.hardCap, 18),
-        ticketAmount: ethers.utils.formatUnits(campaign.ticketAmount, 18),
-        currentAmount: ethers.utils.formatUnits(campaign.currentAmount, 18),
-      startDate: new Date(campaign.startDate.toNumber() * 1000),
-      endDate: new Date(campaign.endDate.toNumber() * 1000),
-      participantCount: campaign.participantCount.toNumber(),
-      prizes: campaign.prizes,
-      winners: campaign.winners,
-      status: this.getStatusString(campaign.status),
-      tokensAreBurned: campaign.tokensAreBurned,
-      totalBurned: ethers.utils.formatUnits(campaign.totalBurned),
-      winnerSelectionTxHash: campaign.winnerSelectionTxHash,
-      createdAt: new Date(campaign.createdAt.toNumber() * 1000),
-      updatedAt: new Date(campaign.updatedAt.toNumber() * 1000),
+      id: toNum(campaign?.id ?? campaign?.campaignId),
+      name: campaign?.name ?? '',
+      description: campaign?.description ?? '',
+      imageUrl: campaign?.imageUrl ?? '',
+      softCap: fmt18(campaign?.softCap),
+      hardCap: fmt18(campaign?.hardCap),
+      ticketAmount: fmt18(campaign?.ticketAmount),
+      currentAmount: fmt18(campaign?.currentAmount),
+      startDate: new Date(startMs || Date.now()),
+      endDate: new Date(endMs || Date.now()),
+      participantCount: toNum(campaign?.participantCount),
+      prizes: campaign?.prizes ?? [],
+      winners: campaign?.winners ?? [],
+      status,
+      tokensAreBurned: Boolean(campaign?.tokensAreBurned),
+      totalBurned: fmt18(campaign?.totalBurned),
+      winnerSelectionTxHash: campaign?.winnerSelectionTxHash ?? '',
+      createdAt: new Date(createdMs),
+      updatedAt: new Date(updatedMs),
     };
   }
 
