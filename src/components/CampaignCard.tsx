@@ -33,6 +33,7 @@ const CampaignCard = ({ campaign }: CampaignCardProps) => {
   const isFinished = derivedStatus === 'finished' || derivedStatus === 'burned' || derivedStatus === 'ended';
   const hasWinners = Array.isArray((localCampaign as any).winners) && (localCampaign as any).winners.length > 0;
   const timeLeft = formatTimeLeft(localCampaign.endDate);
+  const startsIn = formatTimeLeft(localCampaign.startDate);
 
   // Listen for real-time updates
   useEffect(() => {
@@ -161,7 +162,7 @@ const CampaignCard = ({ campaign }: CampaignCardProps) => {
         </div>
 
         {/* Time */}
-        <div className="flex items-center justify-between text-sm">
+          <div className="flex items-center justify-between text-sm">
           <div className="flex items-center gap-3">
             <div className={`p-2 rounded-lg ${isActive ? 'bg-campaign-success/20' : 'bg-muted/50'}`}>
               {isActive ? (
@@ -171,9 +172,9 @@ const CampaignCard = ({ campaign }: CampaignCardProps) => {
               )}
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">{isActive ? 'Time Left' : 'Ended'}</p>
-              <p className={`text-sm font-bold ${isActive ? 'text-campaign-success' : 'text-muted-foreground'}`}>
-                {isActive ? timeLeft : new Date(localCampaign.endDate).toLocaleString()}
+              <p className="text-sm text-muted-foreground">{!started ? 'Starts In' : (isActive ? 'Time Left' : 'Ended')}</p>
+              <p className={`text-sm font-bold ${!started ? 'text-yellow-400' : isActive ? 'text-campaign-success' : 'text-muted-foreground'}`}>
+                {!started ? startsIn : (isActive ? timeLeft : new Date(localCampaign.endDate).toLocaleString())}
               </p>
             </div>
           </div>
