@@ -354,9 +354,15 @@ const CampaignDetail = () => {
 
   // Derived values - only calculate if localCampaign exists
   const progress = localCampaign ? formatProgress(localCampaign.currentAmount, localCampaign.hardCap) : 0;
-  const isActive = localCampaign?.status === "active";
+  const nowTs = Date.now();
+  const startTs = localCampaign ? new Date(localCampaign.startDate).getTime() : 0;
+  const endTs = localCampaign ? new Date(localCampaign.endDate).getTime() : 0;
+  const hasStarted = localCampaign ? nowTs >= startTs : false;
+  const hasEnded = localCampaign ? nowTs > endTs : false;
+  const isJoinOpen = (localCampaign?.status === "active") && hasStarted && !hasEnded;
   const isFinished = localCampaign?.status === "finished" || localCampaign?.status === "burned";
   const timeLeft = localCampaign ? formatTimeLeft(localCampaign.endDate) : '';
+  const startsIn = localCampaign ? formatTimeLeft(localCampaign.startDate) : '';
   const ticketsFromStake = calculateTickets(stakeAmount);
   const hasAllowance = parseFloat(allowance) >= parseFloat(stakeAmount || '0');
   const userStatus = statusData?.status;
@@ -506,14 +512,16 @@ const CampaignDetail = () => {
             <>
               {/* Modern Campaign Header */}
               <div className="mb-12">
-                <CampaignHeader
+                  <CampaignHeader
                   title={localCampaign.name}
                   description={localCampaign.description}
                   status={localCampaign.status}
-                  timeLeft={timeLeft}
+                    timeLeft={timeLeft}
                   onBack={() => navigate(-1)}
                   onJoin={handleJoinCampaign}
-                  isActive={isActive}
+                    isActive={isJoinOpen}
+                    hasStarted={hasStarted}
+                    startsIn={startsIn}
                   imageUrl={localCampaign.imageUrl || 'https://images.unsplash.com/photo-1639762681485-074b7f938ba0?w=800&h=600&fit=crop&crop=center'}
                 />
               </div>
@@ -535,7 +543,7 @@ const CampaignDetail = () => {
                 {/* Main Content Area - Participation Flow */}
                 <div className="lg:col-span-2 space-y-6">
                   {/* Staking Section */}
-                  {isConnected && !isParticipating && isActive && (
+                  {isConnected && !isParticipating && isJoinOpen && (
                     <div id="staking">
                       <StakingSection
                       squdyBalance={squdyBalance}

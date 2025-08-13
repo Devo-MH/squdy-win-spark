@@ -8,6 +8,8 @@ interface CampaignHeaderProps {
   onBack: () => void;
   onJoin: () => void;
   isActive: boolean;
+  hasStarted?: boolean;
+  startsIn?: string;
   imageUrl: string;
 }
 
@@ -19,6 +21,8 @@ export function CampaignHeader({
   onBack,
   onJoin,
   isActive,
+  hasStarted = true,
+  startsIn = '',
   imageUrl,
 }: CampaignHeaderProps) {
   const handleJoinClick = () => {
@@ -69,22 +73,35 @@ export function CampaignHeader({
 
               {/* Status Badges */}
               <div className="flex items-center gap-2 flex-wrap">
-                {/* Active Badge with animated dot */}
-                <span className="bg-green-500/90 text-white text-xs font-semibold px-3 py-1 rounded-full flex items-center gap-1 border border-green-400/20">
-                  <span className="relative flex h-2 w-2">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
+                {isActive ? (
+                  <span className="bg-green-500/90 text-white text-xs font-semibold px-3 py-1 rounded-full flex items-center gap-1 border border-green-400/20">
+                    <span className="relative flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
+                    </span>
+                    Active
                   </span>
-                  Active
-                </span>
+                ) : !hasStarted ? (
+                  <span className="bg-yellow-500/90 text-white text-xs font-semibold px-3 py-1 rounded-full border border-yellow-400/20">Upcoming</span>
+                ) : (
+                  <span className="bg-gray-500/60 text-white text-xs font-semibold px-3 py-1 rounded-full border border-gray-400/20">Closed</span>
+                )}
 
-                {/* Countdown Badge with clock icon */}
+                {/* Countdown Badge */}
                 {isActive && (
                   <span className="bg-blue-500/90 text-white text-xs font-semibold px-3 py-1 rounded-full flex items-center gap-1 border border-blue-400/20">
                     <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                       <path d="M10 2a8 8 0 100 16 8 8 0 000-16zm1 8H9V5h2v5z" />
                     </svg>
                     {timeLeft}
+                  </span>
+                )}
+                {!hasStarted && (
+                  <span className="bg-blue-500/90 text-white text-xs font-semibold px-3 py-1 rounded-full flex items-center gap-1 border border-blue-400/20">
+                    <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M10 2a8 8 0 100 16 8 8 0 000-16zm1 8H9V5h2v5z" />
+                    </svg>
+                    Starts in {startsIn}
                   </span>
                 )}
               </div>
@@ -105,9 +122,10 @@ export function CampaignHeader({
                   <span className="absolute inset-0 bg-white/10 blur-xl opacity-0 group-hover:opacity-30 transition-opacity duration-300 rounded-xl"></span>
                   <button 
                     onClick={handleJoinClick}
-                    className="relative z-10 flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 via-indigo-500 to-blue-500 text-white font-bold rounded-xl shadow-lg hover:scale-105 hover:shadow-xl transition-all duration-200 border border-white/20"
+                    disabled={!isActive}
+                    className={`relative z-10 flex items-center gap-2 px-6 py-3 rounded-xl border border-white/20 font-bold shadow-lg transition-all duration-200 ${isActive ? 'bg-gradient-to-r from-purple-600 via-indigo-500 to-blue-500 text-white hover:scale-105 hover:shadow-xl' : 'bg-gray-700/60 text-gray-300 cursor-not-allowed'}`}
                   >
-                    🚀 Join Campaign
+                    {isActive ? '🚀 Join Campaign' : (hasStarted ? 'Closed' : 'Starts Soon')}
                   </button>
                 </div>
               </div>
