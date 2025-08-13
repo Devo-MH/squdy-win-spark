@@ -865,6 +865,14 @@ export class ContractService {
               if (tokensAreBurned) throw new Error('Cannot burn: tokens already burned');
               if (currentAmount.lte(0)) throw new Error('Cannot burn: no staked tokens to burn');
             } else if (state.winnersSelected !== undefined) {
+              // Legacy/simple manager shape - check for staked tokens
+              const winnersSelected = Boolean(state.winnersSelected);
+              const totalStaked = ethers.BigNumber.from(state.totalStaked ?? 0);
+              const prizePool = ethers.BigNumber.from(state.prizePool ?? 0);
+              console.log("🔍 Winners selected:", winnersSelected, "Total staked:", totalStaked.toString(), "Prize pool:", prizePool.toString());
+              if (!winnersSelected) throw new Error("Cannot burn: winners not selected yet");
+              if (totalStaked.lte(0)) throw new Error("Cannot burn: no staked tokens to burn");
+              if (prizePool.gt(0)) throw new Error("Cannot burn: campaign has active prize pool");
               // Legacy/simple manager shape
               const winnersSelected = Boolean(state.winnersSelected);
               console.log('🔍 Winners selected:', winnersSelected);
@@ -973,8 +981,9 @@ export class ContractService {
           }
         };
 
-        // Our manager exposes burnTokens(campaignId). Try that first.
-        const tx = await trySend('burnTokens') || await trySend('burnAllTokens') || await trySend('burnCampaignTokens');
+        // Try the function that matches the detected contract type
+        // Old SimpleSqudyCampaignManager uses burnCampaignTokens, new AutomatedSqudyCampaignManager uses burnTokens
+        const tx = await trySend('burnCampaignTokens') || await trySend('burnTokens') || await trySend('burnAllTokens');
         if (!tx) {
           throw new Error('Burn reverted or function not available. Ensure winners selected, tokens not already burned, and token not paused.');
         }
