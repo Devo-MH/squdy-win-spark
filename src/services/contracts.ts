@@ -865,14 +865,19 @@ export class ContractService {
               if (tokensAreBurned) throw new Error('Cannot burn: tokens already burned');
               if (currentAmount.lte(0)) throw new Error('Cannot burn: no staked tokens to burn');
             } else if (state.winnersSelected !== undefined) {
-              // Legacy/simple manager shape - check for staked tokens
+              // Legacy/simple manager shape - query total staked from contract
               const winnersSelected = Boolean(state.winnersSelected);
-              const totalStaked = ethers.BigNumber.from(state.totalStaked ?? 0);
+              let totalStaked = ethers.BigNumber.from(0);
+              try {
+                const ts = await (cAny.totalStaked?.(campaignId));
+                if (ts != null) {
+                  totalStaked = ethers.BigNumber.from(ts.toString?.() ?? ts);
+                }
+              } catch {}
               const prizePool = ethers.BigNumber.from(state.prizePool ?? 0);
               console.log("🔍 Winners selected:", winnersSelected, "Total staked:", totalStaked.toString(), "Prize pool:", prizePool.toString());
               if (!winnersSelected) throw new Error("Cannot burn: winners not selected yet");
               if (totalStaked.lte(0)) throw new Error("Cannot burn: no staked tokens to burn");
-              if (prizePool.gt(0)) throw new Error("Cannot burn: campaign has active prize pool");
             }
           }
         } catch (preErr: any) {
@@ -939,7 +944,7 @@ export class ContractService {
           }
         };
 
-        const staticOk = await tryStatic('burnTokens') || await tryStatic('burnAllTokens') || await tryStatic('burnCampaignTokens');
+        const staticOk = await tryStatic('burnCampaignTokens') || await tryStatic('burnTokens') || await tryStatic('burnAllTokens');
         console.log('🔍 Staticcall results:', staticOk);
         if (!staticOk) {
           throw new Error('Burn reverted in simulation. Fix the reason shown and try again.');
