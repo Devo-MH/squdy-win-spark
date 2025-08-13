@@ -156,14 +156,10 @@ const AdminPanel = () => {
           if (localStorage.getItem('forceAutomated') === 'true') flag = true;
         } catch {}
       }
-      // Fallback: if env var is undefined, enable anyway for testing
+      // Respect env in production; allow URL/localStorage override in dev
       if (flag === undefined || flag === null) {
-        flag = true;
-        console.log('🔧 Auto-enabling on-chain tools (env var not set)');
+        flag = false;
       }
-      // FORCE ENABLE FOR DEBUGGING
-      flag = true;
-      console.log('🔧 FORCING on-chain tools enabled for debugging');
       setUseAutomated(!!flag);
     } catch {
       setUseAutomated(true); // Default to enabled

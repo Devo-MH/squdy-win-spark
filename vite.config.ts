@@ -32,6 +32,14 @@ export default defineConfig(({ mode }) => ({
   define: {
     global: 'globalThis',
     'process.env': {},
+    __REQUIRED_ENVS__: (() => {
+      const required = ['VITE_SQUDY_TOKEN_ADDRESS', 'VITE_CAMPAIGN_MANAGER_ADDRESS'];
+      const missing = required.filter((k) => !(process.env as any)[k]);
+      if (missing.length) {
+        console.warn(`[build] Missing envs: ${missing.join(', ')}`);
+      }
+      return JSON.stringify({ missing });
+    })(),
   },
   optimizeDeps: {
     include: ['buffer'],
