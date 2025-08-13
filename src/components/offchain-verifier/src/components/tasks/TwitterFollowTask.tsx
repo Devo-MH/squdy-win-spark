@@ -32,6 +32,7 @@ export function TwitterFollowTask({
   const [status, setStatus] = useState<TaskStatus>('waiting');
   const [isVerifying, setIsVerifying] = useState(false);
   const [hasClickedFollow, setHasClickedFollow] = useState(false);
+  const [tabOpenedAt, setTabOpenedAt] = useState<number | null>(null);
 
   const showToast = (message: string, type: 'success' | 'error') => {
     if (onToast) {
@@ -45,6 +46,7 @@ export function TwitterFollowTask({
     const twitterUrl = `https://twitter.com/${task.data.username}`;
     window.open(twitterUrl, '_blank', 'noopener noreferrer');
     setHasClickedFollow(true);
+    setTabOpenedAt(Date.now());
     console.log('[TwitterFollowTask] User clicked Follow on Twitter button');
   };
 
@@ -59,6 +61,18 @@ export function TwitterFollowTask({
     setStatus('verifying');
 
     try {
+      // Enforce that user opened the task in a new tab before verifying
+      if (!hasClickedFollow || !tabOpenedAt) {
+        showToast('Please open the task in a new tab first, then click Verify.', 'error');
+        setStatus('failed');
+        onStatusChange('failed');
+        setIsVerifying(false);
+        return;
+      }
+      // Optional: require a minimal dwell time (e.g., 2 seconds) before allowing verification
+      if (Date.now() - tabOpenedAt < 2000) {
+        await new Promise(r => setTimeout(r, 2000 - (Date.now() - tabOpenedAt)));
+      }
       // Mock mode for development/testing
       if (enableMockMode) {
         console.log('[TwitterFollowTask] Mock mode - checking if user clicked follow button');

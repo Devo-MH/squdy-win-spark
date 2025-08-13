@@ -44,6 +44,7 @@ export function TelegramTask({
   const [status, setStatus] = useState<TaskStatus>('waiting');
   const [isVerifying, setIsVerifying] = useState(false);
   const [hasClickedJoin, setHasClickedJoin] = useState(false);
+  const [tabOpenedAt, setTabOpenedAt] = useState<number | null>(null);
   const [qrCode, setQrCode] = useState<string>('');
 
   const showToast = (message: string, type: 'success' | 'error') => {
@@ -90,11 +91,13 @@ export function TelegramTask({
         setTimeout(() => {
           window.open(inviteUrl, '_blank', 'noopener noreferrer');
         }, 1000);
+        setTabOpenedAt(Date.now());
         
         showToast('Opening Telegram...', 'success');
       } else {
         // Fallback to web URL
         window.open(inviteUrl, '_blank', 'noopener noreferrer');
+        setTabOpenedAt(Date.now());
         showToast('Opening Telegram...', 'success');
       }
     } else {
@@ -113,6 +116,17 @@ export function TelegramTask({
     setStatus('verifying');
 
     try {
+      // Require that the task link was opened before verification
+      if (!hasClickedJoin || !tabOpenedAt) {
+        showToast('Please open the Telegram invite in a new tab first, then click Verify.', 'error');
+        setStatus('failed');
+        onStatusChange('failed');
+        setIsVerifying(false);
+        return;
+      }
+      if (Date.now() - tabOpenedAt < 2000) {
+        await new Promise(r => setTimeout(r, 2000 - (Date.now() - tabOpenedAt)));
+      }
       // Mock mode for development/testing
       if (enableMockMode) {
         console.log('[TelegramTask] Mock mode - checking if user clicked join button');
