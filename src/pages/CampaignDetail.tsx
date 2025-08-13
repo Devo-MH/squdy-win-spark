@@ -40,7 +40,8 @@ import {
   useVerifySocialTask,
   formatTimeLeft,
   formatProgress,
-  getCampaignStatusBadge
+  getCampaignStatusBadge,
+  useCampaignWinners
 } from "@/hooks/useCampaigns";
 import { useContracts, CONTRACT_ADDRESSES } from "@/services/contracts";
 import { useSocket } from "@/services/socket";
@@ -48,6 +49,7 @@ import { MockTokenBanner } from "@/components/MockTokenBanner";
 import { TaskChecklist } from "@/components/offchain-verifier";
 import { Task } from "@/components/offchain-verifier/types";
 import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 import { CampaignHeader } from "@/components/campaign/CampaignHeader";
 import { CampaignStats } from "@/components/campaign/CampaignStats";
 import { PrizePool } from "@/components/campaign/PrizePool";
@@ -80,6 +82,7 @@ const CampaignDetail = () => {
   
   // Contract integration
   const contractService = useContracts(provider, signer);
+  const queryClient = useQueryClient();
   
   // API queries - only run if we have a valid campaign ID
   // Convert campaignId to the format expected by the API (number or string)
@@ -96,6 +99,10 @@ const CampaignDetail = () => {
     data: statusData, 
     refetch: refetchStatus 
   } = useMyCampaignStatus(apiCampaignId);
+
+  // Winners query (by numeric contractId when available)
+  const winnersId = typeof campaignId === 'number' ? campaignId : (typeof campaignData?.campaign?.contractId === 'number' ? campaignData?.campaign?.contractId : 0);
+  const winnersQuery = useCampaignWinners(winnersId as number);
   
   // Mutations
   const participateMutation = useParticipateCampaign();
@@ -166,14 +173,42 @@ const CampaignDetail = () => {
       }
     };
 
+    const handleWinnersSelected = (data: any) => {
+      if (!localCampaign) return;
+      if (String(data.campaignId) === String(localCampaign.contractId)) {
+        // Refetch detail and winners
+        refetchCampaign();
+        winnersQuery.refetch?.();
+        // Also invalidate caches to keep lists fresh
+        try {
+          queryClient.invalidateQueries();
+        } catch {}
+      }
+    };
+
+    const handleTokensBurned = (data: any) => {
+      if (!localCampaign) return;
+      if (String(data.campaignId) === String(localCampaign.contractId)) {
+        refetchCampaign();
+        winnersQuery.refetch?.();
+        try {
+          queryClient.invalidateQueries();
+        } catch {}
+      }
+    };
+
     socket.onUserStaked(handleUserStaked);
+    socket.onWinnersSelected(handleWinnersSelected);
+    socket.onTokensBurned(handleTokensBurned);
     socket.joinCampaignRoom(localCampaign.contractId);
 
     return () => {
       socket.off('campaign:user-staked', handleUserStaked);
+      socket.off('campaign:winners-selected', handleWinnersSelected);
+      socket.off('campaign:tokens-burned', handleTokensBurned);
       socket.leaveCampaignRoom(localCampaign.contractId);
     };
-  }, [socket, localCampaign]);
+  }, [socket, localCampaign, refetchCampaign, winnersQuery.refetch, queryClient]);
 
   // Helper functions
   const copyToClipboard = (text: string) => {
@@ -500,7 +535,7 @@ const CampaignDetail = () => {
                 {/* Main Content Area - Participation Flow */}
                 <div className="lg:col-span-2 space-y-6">
                   {/* Staking Section */}
-                  {isConnected && !isParticipating && (
+                  {isConnected && !isParticipating && isActive && (
                     <div id="staking">
                       <StakingSection
                       squdyBalance={squdyBalance}
@@ -679,6 +714,49 @@ const CampaignDetail = () => {
             <div className="space-y-6">
               {/* Prize Pool */}
                   <PrizePool prizes={localCampaign.prizes} />
+                  {/* Winners Panel */}
+                  {(localCampaign.status === 'finished' || localCampaign.status === 'burned') && (
+                    <Card className="gradient-card border border-campaign-success/20 shadow-xl">
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-3">
+                          <div className="p-3 bg-campaign-success/20 border border-campaign-success/30 rounded-lg">
+                            <Trophy className="w-5 h-5 text-campaign-success" />
+                          </div>
+                          <span className="text-foreground">Winners</span>
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-3">
+                        {winnersQuery.isLoading ? (
+                          <p className="text-sm text-muted-foreground">Loading winners…</p>
+                        ) : (winnersQuery.data?.winners?.length ? (
+                          <div className="space-y-2">
+                            {winnersQuery.data.winners.map((w: any, idx: number) => (
+                              <div key={idx} className="flex items-center justify-between p-2 bg-muted/30 rounded">
+                                <div className="text-sm text-foreground truncate">
+                                  {w.walletAddress || w.winner || '0x…'}
+                                  {w.prizeName ? <span className="ml-2 text-xs text-muted-foreground">({w.prizeName})</span> : null}
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <Button size="sm" variant="outline" className="h-7 px-2 text-xs" onClick={() => copyToClipboard(w.walletAddress || w.winner)}>
+                                    <Copy className="w-3 h-3 mr-1" /> Copy
+                                  </Button>
+                                  <Button size="sm" variant="outline" className="h-7 px-2 text-xs" onClick={async () => {
+                                    let chainIdHex: string | null = null;
+                                    try { chainIdHex = await (window as any).ethereum?.request?.({ method: 'eth_chainId' }); } catch {}
+                                    const chainId = chainIdHex ? parseInt(chainIdHex, 16) : Number(import.meta.env.VITE_CHAIN_ID || 11155111);
+                                    const base = chainId === 1 ? 'https://etherscan.io' : (chainId === 11155111 ? 'https://sepolia.etherscan.io' : 'https://etherscan.io');
+                                    window.open(`${base}/address/${w.walletAddress || w.winner}`,'_blank');
+                                  }}>View</Button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-sm text-muted-foreground">Winners not selected yet.</p>
+                        ))}
+                      </CardContent>
+                    </Card>
+                  )}
                   
                   {/* Campaign Details */}
                   <Card className="gradient-card border border-border/50 shadow-xl">
@@ -724,7 +802,7 @@ const CampaignDetail = () => {
                 </CardContent>
               </Card>
 
-                  {/* Token Burn Warning */}
+                  {/* Token Burn / Warning */}
                   <Card className="gradient-card border border-campaign-warning/20 shadow-xl">
                     <CardContent className="p-6">
                   <div className="flex items-start gap-3">
@@ -732,12 +810,16 @@ const CampaignDetail = () => {
                           <AlertTriangle className="w-5 h-5 text-campaign-warning" />
                         </div>
                         <div>
-                          <h4 className="font-semibold text-campaign-warning mb-2">🔥 Token Burn Mechanism</h4>
+                          <h4 className="font-semibold text-campaign-warning mb-2">🔥 Token Burn</h4>
                           <p className="text-sm text-campaign-warning/80 leading-relaxed">
-                            All staked SQUDY tokens will be permanently burned at the end of this campaign, 
-                            regardless of winning status. This burn-to-win mechanism creates scarcity and 
+                            All staked SQUDY tokens are burned after the campaign. This creates scarcity and 
                             adds value to the ecosystem.
                           </p>
+                          {localCampaign.status === 'burned' && (
+                            <div className="mt-3 p-3 bg-campaign-warning/5 border border-campaign-warning/20 rounded-lg">
+                              <p className="text-sm text-foreground">Total Burned: <span className="font-semibold text-campaign-warning">{Number(localCampaign.totalBurned || 0).toLocaleString()} SQUDY</span></p>
+                            </div>
+                          )}
                           <div className="mt-3 p-3 bg-campaign-warning/5 border border-campaign-warning/20 rounded-lg">
                             <p className="text-xs text-campaign-warning/70">
                               💡 <strong>Why Burn?</strong> Token burning reduces supply, potentially increasing 
