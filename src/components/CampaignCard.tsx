@@ -146,12 +146,14 @@ const CampaignCard = ({ campaign }: CampaignCardProps) => {
               target.src = "https://images.unsplash.com/photo-1640340434855-6084b1f4901c?w=400&h=300&fit=crop";
             }}
           />
+          {(() => { const badgeStatus = (derivedStatus === 'ended' ? 'finished' : derivedStatus) as any; return (
           <Badge 
-            variant={getCampaignStatusBadge(derivedStatus)}
+            variant={getCampaignStatusBadge(badgeStatus)}
             className="absolute top-2 right-2 capitalize animate-pulse-glow"
           >
             {derivedStatus}
           </Badge>
+          ); })()}
           {localCampaign.status === 'burned' && (
             <Badge 
               variant="destructive"
@@ -303,7 +305,6 @@ const CampaignCard = ({ campaign }: CampaignCardProps) => {
             onClick={() => {
               console.log('Campaign card clicked:', { 
                 contractId: localCampaign.contractId, 
-                id: localCampaign.id,
                 campaign: localCampaign 
               });
               console.log(`Navigating to: /campaigns/${localCampaign.contractId}`);
@@ -312,7 +313,7 @@ const CampaignCard = ({ campaign }: CampaignCardProps) => {
             <Button 
               variant={isActive ? "neon" : "outline"} 
               className="w-full"
-              disabled={!isActive && !isFinished}
+              disabled={!isActive}
             >
               {isActive ? (
                 <>

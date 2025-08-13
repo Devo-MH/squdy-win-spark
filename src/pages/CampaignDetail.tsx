@@ -389,7 +389,8 @@ const CampaignDetail = () => {
   const endTs = localCampaign ? new Date(localCampaign.endDate).getTime() : 0;
   const hasStarted = localCampaign ? nowTs >= startTs : false;
   const hasEnded = localCampaign ? nowTs > endTs : false;
-  const isJoinOpen = (localCampaign?.status === "active") && hasStarted && !hasEnded;
+  // Gate strictly by time; avoid stale API status keeping join open
+  const isJoinOpen = hasStarted && !hasEnded && localCampaign?.status !== 'burned';
   const isFinished = (localCampaign?.status === "finished" || localCampaign?.status === "burned") && hasEnded;
   const timeLeft = localCampaign ? formatTimeLeft(localCampaign.endDate) : '';
   const startsIn = localCampaign ? formatTimeLeft(localCampaign.startDate) : '';
@@ -416,7 +417,7 @@ const CampaignDetail = () => {
   // Participation flow states
   const canJoinCampaign = hasStaked && allRequiredTasksCompleted && !isParticipating;
   const showTasksSection = hasStaked && !isParticipating;
-  const showJoinButton = canJoinCampaign;
+  const showJoinButton = canJoinCampaign && !hasEnded;
 
   // Task handlers
   const handleTaskChange = (taskId: string, completed: boolean, value?: string) => {
