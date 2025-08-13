@@ -58,7 +58,7 @@ const CampaignCard = ({ campaign }: CampaignCardProps) => {
         setLocalCampaign(prev => ({
           ...prev,
           currentAmount: fmt(r.currentAmount ?? prev.currentAmount),
-          participantCount: toNum(r.participantCount ?? prev.participantCount),
+          participantCount: Math.max(0, toNum(r.participantCount ?? prev.participantCount)),
           hardCap: fmt(r.hardCap ?? prev.hardCap),
           softCap: fmt(r.softCap ?? prev.softCap),
           winners: Array.isArray(r.winners) ? (r.winners as string[]).filter((w: string) => (w || '').toLowerCase() !== zeroAddress) : (prev as any).winners,
@@ -91,7 +91,7 @@ const CampaignCard = ({ campaign }: CampaignCardProps) => {
   })();
   const isActive = derivedStatus === 'active';
   const isFinished = derivedStatus === 'finished' || derivedStatus === 'burned' || derivedStatus === 'ended';
-  const hasWinners = Array.isArray((localCampaign as any).winners) && (localCampaign as any).winners.length > 0;
+  const hasWinners = winnersClean.length > 0;
   const timeLeft = formatTimeLeft(localCampaign.endDate);
   const startsIn = formatTimeLeft(localCampaign.startDate);
 
@@ -118,7 +118,19 @@ const CampaignCard = ({ campaign }: CampaignCardProps) => {
 
   // Update local state when campaign prop changes
   useEffect(() => {
-    setLocalCampaign(campaign);
+    // sanitize incoming data (winners, participantCount)
+    const safeParticipants = (() => {
+      const n = Number((campaign as any).participantCount);
+      return Number.isFinite(n) && n >= 0 ? n : 0;
+    })();
+    const safeWinners = Array.isArray((campaign as any).winners)
+      ? ((campaign as any).winners as string[]).filter((w) => (w || '').toLowerCase() !== zeroAddress)
+      : (campaign as any).winners;
+    setLocalCampaign({
+      ...campaign,
+      participantCount: safeParticipants,
+      winners: safeWinners,
+    } as any);
   }, [campaign]);
 
   return (
