@@ -135,6 +135,7 @@ const CampaignDetail = () => {
   useEffect(() => {
     if (!contractService || !localCampaign?.contractId) return;
     let cancelled = false;
+    const zeroAddress = '0x0000000000000000000000000000000000000000';
     const refresh = async () => {
       try {
         const c = await (contractService as any).getCampaign?.(Number(localCampaign.contractId));
@@ -142,13 +143,14 @@ const CampaignDetail = () => {
         const toNum = (v: any) => {
           try { return Number(v?.toString?.() ?? v ?? 0); } catch { return 0; }
         };
+        const winnersClean = Array.isArray(c.winners) ? (c.winners as string[]).filter((w) => (w || '').toLowerCase() !== zeroAddress) : [];
         setLocalCampaign(prev => prev ? ({
           ...prev,
           currentAmount: toNum(c.currentAmount ?? prev.currentAmount),
-          participantCount: toNum(c.participantCount ?? prev.participantCount),
+          participantCount: Math.max(0, toNum(c.participantCount ?? prev.participantCount)),
           softCap: toNum(c.softCap ?? prev.softCap),
           hardCap: toNum(c.hardCap ?? prev.hardCap),
-          winners: Array.isArray(c.winners) ? c.winners : (prev.winners || []),
+          winners: winnersClean.length ? winnersClean : (prev.winners || []),
           totalBurned: toNum(c.totalBurned ?? prev.totalBurned),
           endDate: c.endDate ? new Date(Number((c as any).endDate) * 1000) : prev.endDate,
         }) : prev);
@@ -388,7 +390,7 @@ const CampaignDetail = () => {
   const hasStarted = localCampaign ? nowTs >= startTs : false;
   const hasEnded = localCampaign ? nowTs > endTs : false;
   const isJoinOpen = (localCampaign?.status === "active") && hasStarted && !hasEnded;
-  const isFinished = localCampaign?.status === "finished" || localCampaign?.status === "burned" || hasEnded;
+  const isFinished = (localCampaign?.status === "finished" || localCampaign?.status === "burned") && hasEnded;
   const timeLeft = localCampaign ? formatTimeLeft(localCampaign.endDate) : '';
   const startsIn = localCampaign ? formatTimeLeft(localCampaign.startDate) : '';
   const derivedStatus: string = !hasStarted

@@ -90,7 +90,7 @@ const CampaignCard = ({ campaign }: CampaignCardProps) => {
     return 'active';
   })();
   const isActive = derivedStatus === 'active';
-  const isFinished = derivedStatus === 'finished' || derivedStatus === 'burned' || derivedStatus === 'ended';
+  const isFinished = ended && (derivedStatus === 'finished' || derivedStatus === 'burned');
   const hasWinners = winnersClean.length > 0;
   const timeLeft = formatTimeLeft(localCampaign.endDate);
   const startsIn = formatTimeLeft(localCampaign.startDate);
