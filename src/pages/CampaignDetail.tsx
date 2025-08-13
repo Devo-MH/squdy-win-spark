@@ -360,9 +360,16 @@ const CampaignDetail = () => {
   const hasStarted = localCampaign ? nowTs >= startTs : false;
   const hasEnded = localCampaign ? nowTs > endTs : false;
   const isJoinOpen = (localCampaign?.status === "active") && hasStarted && !hasEnded;
-  const isFinished = localCampaign?.status === "finished" || localCampaign?.status === "burned";
+  const isFinished = localCampaign?.status === "finished" || localCampaign?.status === "burned" || hasEnded;
   const timeLeft = localCampaign ? formatTimeLeft(localCampaign.endDate) : '';
   const startsIn = localCampaign ? formatTimeLeft(localCampaign.startDate) : '';
+  const derivedStatus: string = !hasStarted
+    ? 'pending'
+    : (localCampaign?.totalBurned && Number(localCampaign.totalBurned) > 0) || localCampaign?.status === 'burned'
+      ? 'burned'
+      : hasEnded
+        ? 'finished'
+        : 'active';
   const ticketsFromStake = calculateTickets(stakeAmount);
   const hasAllowance = parseFloat(allowance) >= parseFloat(stakeAmount || '0');
   const userStatus = statusData?.status;
@@ -515,7 +522,7 @@ const CampaignDetail = () => {
                   <CampaignHeader
                   title={localCampaign.name}
                   description={localCampaign.description}
-                  status={localCampaign.status}
+                    status={derivedStatus}
                     timeLeft={timeLeft}
                   onBack={() => navigate(-1)}
                   onJoin={handleJoinCampaign}
@@ -723,7 +730,7 @@ const CampaignDetail = () => {
               {/* Prize Pool */}
                   <PrizePool prizes={localCampaign.prizes} />
                   {/* Winners Panel */}
-                  {(localCampaign.status === 'finished' || localCampaign.status === 'burned') && (
+                  {(winnersQuery.data?.winners?.length || 0) > 0 || derivedStatus === 'finished' || derivedStatus === 'burned' ? (
                     <Card className="gradient-card border border-campaign-success/20 shadow-xl">
                       <CardHeader>
                         <CardTitle className="flex items-center gap-3">
@@ -764,7 +771,7 @@ const CampaignDetail = () => {
                         ))}
                       </CardContent>
                     </Card>
-                  )}
+                  ) : null}
                   
                   {/* Campaign Details */}
                   <Card className="gradient-card border border-border/50 shadow-xl">
@@ -798,12 +805,12 @@ const CampaignDetail = () => {
                           <span className="text-sm text-muted-foreground">Status</span>
                           <Badge 
                             className={`text-xs ${
-                              localCampaign.status === 'active' 
+                              derivedStatus === 'active' 
                                 ? 'bg-campaign-success/20 text-campaign-success border-campaign-success/30' 
                                 : 'bg-muted/50 text-muted-foreground border-border/50'
                             }`}
                           >
-                            {localCampaign.status}
+                            {derivedStatus}
                           </Badge>
                     </div>
                   </div>
