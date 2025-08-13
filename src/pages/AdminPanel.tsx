@@ -38,6 +38,7 @@ import {
   MessageCircle
 } from "lucide-react";
 import { useState, useEffect } from "react";
+import { ethers } from "ethers";
 import { AutomatedContractService } from "@/services/automatedContracts";
 import { useNavigate } from "react-router-dom";
 import { useWeb3 } from "@/contexts/Web3Context";
@@ -77,6 +78,7 @@ const AdminPanel = () => {
   const [isCreating, setIsCreating] = useState(false);
   const [loadingActions, setLoadingActions] = useState<{ [key: string]: boolean }>({});
   const [dashboardStats, setDashboardStats] = useState<any>(null);
+  const [warnings, setWarnings] = useState<string[]>([]);
   
   // Form state
   const [formData, setFormData] = useState({
@@ -221,6 +223,54 @@ const AdminPanel = () => {
       socket.getSocket()?.off?.('campaign:updated', handleCampaignUpdated);
     };
   }, [socket, refetchCampaigns]);
+
+  // Guardrail warnings (roles, network, token pause/link)
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const next: string[] = [];
+      try {
+        if (roleHint) next.push(roleHint);
+        // Network
+        if (provider?.getNetwork) {
+          try {
+            // ethers v5 provider
+            // @ts-ignore
+            const net = await provider.getNetwork();
+            const chainId = Number((net.chainId || (net as any)._chainId || 0).toString());
+            const EXPECTED = Number(import.meta.env.VITE_CHAIN_ID || 11155111); // default Sepolia
+            if (chainId && EXPECTED && chainId !== EXPECTED) {
+              next.push(`Wrong network. Expected chainId ${EXPECTED}, got ${chainId}. Use Switch Network.`);
+            }
+          } catch {}
+        }
+        // Token paused / link checks
+        try {
+          const tokenAddr = (import.meta as any).env?.VITE_SQUDY_TOKEN_ADDRESS;
+          const managerAddr = (import.meta as any).env?.VITE_CAMPAIGN_MANAGER_ADDRESS;
+          if (tokenAddr && managerAddr && signer) {
+            const token = new ethers.Contract(tokenAddr, [
+              'function paused() view returns (bool)',
+              'function campaignManager() view returns (address)'
+            ], signer);
+            try {
+              const paused = await token.paused();
+              if (paused) next.push('Token is paused. Unpause before interacting.');
+            } catch {}
+            try {
+              const linked = await token.campaignManager();
+              if (linked && managerAddr && String(linked).toLowerCase() !== String(managerAddr).toLowerCase()) {
+                next.push('Token is not linked to this manager (setCampaignManager required).');
+              }
+            } catch {}
+          }
+        } catch {}
+      } finally {
+        if (!cancelled) setWarnings(next);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [roleHint, provider, signer]);
 
   const handleCreateCampaign = async () => {
     const auth = await requireAuth();
@@ -1496,6 +1546,30 @@ const AdminPanel = () => {
 
             {/* Settings Tab */}
             <TabsContent value="settings" className="space-y-6">
+              {warnings.length > 0 && (
+                <div className="rounded-md border border-amber-600/40 bg-amber-900/20 p-4 text-amber-200">
+                  <div className="font-semibold mb-1">Environment warnings</div>
+                  <ul className="list-disc pl-5 space-y-1">
+                    {warnings.map((w, i) => (<li key={i}>{w}</li>))}
+                  </ul>
+                  <div className="mt-3 flex gap-2">
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      className="bg-indigo-600 text-white hover:bg-indigo-500"
+                      onClick={async () => {
+                        try {
+                          // Try EIP-3326 switch
+                          // @ts-ignore
+                          await window.ethereum?.request?.({ method: 'wallet_switchEthereumChain', params: [{ chainId: '0xaa36a7' }] });
+                        } catch (e: any) {
+                          toast.error(e?.message || 'Failed to switch network');
+                        }
+                      }}
+                    >Switch to Sepolia</Button>
+                  </div>
+                </div>
+              )}
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
@@ -1604,6 +1678,12 @@ const AdminPanel = () => {
                               if (!confirm(`Select winners for campaign ${cid}?`)) return;
                               setLoadingActions(prev => ({ ...prev, [`select-${cid}`]: true }));
                               try {
+                                // Optional precheck: ensure finished
+                                try {
+                                  const campaign = await autoSvc.getCampaign(Number(cid));
+                                  const isFinished = Number((campaign as any)?.status ?? 0) === 1 || Boolean((campaign as any)?.winners?.length);
+                                  if (!isFinished) toast.info('If this reverts: End campaign now first.');
+                                } catch {}
                                 const ok = await autoSvc.selectWinners(Number(cid));
                                 ok ? toast.success('Winners selected') : toast.error('Select failed');
                               } catch (err: any) { toast.error(err?.message || 'Select failed'); }
@@ -1621,6 +1701,12 @@ const AdminPanel = () => {
                               if (!confirm(`Burn all staked tokens for campaign ${cid}? This is irreversible.`)) return;
                               setLoadingActions(prev => ({ ...prev, [`burn-${cid}`]: true }));
                               try {
+                                // Optional precheck: ensure tokens exist
+                                try {
+                                  const campaign = await autoSvc.getCampaign(Number(cid));
+                                  const amount = (campaign as any)?.currentAmount || (campaign as any)?.totalBurned || 0n;
+                                  if (!amount || String(amount) === '0') toast.info('If this reverts: no staked tokens to burn.');
+                                } catch {}
                                 const ok = await autoSvc.burnTokens(Number(cid));
                                 ok ? toast.success('Tokens burned') : toast.error('Burn failed');
                               } catch (err: any) { toast.error(err?.message || 'Burn failed'); }
