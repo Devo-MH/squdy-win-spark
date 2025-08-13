@@ -850,6 +850,49 @@ export class ContractService {
 
         const cAny: any = this.campaignManagerContract;
 
+        // Preflight checks to avoid blind reverts
+        try {
+          const state: any = (await (cAny.getCampaign?.(campaignId) || cAny.campaigns?.(campaignId))) || null;
+          if (state) {
+            // Automated manager shape
+            if (state.status !== undefined) {
+              const status = Number(state.status);
+              const tokensAreBurned = Boolean(state.tokensAreBurned ?? false);
+              const currentAmount = ethers.BigNumber.from(state.currentAmount ?? 0);
+              if (status !== 3) throw new Error('Cannot burn: winners not selected yet (status != Finished)');
+              if (tokensAreBurned) throw new Error('Cannot burn: tokens already burned');
+              if (currentAmount.lte(0)) throw new Error('Cannot burn: no staked tokens to burn');
+            } else if (state.winnersSelected !== undefined) {
+              // Legacy/simple manager shape
+              const winnersSelected = Boolean(state.winnersSelected);
+              if (!winnersSelected) throw new Error('Cannot burn: winners not selected yet');
+            }
+          }
+        } catch (preErr: any) {
+          if (preErr?.message?.startsWith('Cannot burn')) {
+            toast.error(preErr.message);
+            throw preErr;
+          }
+        }
+
+        // Optional: token pause check and auto-rebind
+        try {
+          const managerTokenAddr = await cAny.squdyToken?.();
+          if (managerTokenAddr && this.squdyTokenContract?.address?.toLowerCase() !== managerTokenAddr.toLowerCase()) {
+            this.squdyTokenContract = new ethers.Contract(managerTokenAddr, SQUDY_TOKEN_ABI, this.signer);
+          }
+          const tAny: any = this.squdyTokenContract;
+          if (tAny?.paused) {
+            const isPaused = await tAny.paused();
+            if (isPaused) throw new Error('Token paused: unpause before burning');
+          }
+        } catch (tokenErr: any) {
+          if (tokenErr?.message?.includes('paused')) {
+            toast.error(tokenErr.message);
+            throw tokenErr;
+          }
+        }
+
         const trySend = async (fnName: string) => {
           if (!fnName || !cAny[fnName]) return null;
           try {
@@ -859,20 +902,32 @@ export class ContractService {
                 const g = await cAny.estimateGas[fnName](campaignId);
                 gasLimit = g.mul(120).div(100);
               }
-            } catch (_) {}
+            } catch (eg) {
+              // Estimation failed; set a conservative cap to still surface revert reason
+              gasLimit = ethers.BigNumber.from('300000');
+            }
             const tx = await cAny[fnName](campaignId, ...(gasLimit ? [{ gasLimit }] : []));
             toast.info(`Burn tx sent: ${tx.hash.slice(0, 10)}... Waiting for confirmation...`);
             return tx;
-          } catch (e) {
+          } catch (e: any) {
+            // Decode revert reason if present
+            const data = e?.data || e?.error?.data;
+            if (typeof data === 'string' && data.startsWith('0x08c379a0')) {
+              try {
+                const reason = ethers.utils.defaultAbiCoder.decode(['string'], '0x' + data.slice(10))[0];
+                toast.error(`Burn failed: ${reason}`);
+              } catch {}
+            } else if (e?.reason) {
+              toast.error(`Burn failed: ${e.reason}`);
+            }
             return null;
           }
         };
 
-        // Try common function names
         // Our manager exposes burnTokens(campaignId). Try that first.
         const tx = await trySend('burnTokens') || await trySend('burnAllTokens') || await trySend('burnCampaignTokens');
         if (!tx) {
-          throw new Error('Burn function not available on contract');
+          throw new Error('Burn reverted or function not available. Ensure winners selected, tokens not already burned, and token not paused.');
         }
         return tx;
       }
