@@ -1910,6 +1910,12 @@ const AdminPanel = () => {
                                 if (!newDate) return toast.error('Please select new end date');
                                 try {
                                   await autoSvc.updateCampaignEndDate(Number(id), new Date(newDate));
+                                  // Refresh lists/details so UI reflects new end time
+                                  try {
+                                    queryClient.invalidateQueries({ queryKey: campaignKeys.detail(Number(id)) });
+                                    queryClient.invalidateQueries({ queryKey: campaignKeys.lists() });
+                                    refetchCampaigns();
+                                  } catch {}
                                 } catch (err: any) { toast.error(err?.message || 'Update failed'); }
                               }}
                              >📅 Update</Button>
@@ -1935,6 +1941,11 @@ const AdminPanel = () => {
                                   const end = (current as any)?.endDate ? new Date(Number((current as any).endDate) * 1000) : new Date();
                                   const extended = new Date(end.getTime() + hours * 3600 * 1000);
                                   await autoSvc.updateCampaignEndDate(Number(id), extended);
+                                  try {
+                                    queryClient.invalidateQueries({ queryKey: campaignKeys.detail(Number(id)) });
+                                    queryClient.invalidateQueries({ queryKey: campaignKeys.lists() });
+                                    refetchCampaigns();
+                                  } catch {}
                                   toast.success(`Extended by ${hours}h`);
                                 } catch (err: any) { toast.error(err?.message || 'Extend failed'); }
                               }}

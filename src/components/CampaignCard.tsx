@@ -16,6 +16,21 @@ interface CampaignCardProps {
 const CampaignCard = ({ campaign }: CampaignCardProps) => {
   const socket = useSocket();
   const [localCampaign, setLocalCampaign] = useState(campaign);
+  // periodic light refresh to keep cards closer to real data when sockets are off
+  useEffect(() => {
+    let cancelled = false;
+    const refresh = async () => {
+      try {
+        const res = await fetch(`/api/campaigns/${campaign.contractId}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        if (cancelled) return;
+        setLocalCampaign((prev) => ({ ...prev, ...(data?.campaign || {}) }));
+      } catch {}
+    };
+    const id = setInterval(refresh, 20000);
+    return () => { cancelled = true; clearInterval(id); };
+  }, [campaign.contractId]);
   
   const progress = formatProgress(localCampaign.currentAmount, localCampaign.hardCap);
   const nowMs = Date.now();

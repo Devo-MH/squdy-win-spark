@@ -131,7 +131,7 @@ const CampaignDetail = () => {
     }
   }, [campaignData, campaignError, navigate]);
 
-  // On-chain refresh to reflect real-time amounts/participants/winners/burn
+  // On-chain refresh to reflect real-time amounts/participants/winners/burn and end time changes
   useEffect(() => {
     if (!contractService || !localCampaign?.contractId) return;
     let cancelled = false;
@@ -150,6 +150,7 @@ const CampaignDetail = () => {
           hardCap: toNum(c.hardCap ?? prev.hardCap),
           winners: Array.isArray(c.winners) ? c.winners : (prev.winners || []),
           totalBurned: toNum(c.totalBurned ?? prev.totalBurned),
+          endDate: c.endDate ? new Date(Number((c as any).endDate) * 1000) : prev.endDate,
         }) : prev);
       } catch {}
     };
