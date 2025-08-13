@@ -61,7 +61,7 @@ const CampaignCard = ({ campaign }: CampaignCardProps) => {
           participantCount: toNum(r.participantCount ?? prev.participantCount),
           hardCap: fmt(r.hardCap ?? prev.hardCap),
           softCap: fmt(r.softCap ?? prev.softCap),
-          winners: Array.isArray(r.winners) ? r.winners : (prev as any).winners,
+          winners: Array.isArray(r.winners) ? (r.winners as string[]).filter((w: string) => (w || '').toLowerCase() !== zeroAddress) : (prev as any).winners,
           tokensAreBurned: Boolean(r.tokensAreBurned ?? (prev as any).tokensAreBurned),
           totalBurned: fmt(r.totalBurned ?? (prev as any).totalBurned),
         }));
@@ -78,11 +78,14 @@ const CampaignCard = ({ campaign }: CampaignCardProps) => {
   const endMs = new Date(localCampaign.endDate).getTime();
   const ended = Number.isFinite(endMs) && endMs <= nowMs;
   const started = Number.isFinite(startMs) && startMs <= nowMs;
-  const winnersExist = Array.isArray((localCampaign as any).winners) && (localCampaign as any).winners.length > 0;
+  const zeroAddress = '0x0000000000000000000000000000000000000000';
+  const winnersList = Array.isArray((localCampaign as any).winners) ? ((localCampaign as any).winners as string[]) : [];
+  const winnersClean = winnersList.filter((w) => typeof w === 'string' && w.toLowerCase() !== zeroAddress);
+  const winnersExist = winnersClean.length > 0;
   const burnedFlag = Boolean((localCampaign as any).tokensAreBurned) || Number((localCampaign as any).totalBurned || 0) > 0;
   const derivedStatus = (() => {
-    if (burnedFlag) return 'burned';
     if (!started) return 'pending';
+    if (burnedFlag) return 'burned';
     if (ended) return winnersExist ? 'finished' : 'ended';
     return 'active';
   })();
