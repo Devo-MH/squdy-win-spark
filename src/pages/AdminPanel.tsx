@@ -58,7 +58,7 @@ const AdminPanel = () => {
   const { account, isConnected, provider, signer } = useWeb3();
   const { isAuthenticated, requireAuth } = useAuth();
   const contractService = useContracts(provider, signer);
-  const ENV_AUTOMATED = (import.meta as any).env?.VITE_USE_AUTOMATED_MANAGER === 'true';
+  const ENV_AUTOMATED = String((import.meta as any).env?.VITE_USE_AUTOMATED_MANAGER || '').toLowerCase() === 'true';
   const [useAutomated, setUseAutomated] = useState<boolean>(false);
   const [autoSvc, setAutoSvc] = useState<AutomatedContractService | null>(null);
   const [roleHint, setRoleHint] = useState<string | null>(null);
