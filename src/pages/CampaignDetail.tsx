@@ -131,6 +131,33 @@ const CampaignDetail = () => {
     }
   }, [campaignData, campaignError, navigate]);
 
+  // On-chain refresh to reflect real-time amounts/participants/winners/burn
+  useEffect(() => {
+    if (!contractService || !localCampaign?.contractId) return;
+    let cancelled = false;
+    const refresh = async () => {
+      try {
+        const c = await (contractService as any).getCampaign?.(Number(localCampaign.contractId));
+        if (!c || cancelled) return;
+        const toNum = (v: any) => {
+          try { return Number(v?.toString?.() ?? v ?? 0); } catch { return 0; }
+        };
+        setLocalCampaign(prev => prev ? ({
+          ...prev,
+          currentAmount: toNum(c.currentAmount ?? prev.currentAmount),
+          participantCount: toNum(c.participantCount ?? prev.participantCount),
+          softCap: toNum(c.softCap ?? prev.softCap),
+          hardCap: toNum(c.hardCap ?? prev.hardCap),
+          winners: Array.isArray(c.winners) ? c.winners : (prev.winners || []),
+          totalBurned: toNum(c.totalBurned ?? prev.totalBurned),
+        }) : prev);
+      } catch {}
+    };
+    refresh();
+    const id = setInterval(refresh, 15000);
+    return () => { cancelled = true; clearInterval(id); };
+  }, [contractService, localCampaign?.contractId]);
+
   // Reset local participation state when server data is available
   useEffect(() => {
     if (statusData?.isParticipating === true) {
