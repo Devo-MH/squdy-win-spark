@@ -873,10 +873,6 @@ export class ContractService {
               if (!winnersSelected) throw new Error("Cannot burn: winners not selected yet");
               if (totalStaked.lte(0)) throw new Error("Cannot burn: no staked tokens to burn");
               if (prizePool.gt(0)) throw new Error("Cannot burn: campaign has active prize pool");
-              // Legacy/simple manager shape
-              const winnersSelected = Boolean(state.winnersSelected);
-              console.log('🔍 Winners selected:', winnersSelected);
-              if (!winnersSelected) throw new Error('Cannot burn: winners not selected yet');
             }
           }
         } catch (preErr: any) {
