@@ -98,12 +98,12 @@ export class MockSqudyToken {
   }
 
   // Helper method to add more tokens for testing
-  mintTokens(address: string, amount: string) {
-    const amountBN = ethers.utils.parseUnits(amount, this._decimals);
+  mintTokens(address: string, amount: bigint) {
+    const amountBN = amount;
     const currentBalance = this.userBalances.get(address.toLowerCase()) || 0n;
     this.userBalances.set(address.toLowerCase(), currentBalance + amountBN);
-    console.log(`🏭 Minted ${amount} mSQUDY tokens to ${address}`);
-    toast.success(`🏭 Minted ${amount} mock SQUDY tokens for testing!`);
+    console.log(`🏭 Minted ${ethers.utils.formatUnits(amountBN, this._decimals)} mSQUDY tokens to ${address}`);
+    toast.success(`🏭 Minted ${ethers.utils.formatUnits(amountBN, this._decimals)} mock SQUDY tokens for testing!`);
   }
 
   // Method to reset balances for testing

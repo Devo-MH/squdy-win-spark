@@ -51,7 +51,7 @@ const AUTOMATED_CAMPAIGN_MANAGER_ABI = [
   'event CampaignEndDateUpdated(uint256 indexed campaignId, uint256 oldEndDate, uint256 newEndDate)',
 ];
 
-// Real SQUDY Token ABI
+// Real SQUDY Token V4 ABI (no burn, no campaign-manager linkage)
 const SQUDY_TOKEN_ABI = [
   // Standard ERC20
   'function name() external view returns (string)',
@@ -64,24 +64,14 @@ const SQUDY_TOKEN_ABI = [
   'function transfer(address to, uint256 amount) external returns (bool)',
   'function transferFrom(address from, address to, uint256 amount) external returns (bool)',
   
-  // Enhanced SQUDY features
-  'function burn(uint256 amount) external',
-  'function burnFrom(address from, uint256 amount) external',
-  'function authorizedBurners(address) external view returns (bool)',
-  'function totalBurned() external view returns (uint256)',
-  'function circulatingSupply() external view returns (uint256)',
-  'function getBurnStats() external view returns (uint256 burned, uint256 circulating, uint256 burnRate)',
-  
-  // Owner functions
-  'function setAuthorizedBurner(address burner, bool authorized) external',
+  // Admin/Security
   'function pause() external',
   'function unpause() external',
+  'function paused() external view returns (bool)',
   
   // Events
   'event Transfer(address indexed from, address indexed to, uint256 value)',
   'event Approval(address indexed owner, address indexed spender, uint256 value)',
-  'event BurnerAuthorized(address indexed burner, bool authorized)',
-  'event TokensBurnedByCampaign(address indexed campaign, uint256 amount)',
 ];
 
 // Contract addresses
@@ -127,13 +117,13 @@ export interface AutomatedParticipant {
 
 // Automated Contract Service
 export class AutomatedContractService {
-  private provider: ethers.BrowserProvider;
+  private provider: any;
   private signer: ethers.Signer;
   private squdyTokenContract: ethers.Contract | null = null;
   private campaignManagerContract: ethers.Contract;
   private useMockToken: boolean;
 
-  constructor(provider: ethers.BrowserProvider, signer: ethers.Signer) {
+  constructor(provider: any, signer: ethers.Signer) {
     this.provider = provider;
     this.signer = signer;
     
@@ -163,7 +153,7 @@ export class AutomatedContractService {
     try {
       if (this.useMockToken) {
         const balance = await mockSqudyToken.balanceOf(address);
-        return ethers.utils.formatUnits(balance, 18);
+         return ethers.utils.formatUnits(balance, 18);
       } else {
         const balance = await this.squdyTokenContract!.balanceOf(address);
         return ethers.utils.formatUnits(balance, 18);
@@ -178,7 +168,7 @@ export class AutomatedContractService {
     try {
       if (this.useMockToken) {
         const allowance = await mockSqudyToken.allowance(owner, spender);
-        return ethers.utils.formatUnits(allowance, 18);
+         return ethers.utils.formatUnits(allowance, 18);
       } else {
         const allowance = await this.squdyTokenContract!.allowance(owner, spender);
         return ethers.utils.formatUnits(allowance, 18);
@@ -195,7 +185,7 @@ export class AutomatedContractService {
       
       if (this.useMockToken) {
         const userAddress = await this.signer.getAddress();
-        await mockSqudyToken.approve(userAddress, spender, amountBN);
+        await mockSqudyToken.approve(userAddress, spender, BigInt(amountBN.toString()));
         return true;
       } else {
         const tx = await this.squdyTokenContract!.approve(spender, amountBN);
@@ -213,7 +203,7 @@ export class AutomatedContractService {
       const amountBN = ethers.utils.parseUnits(amount, 18);
       if (this.useMockToken) {
         const from = await this.signer.getAddress();
-        await mockSqudyToken.transfer(from, to, amountBN);
+        await mockSqudyToken.transfer(from, to, BigInt(amountBN.toString()));
         toast.success(`✅ Sent ${amount} SQUDY to ${to.slice(0, 6)}...${to.slice(-4)}`);
         return true;
       } else {
@@ -223,7 +213,8 @@ export class AutomatedContractService {
         }
         const from = await this.signer.getAddress();
         const balance = await this.squdyTokenContract!.balanceOf(from);
-        if (balance.lt(amountBN)) {
+        const balEnough = (balance as any).lt ? !(balance as any).lt(amountBN) : (BigInt(balance.toString()) >= BigInt(amountBN.toString()));
+        if (!balEnough) {
           toast.error('Insufficient SQUDY balance');
           return false;
         }
@@ -248,7 +239,7 @@ export class AutomatedContractService {
 
     try {
       const userAddress = await this.signer.getAddress();
-      const amount = ethers.utils.parseUnits('1000', 18); // 1000 test tokens
+      const amount = BigInt(ethers.utils.parseUnits('1000', 18).toString()); // 1000 test tokens
       mockSqudyToken.mintTokens(userAddress, amount);
       
       if (!window.mockTokenToastShown) {
@@ -273,7 +264,7 @@ export class AutomatedContractService {
   async getTotalCampaigns(): Promise<number> {
     try {
       const total = await this.campaignManagerContract.getTotalCampaigns();
-      return Number(total);
+      return Number(total.toString?.() ?? total);
     } catch (error) {
       console.error('Error getting total campaigns:', error);
       return 0;
@@ -284,23 +275,23 @@ export class AutomatedContractService {
     try {
       const campaign = await this.campaignManagerContract.getCampaign(campaignId);
       return {
-        id: campaign.id,
+        id: BigInt(campaign.id?.toString?.() ?? campaign.id),
         name: campaign.name,
         description: campaign.description,
         imageUrl: campaign.imageUrl,
-        softCap: campaign.softCap,
-        hardCap: campaign.hardCap,
-        ticketAmount: campaign.ticketAmount,
-        currentAmount: campaign.currentAmount,
-        startDate: campaign.startDate,
-        endDate: campaign.endDate,
-        participantCount: campaign.participantCount,
+        softCap: BigInt(campaign.softCap?.toString?.() ?? campaign.softCap),
+        hardCap: BigInt(campaign.hardCap?.toString?.() ?? campaign.hardCap),
+        ticketAmount: BigInt(campaign.ticketAmount?.toString?.() ?? campaign.ticketAmount),
+        currentAmount: BigInt(campaign.currentAmount?.toString?.() ?? campaign.currentAmount),
+        startDate: BigInt(campaign.startDate?.toString?.() ?? campaign.startDate),
+        endDate: BigInt(campaign.endDate?.toString?.() ?? campaign.endDate),
+        participantCount: BigInt(campaign.participantCount?.toString?.() ?? campaign.participantCount),
         prizes: campaign.prizes,
         winners: campaign.winners,
-        status: campaign.status,
+        status: Number(campaign.status?.toString?.() ?? campaign.status) as CampaignStatus,
         tokensAreBurned: campaign.tokensAreBurned,
-        totalBurned: campaign.totalBurned,
-        winnerSelectionBlock: campaign.winnerSelectionBlock
+        totalBurned: BigInt(campaign.totalBurned?.toString?.() ?? campaign.totalBurned),
+        winnerSelectionBlock: BigInt(campaign.winnerSelectionBlock?.toString?.() ?? campaign.winnerSelectionBlock)
       };
     } catch (error) {
       console.error('Error getting campaign:', error);
@@ -312,10 +303,10 @@ export class AutomatedContractService {
     try {
       const participant = await this.campaignManagerContract.getParticipant(campaignId, userAddress);
       return {
-        stakedAmount: participant.stakedAmount,
-        ticketCount: participant.ticketCount,
+        stakedAmount: BigInt(participant.stakedAmount?.toString?.() ?? participant.stakedAmount),
+        ticketCount: BigInt(participant.ticketCount?.toString?.() ?? participant.ticketCount),
         hasCompletedSocial: participant.hasCompletedSocial,
-        joinedAt: participant.joinedAt
+        joinedAt: BigInt(participant.joinedAt?.toString?.() ?? participant.joinedAt)
       };
     } catch (error) {
       console.error('Error getting participant:', error);
@@ -332,7 +323,8 @@ export class AutomatedContractService {
         const userAddress = await this.signer.getAddress();
         const balance = await mockSqudyToken.balanceOf(userAddress);
         
-        if (balance < amountBN) {
+        const hasEnough = (balance as any).lt ? !(balance as any).lt(amountBN) : (BigInt(balance.toString()) >= BigInt(amountBN.toString()));
+        if (!hasEnough) {
           toast.error('Insufficient token balance');
           return false;
         }
@@ -341,7 +333,7 @@ export class AutomatedContractService {
         await mockSqudyToken.transfer(
           userAddress, 
           AUTOMATED_CONTRACT_ADDRESSES.CAMPAIGN_MANAGER, 
-          amountBN
+          BigInt(amountBN.toString())
         );
         
         toast.success(`🎯 Staked ${amount} SQUDY tokens!`);
@@ -369,6 +361,7 @@ export class AutomatedContractService {
   }
 
   async burnTokens(campaignId: number): Promise<boolean> {
+    // Manager still performs burn (transfer-to-dead if token lacks burn). Keep this.
     try {
       const tx = await this.campaignManagerContract.burnTokens(campaignId);
       await tx.wait();
@@ -470,27 +463,7 @@ export class AutomatedContractService {
 
   // ============ TOKEN STATS ============
 
-  async getBurnStats(): Promise<{ burned: string; circulating: string; burnRate: string } | null> {
-    if (this.useMockToken) {
-      return {
-        burned: '0',
-        circulating: '1000000000', // 1B tokens
-        burnRate: '0'
-      };
-    }
-
-    try {
-      const stats = await this.squdyTokenContract!.getBurnStats();
-      return {
-        burned: ethers.utils.formatUnits(stats.burned, 18),
-        circulating: ethers.utils.formatUnits(stats.circulating, 18),
-        burnRate: (Number(stats.burnRate) / 100).toString() // Convert basis points to percentage
-      };
-    } catch (error) {
-      console.error('Error getting burn stats:', error);
-      return null;
-    }
-  }
+  // Burn stats removed in V4 token
 
   // ============ EMERGENCY FUNCTIONS ============
   

@@ -898,16 +898,7 @@ export class ContractService {
           }
           const tAny: any = this.squdyTokenContract;
           console.log('🔍 Token contract:', tAny?.address);
-          // Ensure token is linked to this manager for exemptions/roles
-          if (tAny?.campaignManager) {
-            const linked = await tAny.campaignManager();
-            const mgrAddr = await this.campaignManagerContract.getAddress?.() || (this.campaignManagerContract as any).address;
-            console.log('🔍 Token linked to:', linked, 'Manager:', mgrAddr);
-            if (linked && mgrAddr && linked.toLowerCase() !== String(mgrAddr).toLowerCase()) {
-              toast.error('Token not linked to this manager. Call setCampaignManager(manager) from token admin.');
-              throw new Error('Token not linked to this manager');
-            }
-          }
+          // V4 token has no campaignManager linkage – skip linkage checks
           if (tAny?.paused) {
             const isPaused = await tAny.paused();
             console.log('🔍 Token paused:', isPaused);
