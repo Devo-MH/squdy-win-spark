@@ -626,11 +626,11 @@ const CampaignDetail = () => {
                       return (
                         <li
                           key={idx}
-                          className="group px-4 py-2 rounded-full bg-campaign-success/10 border border-campaign-success/30 hover:border-campaign-success/60 hover:bg-campaign-success/15 transition-all duration-300 shadow-sm backdrop-blur-sm"
+                          className="group px-4 py-2 rounded-md bg-campaign-success/10 border border-campaign-success/30 hover:border-campaign-success/60 hover:bg-campaign-success/15 transition-all duration-300 shadow-sm backdrop-blur-sm max-w-full"
                           style={{ animationDelay: `${idx * 80}ms` }}
                         >
-                          <button className="text-sm font-medium text-campaign-success hover:text-white/90 transition-colors" onClick={() => copyToClipboard(addr)}>
-                            {addr.slice(0, 6)}...{addr.slice(-4)}
+                          <button className="text-sm font-medium text-campaign-success hover:text-white/90 transition-colors break-all text-left" onClick={() => copyToClipboard(addr)}>
+                            {addr}
                           </button>
                           {w.prizeName ? <span className="ml-2 text-xs text-muted-foreground">({w.prizeName})</span> : null}
                         </li>
@@ -642,11 +642,11 @@ const CampaignDetail = () => {
                     {(localCampaign!.winners as any[]).map((addr: any, idx: number) => (
                       <li
                         key={idx}
-                        className="group px-4 py-2 rounded-full bg-campaign-success/10 border border-campaign-success/30 hover:border-campaign-success/60 hover:bg-campaign-success/15 transition-all duration-300 shadow-sm backdrop-blur-sm"
+                        className="group px-4 py-2 rounded-md bg-campaign-success/10 border border-campaign-success/30 hover:border-campaign-success/60 hover:bg-campaign-success/15 transition-all duration-300 shadow-sm backdrop-blur-sm max-w-full"
                         style={{ animationDelay: `${idx * 80}ms` }}
                       >
-                        <button className="text-sm font-medium text-campaign-success hover:text-white/90 transition-colors" onClick={() => copyToClipboard(String(addr))}>
-                          {String(addr).slice(0, 6)}...{String(addr).slice(-4)}
+                        <button className="text-sm font-medium text-campaign-success hover:text-white/90 transition-colors break-all text-left" onClick={() => copyToClipboard(String(addr))}>
+                          {String(addr)}
                         </button>
                       </li>
                     ))}
@@ -748,20 +748,7 @@ const CampaignDetail = () => {
                     </div>
                   )}
 
-                  {/* Debug Info for Mobile Issues */}
-                  {import.meta.env.DEV && (
-                    <Card className="bg-yellow-500/10 border-yellow-500/20 p-4">
-                      <h4 className="font-semibold text-yellow-600 mb-2">Debug Info (Mobile)</h4>
-                      <div className="text-sm space-y-1">
-                        <p>isConnected: {String(isConnected)}</p>
-                        <p>isParticipating: {String(isParticipating)}</p>
-                        <p>hasJoinedLocally: {String(hasJoinedLocally)}</p>
-                        <p>statusData?.isParticipating: {String(statusData?.isParticipating)}</p>
-                        <p>account: {account || 'none'}</p>
-                        <p>Show Staking: {String(isConnected && !isParticipating)}</p>
-                    </div>
-                    </Card>
-                  )}
+                  {/* Debug Info panel removed */}
 
                   {/* Fallback Staking Section for Mobile - Always show if not participating */}
                   {!isParticipating && !isConnected && (
