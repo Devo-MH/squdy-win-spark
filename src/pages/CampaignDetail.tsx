@@ -604,7 +604,7 @@ const CampaignDetail = () => {
         <div className="container mx-auto px-4 max-w-7xl">
           {/* Winners banner moved here to top */}
           <div className="mb-8">
-            {derivedStatus !== 'active' && (winnersQuery.data?.winners?.length || 0) > 0 ? (
+            {derivedStatus !== 'active' && ((winnersQuery.data?.winners?.length || 0) > 0 || (Array.isArray(localCampaign?.winners) && (localCampaign!.winners as any[]).length > 0)) ? (
             <Card className="gradient-card border border-campaign-success/40 shadow-neon animate-in fade-in slide-in-from-top-4 duration-500">
               <CardHeader>
                 <CardTitle className="flex items-center gap-3">
@@ -632,7 +632,16 @@ const CampaignDetail = () => {
                     ))}
                   </ul>
                 ) : (
-                  <p className="text-sm text-muted-foreground">Winners not selected yet.</p>
+                  <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {(localCampaign!.winners as any[]).map((addr: any, idx: number) => (
+                      <li key={idx} className="group p-3 rounded-lg bg-muted/30 border border-campaign-success/20 hover:border-campaign-success/40 transition-all duration-300 hover:translate-y-[-2px]">
+                        <div className="flex items-center justify-between">
+                          <div className="text-sm text-foreground truncate">{String(addr)}</div>
+                          <button className="text-xs opacity-70 hover:opacity-100 transition-opacity" onClick={() => copyToClipboard(String(addr))}>Copy</button>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
                 ))}
                 {/* Celebration confetti */}
                 <div className="pointer-events-none select-none">

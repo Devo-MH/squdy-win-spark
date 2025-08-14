@@ -29,7 +29,8 @@ const CampaignCard = ({ campaign }: CampaignCardProps) => {
         setLocalCampaign((prev) => ({ ...prev, ...(data?.campaign || {}) }));
       } catch {}
     };
-    const id = setInterval(refresh, 20000);
+    refresh();
+    const id = setInterval(refresh, 15000);
     return () => { cancelled = true; clearInterval(id); };
   }, [campaign.contractId]);
 
@@ -55,13 +56,15 @@ const CampaignCard = ({ campaign }: CampaignCardProps) => {
         const toNum = (v: any) => {
           try { return Number(v?.toString?.() ?? v ?? 0); } catch { return 0; }
         };
-        setLocalCampaign(prev => ({
+         const zeroAddress = '0x0000000000000000000000000000000000000000';
+         const winners = Array.isArray(r.winners) ? (r.winners as string[]).filter((w: string)=> (w||'').toLowerCase()!==zeroAddress) : (localCampaign as any).winners;
+         setLocalCampaign(prev => ({
           ...prev,
           currentAmount: fmt(r.currentAmount ?? prev.currentAmount),
           participantCount: Math.max(0, toNum(r.participantCount ?? prev.participantCount)),
           hardCap: fmt(r.hardCap ?? prev.hardCap),
           softCap: fmt(r.softCap ?? prev.softCap),
-          winners: Array.isArray(r.winners) && ended ? (r.winners as string[]).filter((w: string) => (w || '').toLowerCase() !== zeroAddress) : (prev as any).winners,
+           winners,
           tokensAreBurned: Boolean(r.tokensAreBurned ?? (prev as any).tokensAreBurned),
           totalBurned: fmt(r.totalBurned ?? (prev as any).totalBurned),
         }));
