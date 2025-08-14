@@ -576,10 +576,10 @@ const CampaignDetail = () => {
         <div className="container mx-auto px-4 max-w-7xl">
           {/* Winners banner moved here to top */}
           <div className="mb-8">
-            <Card className="gradient-card border border-campaign-success/40 shadow-neon">
+            <Card className="gradient-card border border-campaign-success/40 shadow-neon animate-in fade-in slide-in-from-top-4 duration-500">
               <CardHeader>
                 <CardTitle className="flex items-center gap-3">
-                  <div className="p-3 bg-campaign-success/20 border border-campaign-success/40 rounded-lg">
+                  <div className="p-3 bg-campaign-success/20 border border-campaign-success/40 rounded-lg animate-pulse">
                     <Trophy className="w-6 h-6 text-campaign-success" />
                   </div>
                   <span className="text-foreground text-xl">Winners</span>
@@ -589,13 +589,19 @@ const CampaignDetail = () => {
                 {winnersQuery.isLoading ? (
                   <p className="text-sm text-muted-foreground">Loading winners…</p>
                 ) : (winnersQuery.data?.winners?.length ? (
-                  <div className="flex flex-wrap gap-2">
-                    {winnersQuery.data.winners.slice(0, 5).map((w: any, idx: number) => (
-                      <Badge key={idx} variant="outline" className="text-xs border-campaign-success/30 text-campaign-success">
-                        {(w.walletAddress || w.winner || '').slice(0, 6)}...{(w.walletAddress || w.winner || '').slice(-4)}
-                      </Badge>
+                  <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {winnersQuery.data.winners.map((w: any, idx: number) => (
+                      <li key={idx} className="group p-3 rounded-lg bg-muted/30 border border-campaign-success/20 hover:border-campaign-success/40 transition-all duration-300 hover:translate-y-[-2px]">
+                        <div className="flex items-center justify-between">
+                          <div className="text-sm text-foreground truncate">
+                            {w.walletAddress || w.winner || '0x…'}
+                            {w.prizeName ? <span className="ml-2 text-xs text-muted-foreground">({w.prizeName})</span> : null}
+                          </div>
+                          <button className="text-xs opacity-70 hover:opacity-100 transition-opacity" onClick={() => copyToClipboard(w.walletAddress || w.winner)}>Copy</button>
+                        </div>
+                      </li>
                     ))}
-                  </div>
+                  </ul>
                 ) : (
                   <p className="text-sm text-muted-foreground">Winners not selected yet.</p>
                 ))}
@@ -849,51 +855,7 @@ const CampaignDetail = () => {
               {/* Prize Pool */}
                   <PrizePool prizes={localCampaign.prizes} />
                   {/* Winners Panel */}
-                  <Card className="gradient-card border border-campaign-success/40 shadow-neon">
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-3">
-                        <div className="p-3 bg-campaign-success/20 border border-campaign-success/40 rounded-lg">
-                          <Trophy className="w-6 h-6 text-campaign-success" />
-                        </div>
-                        <span className="text-foreground text-xl">Winners</span>
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      {winnersQuery.isLoading ? (
-                        <p className="text-sm text-muted-foreground">Loading winners…</p>
-                      ) : (winnersQuery.data?.winners?.length ? (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                          {winnersQuery.data.winners.map((w: any, idx: number) => (
-                            <div key={idx} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg border border-campaign-success/20">
-                              <div className="text-sm text-foreground truncate">
-                                {w.walletAddress || w.winner || '0x…'}
-                                {w.prizeName ? <span className="ml-2 text-xs text-muted-foreground">({w.prizeName})</span> : null}
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <Button size="sm" variant="outline" className="h-7 px-2 text-xs" onClick={() => copyToClipboard(w.walletAddress || w.winner)}>
-                                  <Copy className="w-3 h-3 mr-1" /> Copy
-                                </Button>
-                                <Button size="sm" variant="outline" className="h-7 px-2 text-xs" onClick={async () => {
-                                  let chainIdHex: string | null = null;
-                                  try { chainIdHex = await (window as any).ethereum?.request?.({ method: 'eth_chainId' }); } catch {}
-                                  const chainId = chainIdHex ? parseInt(chainIdHex, 16) : Number(import.meta.env.VITE_CHAIN_ID || 11155111);
-                                  const base = chainId === 1 ? 'https://etherscan.io' : (chainId === 11155111 ? 'https://sepolia.etherscan.io' : 'https://etherscan.io');
-                                  window.open(`${base}/address/${w.walletAddress || w.winner}`,'_blank');
-                                }}>View</Button>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <div className="p-4 bg-muted/30 rounded-lg border border-border/40">
-                          <p className="text-sm text-muted-foreground">Winners not selected yet.</p>
-                          {(derivedStatus === 'finished' || derivedStatus === 'burned') && (
-                            <p className="text-xs text-muted-foreground mt-1">If winners have just been selected, please refresh in a moment while the data propagates.</p>
-                          )}
-                        </div>
-                      ))}
-                    </CardContent>
-                  </Card>
+                  {/* Winners card removed per request; top banner now serves as the primary winners display */}
                   
                   {/* Campaign Details card removed per request */}
 
