@@ -620,34 +620,58 @@ const CampaignDetail = () => {
                 {winnersQuery.isLoading ? (
                   <p className="text-sm text-muted-foreground">Loading winners…</p>
                 ) : (winnersQuery.data?.winners?.length ? (
-                  <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 place-items-center">
+                  <ul className="flex flex-col sm:flex-row flex-wrap justify-center items-center gap-3">
                     {winnersQuery.data.winners.map((w: any, idx: number) => {
                       const addr = w.walletAddress || w.winner || '0x…';
                       return (
                         <li
                           key={idx}
-                          className="group px-4 py-2 rounded-md bg-campaign-success/10 border border-campaign-success/30 hover:border-campaign-success/60 hover:bg-campaign-success/15 transition-all duration-300 shadow-sm backdrop-blur-sm max-w-full whitespace-nowrap text-center overflow-x-auto"
+                          className="group inline-flex items-center justify-center px-6 py-3 rounded-md bg-campaign-success/10 border border-campaign-success/30 hover:border-campaign-success/60 hover:bg-campaign-success/15 transition-all duration-300 shadow-sm backdrop-blur-sm whitespace-nowrap text-center"
                           style={{ animationDelay: `${idx * 80}ms` }}
                         >
-                          <button className="text-sm font-medium text-campaign-success hover:text-white/90 transition-colors whitespace-nowrap" onClick={() => copyToClipboard(addr)}>
-                            {addr}
-                          </button>
-                          {w.prizeName ? <span className="ml-2 text-xs text-muted-foreground">({w.prizeName})</span> : null}
+                          <div className="flex items-center justify-center gap-3">
+                            <span className="font-mono text-sm text-campaign-success">{addr}</span>
+                            <Button size="sm" variant="outline" className="h-7 px-2 text-xs" onClick={() => copyToClipboard(addr)}>
+                              <Copy className="w-3 h-3 mr-1" /> Copy
+                            </Button>
+                            <Button size="sm" variant="outline" className="h-7 px-2 text-xs" onClick={async () => {
+                              let chainIdHex: string | null = null;
+                              try { chainIdHex = await (window as any).ethereum?.request?.({ method: 'eth_chainId' }); } catch {}
+                              const chainId = chainIdHex ? parseInt(chainIdHex, 16) : Number(import.meta.env.VITE_CHAIN_ID || 11155111);
+                              const base = chainId === 1 ? 'https://etherscan.io' : (chainId === 56 ? 'https://bscscan.com' : (chainId === 11155111 ? 'https://sepolia.etherscan.io' : 'https://etherscan.io'));
+                              window.open(`${base}/address/${addr}`,'_blank');
+                            }}>
+                              <ExternalLink className="w-3 h-3 mr-1" /> View
+                            </Button>
+                          </div>
+                          {w.prizeName ? <div className="mt-1 text-xs text-muted-foreground">{w.prizeName}</div> : null}
                         </li>
                       );
                     })}
                   </ul>
                 ) : (
-                  <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 place-items-center">
+                  <ul className="flex flex-col sm:flex-row flex-wrap justify-center items-center gap-3">
                     {(localCampaign!.winners as any[]).map((addr: any, idx: number) => (
                       <li
                         key={idx}
-                        className="group px-4 py-2 rounded-md bg-campaign-success/10 border border-campaign-success/30 hover:border-campaign-success/60 hover:bg-campaign-success/15 transition-all duration-300 shadow-sm backdrop-blur-sm max-w-full whitespace-nowrap text-center overflow-x-auto"
+                        className="group inline-flex items-center justify-center px-6 py-3 rounded-md bg-campaign-success/10 border border-campaign-success/30 hover:border-campaign-success/60 hover:bg-campaign-success/15 transition-all duration-300 shadow-sm backdrop-blur-sm whitespace-nowrap text-center"
                         style={{ animationDelay: `${idx * 80}ms` }}
                       >
-                        <button className="text-sm font-medium text-campaign-success hover:text-white/90 transition-colors whitespace-nowrap" onClick={() => copyToClipboard(String(addr))}>
-                          {String(addr)}
-                        </button>
+                        <div className="flex items-center justify-center gap-3">
+                          <span className="font-mono text-sm text-campaign-success">{String(addr)}</span>
+                          <Button size="sm" variant="outline" className="h-7 px-2 text-xs" onClick={() => copyToClipboard(String(addr))}>
+                            <Copy className="w-3 h-3 mr-1" /> Copy
+                          </Button>
+                          <Button size="sm" variant="outline" className="h-7 px-2 text-xs" onClick={async () => {
+                            let chainIdHex: string | null = null;
+                            try { chainIdHex = await (window as any).ethereum?.request?.({ method: 'eth_chainId' }); } catch {}
+                            const chainId = chainIdHex ? parseInt(chainIdHex, 16) : Number(import.meta.env.VITE_CHAIN_ID || 11155111);
+                            const base = chainId === 1 ? 'https://etherscan.io' : (chainId === 56 ? 'https://bscscan.com' : (chainId === 11155111 ? 'https://sepolia.etherscan.io' : 'https://etherscan.io'));
+                            window.open(`${base}/address/${String(addr)}`,'_blank');
+                          }}>
+                            <ExternalLink className="w-3 h-3 mr-1" /> View
+                          </Button>
+                        </div>
                       </li>
                     ))}
                   </ul>
