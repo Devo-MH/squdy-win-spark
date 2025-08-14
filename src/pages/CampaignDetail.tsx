@@ -46,7 +46,6 @@ import {
 } from "@/hooks/useCampaigns";
 import { useContracts, CONTRACT_ADDRESSES } from "@/services/contracts";
 import { useSocket } from "@/services/socket";
-import { MockTokenBanner } from "@/components/MockTokenBanner";
 import { TaskChecklist } from "@/components/offchain-verifier";
 import { Task } from "@/components/offchain-verifier/types";
 import { toast } from "sonner";
@@ -575,9 +574,33 @@ const CampaignDetail = () => {
       
       <div className="pt-24 pb-20">
         <div className="container mx-auto px-4 max-w-7xl">
-          {/* Mock Token Banner */}
+          {/* Winners banner moved here to top */}
           <div className="mb-8">
-            <MockTokenBanner contractService={contractService} />
+            <Card className="gradient-card border border-campaign-success/40 shadow-neon">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-3">
+                  <div className="p-3 bg-campaign-success/20 border border-campaign-success/40 rounded-lg">
+                    <Trophy className="w-6 h-6 text-campaign-success" />
+                  </div>
+                  <span className="text-foreground text-xl">Winners</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {winnersQuery.isLoading ? (
+                  <p className="text-sm text-muted-foreground">Loading winners…</p>
+                ) : (winnersQuery.data?.winners?.length ? (
+                  <div className="flex flex-wrap gap-2">
+                    {winnersQuery.data.winners.slice(0, 5).map((w: any, idx: number) => (
+                      <Badge key={idx} variant="outline" className="text-xs border-campaign-success/30 text-campaign-success">
+                        {(w.walletAddress || w.winner || '').slice(0, 6)}...{(w.walletAddress || w.winner || '').slice(-4)}
+                      </Badge>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">Winners not selected yet.</p>
+                ))}
+              </CardContent>
+            </Card>
           </div>
 
           {/* Loading State */}
