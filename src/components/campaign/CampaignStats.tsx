@@ -10,6 +10,7 @@ interface CampaignStatsProps {
   participantCount: number;
   timeLeft: string;
   ticketAmount: number;
+  hideProgress?: boolean;
 }
 
 export function CampaignStats({ 
@@ -18,7 +19,8 @@ export function CampaignStats({
   softCap, 
   participantCount, 
   timeLeft, 
-  ticketAmount 
+  ticketAmount,
+  hideProgress = false
 }: CampaignStatsProps) {
   const progress = (currentAmount / hardCap) * 100;
   const progressToSoftCap = (currentAmount / softCap) * 100;
@@ -111,6 +113,7 @@ export function CampaignStats({
       </div>
 
       {/* Progress Section */}
+      {!hideProgress && (
       <Card className="gradient-card border border-white/10 slide-up-delay-1">
         <CardContent className="p-8">
           <div className="space-y-6">
@@ -179,6 +182,7 @@ export function CampaignStats({
           </div>
         </CardContent>
       </Card>
+      )}
     </div>
   );
 }

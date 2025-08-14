@@ -119,6 +119,9 @@ const CampaignDetail = () => {
   const [isJoiningCampaign, setIsJoiningCampaign] = useState(false);
   const [hasJoinedLocally, setHasJoinedLocally] = useState(false);
   const [localCampaign, setLocalCampaign] = useState(campaignData?.campaign || null);
+  // On-chain participation snapshot for the signed-in user
+  const [myTickets, setMyTickets] = useState<number | null>(null);
+  const [myStaked, setMyStaked] = useState<string | null>(null);
 
   // Update local campaign when data changes
   useEffect(() => {
@@ -130,6 +133,28 @@ const CampaignDetail = () => {
       navigate('/campaigns');
     }
   }, [campaignData, campaignError, navigate]);
+
+  // Helper: refresh my on-chain participation
+  const refreshMyParticipation = async () => {
+    try {
+      if (!contractService || !localCampaign?.contractId || !account) return;
+      const p = await (contractService as any).getParticipant?.(Number(localCampaign.contractId), account);
+      if (p) {
+        if (typeof p.ticketCount === 'number') setMyTickets(p.ticketCount);
+        if (p.stakedAmount != null) setMyStaked(String(p.stakedAmount));
+      }
+    } catch {}
+  };
+
+  // Initial load and periodic refresh of my participation
+  useEffect(() => {
+    let timer: any;
+    (async () => {
+      await refreshMyParticipation();
+      timer = setInterval(refreshMyParticipation, 15000);
+    })();
+    return () => { if (timer) clearInterval(timer); };
+  }, [account, contractService, localCampaign?.contractId]);
 
   // On-chain refresh to reflect real-time amounts/participants/winners/burn and end time changes
   useEffect(() => {
@@ -368,6 +393,8 @@ const CampaignDetail = () => {
       // Refresh wallet data
       const newBalance = await contractService.getTokenBalance(account!);
       setSqudyBalance(newBalance);
+      // Update my on-chain snapshot
+      await refreshMyParticipation();
       
       toast.success(`Successfully staked ${amount} SQUDY! Now complete the required tasks to join the campaign.`);
       
@@ -406,6 +433,7 @@ const CampaignDetail = () => {
       // Immediately update local state to reflect participation
       setHasJoinedLocally(true);
       refetchStatus();
+      await refreshMyParticipation();
       toast.success("🎉 Successfully joined the campaign! Good luck!");
       
     } catch (error: any) {
@@ -576,6 +604,7 @@ const CampaignDetail = () => {
         <div className="container mx-auto px-4 max-w-7xl">
           {/* Winners banner moved here to top */}
           <div className="mb-8">
+            {derivedStatus !== 'active' && (winnersQuery.data?.winners?.length || 0) > 0 ? (
             <Card className="gradient-card border border-campaign-success/40 shadow-neon animate-in fade-in slide-in-from-top-4 duration-500">
               <CardHeader>
                 <CardTitle className="flex items-center gap-3">
@@ -605,8 +634,17 @@ const CampaignDetail = () => {
                 ) : (
                   <p className="text-sm text-muted-foreground">Winners not selected yet.</p>
                 ))}
+                {/* Celebration confetti */}
+                <div className="pointer-events-none select-none">
+                  <div className="animate-in zoom-in duration-700 origin-center">
+                    <span className="text-3xl">🎉</span>
+                    <span className="text-3xl ml-2">🎊</span>
+                    <span className="text-3xl ml-2">✨</span>
+                  </div>
+                </div>
               </CardContent>
             </Card>
+            ) : null}
           </div>
 
           {/* Loading State */}
@@ -667,6 +705,7 @@ const CampaignDetail = () => {
                   participantCount={localCampaign.participantCount}
                   timeLeft={timeLeft}
                   ticketAmount={Number(localCampaign.ticketAmount)}
+                  hideProgress={derivedStatus === 'burned'}
                 />
           </div>
 
@@ -831,18 +870,18 @@ const CampaignDetail = () => {
                           <div className="grid grid-cols-2 gap-4 text-center">
                             <div>
                               <p className="text-2xl font-bold text-campaign-success">
-                                {userStatus?.ticketCount}
+                                {myTickets ?? userStatus?.ticketCount ?? 0}
                               </p>
                               <p className="text-sm text-muted-foreground">Tickets</p>
                             </div>
                             <div>
                               <p className="text-2xl font-bold text-campaign-success">
-                                {userStatus?.stakedAmount}
+                                {myStaked ?? userStatus?.stakedAmount ?? 0}
                               </p>
                               <p className="text-sm text-muted-foreground">SQUDY Staked</p>
                             </div>
-                      </div>
-                  </div>
+                          </div>
+                        </div>
                 </CardContent>
               </Card>
                   )}

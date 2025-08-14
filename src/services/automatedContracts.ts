@@ -1,6 +1,14 @@
 import { ethers } from 'ethers';
 import { toast } from 'sonner';
-import { mockSqudyToken } from './mockSqudyToken';
+// Lazy-load mock token only when explicitly used to avoid side-effect logs in production
+type MockModule = typeof import('./mockSqudyToken');
+let cachedMockModule: MockModule | null = null;
+async function loadMock(): Promise<MockModule> {
+  if (!cachedMockModule) {
+    cachedMockModule = await import('./mockSqudyToken');
+  }
+  return cachedMockModule;
+}
 
 // Automated Campaign Manager ABI
 const AUTOMATED_CAMPAIGN_MANAGER_ABI = [
@@ -127,9 +135,8 @@ export class AutomatedContractService {
     this.provider = provider;
     this.signer = signer;
     
-    // Use mock token if contract addresses are demo addresses
-    this.useMockToken = AUTOMATED_CONTRACT_ADDRESSES.SQUDY_TOKEN === '0x1234567890123456789012345678901234567890' || 
-                       AUTOMATED_CONTRACT_ADDRESSES.SQUDY_TOKEN === '';
+    // Use mock token only if explicitly enabled via env
+    this.useMockToken = String(import.meta.env.VITE_ENABLE_MOCK_FALLBACK || '').toLowerCase() === 'true';
 
     // Initialize contracts
     if (!this.useMockToken) {
@@ -152,6 +159,7 @@ export class AutomatedContractService {
   async getTokenBalance(address: string): Promise<string> {
     try {
       if (this.useMockToken) {
+        const { mockSqudyToken } = await loadMock();
         const balance = await mockSqudyToken.balanceOf(address);
          return ethers.utils.formatUnits(balance, 18);
       } else {
@@ -167,6 +175,7 @@ export class AutomatedContractService {
   async getTokenAllowance(owner: string, spender: string): Promise<string> {
     try {
       if (this.useMockToken) {
+        const { mockSqudyToken } = await loadMock();
         const allowance = await mockSqudyToken.allowance(owner, spender);
          return ethers.utils.formatUnits(allowance, 18);
       } else {
@@ -185,6 +194,7 @@ export class AutomatedContractService {
       
       if (this.useMockToken) {
         const userAddress = await this.signer.getAddress();
+        const { mockSqudyToken } = await loadMock();
         await mockSqudyToken.approve(userAddress, spender, BigInt(amountBN.toString()));
         return true;
       } else {
@@ -203,6 +213,7 @@ export class AutomatedContractService {
       const amountBN = ethers.utils.parseUnits(amount, 18);
       if (this.useMockToken) {
         const from = await this.signer.getAddress();
+        const { mockSqudyToken } = await loadMock();
         await mockSqudyToken.transfer(from, to, BigInt(amountBN.toString()));
         toast.success(`✅ Sent ${amount} SQUDY to ${to.slice(0, 6)}...${to.slice(-4)}`);
         return true;
@@ -240,6 +251,7 @@ export class AutomatedContractService {
     try {
       const userAddress = await this.signer.getAddress();
       const amount = BigInt(ethers.utils.parseUnits('1000', 18).toString()); // 1000 test tokens
+      const { mockSqudyToken } = await loadMock();
       mockSqudyToken.mintTokens(userAddress, amount);
       
       if (!window.mockTokenToastShown) {
@@ -321,6 +333,7 @@ export class AutomatedContractService {
       if (this.useMockToken) {
         // Mock staking logic
         const userAddress = await this.signer.getAddress();
+        const { mockSqudyToken } = await loadMock();
         const balance = await mockSqudyToken.balanceOf(userAddress);
         
         const hasEnough = (balance as any).lt ? !(balance as any).lt(amountBN) : (BigInt(balance.toString()) >= BigInt(amountBN.toString()));
