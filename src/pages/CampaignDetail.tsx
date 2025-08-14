@@ -153,7 +153,10 @@ const CampaignDetail = () => {
           hardCap: toNum(c.hardCap ?? prev.hardCap),
           winners: winnersClean.length ? winnersClean : (prev.winners || []),
           totalBurned: toNum(c.totalBurned ?? prev.totalBurned),
-          endDate: c.endDate ? new Date(Number((c as any).endDate) * 1000) : prev.endDate,
+          // c.endDate is already a Date from ContractService.parseCampaignData
+          endDate: (c as any).endDate instanceof Date ? (c as any).endDate : (c.endDate ? new Date(Number((c as any).endDate) * 1000) : prev.endDate),
+          startDate: (c as any).startDate instanceof Date ? (c as any).startDate : prev.startDate,
+          status: typeof (c as any).status === 'string' ? (c as any).status : prev.status,
         }) : prev);
       } catch {}
     };
@@ -451,16 +454,16 @@ const CampaignDetail = () => {
   const endTs = localCampaign ? toMs(localCampaign.endDate as any) : 0;
   const hasStarted = localCampaign ? nowTs >= startTs : false;
   const hasEnded = localCampaign ? nowTs > endTs : false;
-  // Gate strictly by time; avoid stale API status keeping join open
-  const isJoinOpen = hasStarted && !hasEnded && localCampaign?.status !== 'burned';
-  const isFinished = (localCampaign?.status === "finished" || localCampaign?.status === "burned") && hasEnded;
+  // Gate strictly by time and on-chain status; this prevents join after end or burn
+  const isJoinOpen = hasStarted && !hasEnded && (localCampaign?.status !== 'finished' && localCampaign?.status !== 'burned');
+  const isFinished = (localCampaign?.status === 'finished' || hasEnded || localCampaign?.status === 'burned');
   const timeLeft = localCampaign ? formatTimeLeft(localCampaign.endDate as any) : '';
   const startsIn = localCampaign ? formatTimeLeft(localCampaign.startDate as any) : '';
   const derivedStatus: string = !hasStarted
     ? 'pending'
     : (localCampaign?.totalBurned && Number(localCampaign.totalBurned) > 0) || localCampaign?.status === 'burned'
       ? 'burned'
-      : hasEnded
+      : (hasEnded || localCampaign?.status === 'finished')
         ? 'finished'
         : 'active';
   const ticketsFromStake = calculateTickets(stakeAmount);
