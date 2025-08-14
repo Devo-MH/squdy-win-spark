@@ -1,87 +1,3 @@
-## Summary of Changes
-
-I've successfully created a **simplified version** of the Squdy Token with the following modifications:
-
-### ✅ **REMOVED Components:**
-
-1. **All Burn Functions:**
-    - Removed `burn()` function
-    - Removed `burnFrom()` function
-    - Removed ERC20Burnable inheritance
-    - Removed `totalBurned` tracking
-    - Removed `TokensBurned` events
-2. **All Campaign Manager Relations:**
-    - Removed `campaignManager` state variable
-    - Removed `setCampaignManager()` function
-    - Removed `authorizedBurners` mapping
-    - Removed `setAuthorizedBurner()` function
-    - Removed `queueWithdrawal()` function
-    - Removed `processWithdrawal()` function
-    - Removed withdrawal pattern components
-    - Removed `prizePool` and related functions
-    - Removed all campaign-related events
-
-### ✅ **KEPT Components:**
-
-1. **Core Trading Features:**
-    - Anti-bot protection (cooldown, blacklist)
-    - Anti-sandwich mechanisms
-    - Dynamic fee structure
-    - Buy/sell limits
-    - Circuit breakers
-2. **Essential Functions:**
-    - ERC20 standard functions
-    - Trading enable/disable
-    - Fee collection and management
-    - Admin controls
-    - Recovery functions
-3. **Security Features:**
-    - Pausable mechanism
-    - ReentrancyGuard
-    - AccessControl roles
-    - Input validation
-
-### 📋 **New Simplified Structure:**
-
-The token now functions as a **pure trading token** with:
-
-- Standard ERC20 functionality
-- Advanced anti-bot protection
-- Fee collection mechanism
-- No burning capability
-- No campaign dependencies
-
-### 🔧 **Key Changes:**
-
-solidity
-
-```solidity
-// Old: Complex token with burn and campaign features
-contract SqudyToken is ERC20, ERC20Burnable, ERC20Permit, AccessControl...
-
-// New: Simplified trading token
-contract SqudyToken is ERC20, ERC20Permit, AccessControl, Pausable, ReentrancyGuard
-```
-
-### 📊 **Fee Management Update:**
-
-Instead of routing to campaign/prize pools, fees now:
-
-1. Accumulate in the contract
-2. Can be collected by designated `feeReceiver`
-3. Admin can set and update fee receiver
-4. Simple `collectFees()` function for fee distribution
-
-This simplified version is:
-
-- **Lighter** - Lower deployment cost
-- **Simpler** - Easier to audit and maintain
-- **Independent** - No external contract dependencies
-- **Focused** - Pure trading token functionality
-
-The token is now a standalone trading token that can work independently without any campaign management system!
-
-```
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
@@ -89,8 +5,8 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Permit.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
-import "@openzeppelin/contracts/security/Pausable.sol";
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/utils/Pausable.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 import "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol";
 import "@uniswap/v2-core/contracts/interfaces/IUniswapV2Factory.sol";
@@ -597,4 +513,3 @@ contract SqudyToken is ERC20, ERC20Permit, AccessControl, Pausable, ReentrancyGu
     
     receive() external payable {}
 }
-```
