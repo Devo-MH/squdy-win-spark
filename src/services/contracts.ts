@@ -32,43 +32,36 @@ async function loadMock(): Promise<MockModule> {
   return cachedMockModule;
 }
 
-// Contract ABIs for SimpleSqudyCampaignManager
+// Campaign Manager ABI (new: CampaignManager.sol)
 const CAMPAIGN_MANAGER_ABI = [
-  'function campaigns(uint256) external view returns (address creator, string title, string description, uint256 targetAmount, uint256 ticketPrice, uint256 startTime, uint256 endTime, uint256 maxParticipants, bool isActive, bool winnersSelected, uint256 totalParticipants, uint256 prizePool)',
-  'function campaignCounter() external view returns (uint256)',
-  'function stakes(uint256, address) external view returns (uint256 amount, uint256 tickets, uint256 timestamp, bool withdrawn)',
-  'function hasStaked(uint256, address) external view returns (bool)',
-  'function totalStaked(uint256) external view returns (uint256)',
-  'function getCampaign(uint256 _campaignId) external view returns (tuple(address creator, string title, string description, uint256 targetAmount, uint256 ticketPrice, uint256 startTime, uint256 endTime, uint256 maxParticipants, bool isActive, bool winnersSelected, uint256 totalParticipants, uint256 prizePool))',
-  'function getUserStake(uint256 _campaignId, address _user) external view returns (tuple(uint256 amount, uint256 tickets, uint256 timestamp, bool withdrawn))',
-  'function getCampaignParticipants(uint256 _campaignId) external view returns (address[])',
-  // Simple manager signature
-  'function createCampaign(string _title, string _description, uint256 _targetAmount, uint256 _ticketPrice, uint256 _startTime, uint256 _endTime, uint256 _maxParticipants, uint256 _prizePool) external returns (uint256)',
-  // Automated/role-based manager signature
+  // Views
+  'function getCampaign(uint256) external view returns (tuple(uint256 id, string name, string description, string imageUrl, uint256 softCap, uint256 hardCap, uint256 ticketAmount, uint256 currentAmount, uint256 refundableAmount, uint256 startDate, uint256 endDate, uint256 participantCount, string[] prizes, address[] winners, uint8 status, bool tokensAreBurned, uint256 totalBurned, uint256 winnerSelectionBlock))',
+  'function campaigns(uint256) external view returns (uint256 id, string name, string description, string imageUrl, uint256 softCap, uint256 hardCap, uint256 ticketAmount, uint256 currentAmount, uint256 refundableAmount, uint256 startDate, uint256 endDate, uint256 participantCount, string[] prizes, address[] winners, uint8 status, bool tokensAreBurned, uint256 totalBurned, uint256 winnerSelectionBlock)',
+  'function getCampaignParticipants(uint256) external view returns (address[])',
+  'function getParticipant(uint256, address) external view returns (tuple(uint256 stakedAmount, uint256 ticketCount, bool hasCompletedSocial, uint256 joinedAt))',
+  'function participants(uint256, address) external view returns (uint256 stakedAmount, uint256 ticketCount, bool hasCompletedSocial, uint256 joinedAt, bool hasWithdrawnRefund)',
+  'function getTotalCampaigns() external view returns (uint256)',
+  
+  // Mutations
   'function createCampaign(string name, string description, string imageUrl, uint256 softCap, uint256 hardCap, uint256 ticketAmount, uint256 startDate, uint256 endDate, string[] prizes) external returns (uint256)',
-  // Support multiple manager variants
   'function stakeTokens(uint256 campaignId, uint256 amount) external',
-  'function stakeSQUDY(uint256 campaignId, uint256 amount) external',
-  'function stakeInCampaign(uint256 _campaignId, uint256 _amount) external',
-  'function selectWinners(uint256 _campaignId, address[] _winners) external',
-  // Some managers expose a simpler single-arg variant
-  'function selectWinners(uint256 _campaignId) external',
-  'function burnCampaignTokens(uint256 _campaignId) external',
+  'function selectWinners(uint256 campaignId) external',
+  'function burnTokens(uint256 campaignId) external',
+  'function confirmSocialTasks(uint256 campaignId, address user) external',
   'function updateCampaignEndDate(uint256 campaignId, uint256 newEndDate) external',
   'function emergencyPause() external',
   'function emergencyUnpause() external',
-  'function confirmSocialTasks(uint256 campaignId, address user) external',
-  // Optional access-control helpers (not all deployments implement these)
+  
+  // Roles
   'function hasRole(bytes32 role, address account) external view returns (bool)',
   'function ADMIN_ROLE() external view returns (bytes32)',
   'function OPERATOR_ROLE() external view returns (bytes32)',
-  'function owner() external view returns (address)',
   
-  // Events
-  'event CampaignCreated(uint256 indexed campaignId, address indexed creator, string title)',
-  'event StakeCreated(uint256 indexed campaignId, address indexed participant, uint256 amount, uint256 tickets)',
-  'event WinnersSelected(uint256 indexed campaignId, address[] winners)',
-  'event TokensBurned(uint256 indexed campaignId, uint256 amount)',
+  // Events (subset used by client)
+  'event CampaignCreated(uint256 indexed campaignId, address indexed creator, string name)',
+  'event UserStaked(uint256 indexed campaignId, address indexed user, uint256 amount, uint256 tickets)',
+  'event WinnersSelected(uint256 indexed campaignId, address[] winners, uint256 blockNumber)',
+  'event TokensBurned(uint256 indexed campaignId, uint256 amount)'
 ];
 
 const SQUDY_TOKEN_ABI = [
@@ -327,8 +320,9 @@ export class ContractService {
   // Campaign Manager methods
   async getCampaignCount(): Promise<number> {
     try {
-      const count = await this.campaignManagerContract.getCampaignCount();
-      return count.toNumber();
+      const getTotal = (this.campaignManagerContract as any).getTotalCampaigns || (this.campaignManagerContract as any).getCampaignCount || (this.campaignManagerContract as any).campaignCounter;
+      const count = await getTotal();
+      return Number(count?.toString?.() ?? count);
     } catch (error) {
       console.error('Error getting campaign count:', error);
       throw error;
@@ -432,7 +426,8 @@ export class ContractService {
     if (this.useMockToken) {
       const { mockSqudyToken } = await loadMock();
       const userAddress = await this.signer.getAddress();
-      mockSqudyToken.mintTokens(userAddress, amount);
+      const amt = ethers.utils.parseUnits(amount, 18);
+      mockSqudyToken.mintTokens(userAddress, BigInt(amt.toString()));
     } else {
       toast.error('Test tokens are only available in mock mode');
     }
