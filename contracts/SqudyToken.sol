@@ -5,8 +5,8 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Permit.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
-import "@openzeppelin/contracts/security/Pausable.sol";
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/utils/Pausable.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 import "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol";
 import "@uniswap/v2-core/contracts/interfaces/IUniswapV2Factory.sol";
@@ -34,8 +34,8 @@ contract SqudyToken is ERC20, ERC20Permit, AccessControl, Pausable, ReentrancyGu
     uint256 public constant INITIAL_SUPPLY = 450_000_000_000 * 10**18; // 450B (18dp)
 
     /* ───────────────────────── PancakeSwap/DEX ──────────────────────── */
-    IUniswapV2Router02 public immutable pancakeRouter;
-    address public immutable pancakePair;
+    IUniswapV2Router02 public pancakeRouter;
+    address public pancakePair;
 
     /* ───────────────────────── Trading controls ──────────────────────── */
     bool public tradingEnabled;
@@ -143,18 +143,18 @@ contract SqudyToken is ERC20, ERC20Permit, AccessControl, Pausable, ReentrancyGu
         currentDay = block.timestamp / 1 days;
 
         // Router/pair setup
-        if (_router != address(0)) {
-            pancakeRouter = IUniswapV2Router02(_router);
-            address factory = pancakeRouter.factory();
-            address weth    = pancakeRouter.WETH();
+        address router_ = _router;
+        address pair_ = address(0);
+        if (router_ != address(0)) {
+            address factory = IUniswapV2Router02(router_).factory();
+            address weth    = IUniswapV2Router02(router_).WETH();
             address existing = IUniswapV2Factory(factory).getPair(address(this), weth);
-            pancakePair = existing == address(0)
+            pair_ = existing == address(0)
                 ? IUniswapV2Factory(factory).createPair(address(this), weth)
                 : existing;
-        } else {
-            pancakeRouter = IUniswapV2Router02(address(0));
-            pancakePair   = address(0);
         }
+        pancakeRouter = IUniswapV2Router02(router_);
+        pancakePair   = pair_;
 
         // Exclusions
         _isExcludedFromFee[_initialOwner] = true;
@@ -387,7 +387,7 @@ contract SqudyToken is ERC20, ERC20Permit, AccessControl, Pausable, ReentrancyGu
 
         bool _tradingEnabled = tradingEnabled;
         address _pancakePair = pancakePair;
-        bool apply = _applyRestrictions();
+        bool applyRestrictions = _applyRestrictions();
 
         // Trading gate
         require(
@@ -403,7 +403,7 @@ contract SqudyToken is ERC20, ERC20Permit, AccessControl, Pausable, ReentrancyGu
         if (_pancakePair != address(0) && (from == _pancakePair || to == _pancakePair)) {
             _updateDailyVolume(value);
 
-            if (apply && cooldownBlocks > 0) {
+            if (applyRestrictions && cooldownBlocks > 0) {
                 address actor = (from == _pancakePair) ? to : from;
                 if (!_isExcludedFromFee[actor]) {
                     uint256 last = _lastTxBlock[actor];
@@ -412,18 +412,18 @@ contract SqudyToken is ERC20, ERC20Permit, AccessControl, Pausable, ReentrancyGu
                 }
             }
 
-            if (apply) {
+            if (applyRestrictions) {
                 _enforceAntiSandwich(from, to, value);
             }
 
             // Buy limits
-            if (apply && from == _pancakePair && !_isExcludedFromLimits[to]) {
+            if (applyRestrictions && from == _pancakePair && !_isExcludedFromLimits[to]) {
                 require(value <= maxTxAmount, "Exceeds max tx");
                 require(balanceOf(to) + value <= maxWalletAmount, "Exceeds max wallet");
             }
 
             // Sell limits
-            if (apply && to == _pancakePair && !_isExcludedFromLimits[from]) {
+            if (applyRestrictions && to == _pancakePair && !_isExcludedFromLimits[from]) {
                 _enforceEarlySellLimit(value);
             }
         }
@@ -435,7 +435,7 @@ contract SqudyToken is ERC20, ERC20Permit, AccessControl, Pausable, ReentrancyGu
             bool isBuy  = from == _pancakePair;
 
             if (isSell || (taxBuys && isBuy)) {
-                uint256 feeRate = apply ? _currentFee() : normalFee;
+                uint256 feeRate = applyRestrictions ? _currentFee() : normalFee;
                 if (feeRate > 0) {
                     feeAmount = (value * feeRate) / FEE_DENOM;
                     if (feeAmount > 0) {
@@ -446,7 +446,7 @@ contract SqudyToken is ERC20, ERC20Permit, AccessControl, Pausable, ReentrancyGu
             }
         }
 
-        if (apply && sameBlockGuard && _pancakePair != address(0) && (from == _pancakePair || to == _pancakePair)) {
+        if (applyRestrictions && sameBlockGuard && _pancakePair != address(0) && (from == _pancakePair || to == _pancakePair)) {
             address actor = (from == _pancakePair) ? to : from;
             _lastTradeBlock[actor] = block.number;
         }
@@ -558,8 +558,8 @@ contract SqudyToken is ERC20, ERC20Permit, AccessControl, Pausable, ReentrancyGu
         uint256 walletLimit,
         uint256 dailyVolume
     ) {
-        bool apply = _applyRestrictions();
-        return (tradingEnabled, apply ? _currentFee() : normalFee, maxTxAmount, maxWalletAmount, currentDayVolume);
+        bool applyRestrictions = _applyRestrictions();
+        return (tradingEnabled, applyRestrictions ? _currentFee() : normalFee, maxTxAmount, maxWalletAmount, currentDayVolume);
     }
 
     // Maintained for dashboard compatibility: mints are disabled (false/0)

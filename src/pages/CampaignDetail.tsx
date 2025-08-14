@@ -433,15 +433,29 @@ const CampaignDetail = () => {
   // Derived values - only calculate if localCampaign exists
   const progress = localCampaign ? formatProgress(localCampaign.currentAmount, localCampaign.hardCap) : 0;
   const nowTs = Date.now();
-  const startTs = localCampaign ? new Date(localCampaign.startDate).getTime() : 0;
-  const endTs = localCampaign ? new Date(localCampaign.endDate).getTime() : 0;
+  const toMs = (v: any): number => {
+    try {
+      if (v instanceof Date) return v.getTime();
+      if (typeof v === 'number') return v < 1e12 ? v * 1000 : v;
+      if (typeof v === 'string') {
+        const n = Number(v);
+        if (Number.isFinite(n)) return n < 1e12 ? n * 1000 : n;
+        const d = new Date(v);
+        return d.getTime();
+      }
+      const d = new Date(v);
+      return d.getTime();
+    } catch { return 0; }
+  };
+  const startTs = localCampaign ? toMs(localCampaign.startDate as any) : 0;
+  const endTs = localCampaign ? toMs(localCampaign.endDate as any) : 0;
   const hasStarted = localCampaign ? nowTs >= startTs : false;
   const hasEnded = localCampaign ? nowTs > endTs : false;
   // Gate strictly by time; avoid stale API status keeping join open
   const isJoinOpen = hasStarted && !hasEnded && localCampaign?.status !== 'burned';
   const isFinished = (localCampaign?.status === "finished" || localCampaign?.status === "burned") && hasEnded;
-  const timeLeft = localCampaign ? formatTimeLeft(localCampaign.endDate) : '';
-  const startsIn = localCampaign ? formatTimeLeft(localCampaign.startDate) : '';
+  const timeLeft = localCampaign ? formatTimeLeft(localCampaign.endDate as any) : '';
+  const startsIn = localCampaign ? formatTimeLeft(localCampaign.startDate as any) : '';
   const derivedStatus: string = !hasStarted
     ? 'pending'
     : (localCampaign?.totalBurned && Number(localCampaign.totalBurned) > 0) || localCampaign?.status === 'burned'

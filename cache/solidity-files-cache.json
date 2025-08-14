@@ -1,100 +1,6 @@
 {
   "_format": "hh-sol-cache-2",
   "files": {
-    "/Users/dina/squdy-win-spark/contracts/ISqudyToken.sol": {
-      "lastModificationDate": 1754078045129,
-      "contentHash": "ccf538efec441aea15d809d12c6dbd71",
-      "sourceName": "contracts/ISqudyToken.sol",
-      "solcConfig": {
-        "version": "0.8.20",
-        "settings": {
-          "viaIR": true,
-          "optimizer": {
-            "enabled": true,
-            "runs": 200
-          },
-          "evmVersion": "paris",
-          "outputSelection": {
-            "*": {
-              "*": [
-                "abi",
-                "evm.bytecode",
-                "evm.deployedBytecode",
-                "evm.methodIdentifiers",
-                "metadata",
-                "devdoc",
-                "userdoc",
-                "storageLayout",
-                "evm.gasEstimates"
-              ],
-              "": [
-                "ast"
-              ]
-            }
-          },
-          "metadata": {
-            "useLiteralContent": true
-          }
-        }
-      },
-      "imports": [],
-      "versionPragmas": [
-        "^0.8.20"
-      ],
-      "artifacts": [
-        "ISqudyToken"
-      ]
-    },
-    "/Users/dina/squdy-win-spark/contracts/SqudyCampaignManager.sol": {
-      "lastModificationDate": 1754098639694,
-      "contentHash": "6cb90b1433bda8af04c07a61a8e0e550",
-      "sourceName": "contracts/SqudyCampaignManager.sol",
-      "solcConfig": {
-        "version": "0.8.20",
-        "settings": {
-          "viaIR": true,
-          "optimizer": {
-            "enabled": true,
-            "runs": 200
-          },
-          "evmVersion": "paris",
-          "outputSelection": {
-            "*": {
-              "*": [
-                "abi",
-                "evm.bytecode",
-                "evm.deployedBytecode",
-                "evm.methodIdentifiers",
-                "metadata",
-                "devdoc",
-                "userdoc",
-                "storageLayout",
-                "evm.gasEstimates"
-              ],
-              "": [
-                "ast"
-              ]
-            }
-          },
-          "metadata": {
-            "useLiteralContent": true
-          }
-        }
-      },
-      "imports": [
-        "@openzeppelin/contracts/access/AccessControl.sol",
-        "@openzeppelin/contracts/utils/ReentrancyGuard.sol",
-        "@openzeppelin/contracts/utils/Pausable.sol",
-        "@openzeppelin/contracts/token/ERC20/IERC20.sol",
-        "./ISqudyToken.sol"
-      ],
-      "versionPragmas": [
-        "^0.8.20"
-      ],
-      "artifacts": [
-        "SqudyCampaignManager"
-      ]
-    },
     "/Users/dina/squdy-win-spark/node_modules/@openzeppelin/contracts/access/AccessControl.sol": {
       "lastModificationDate": 1754085886080,
       "contentHash": "d0e2c05f09a3aea7cd299bbd4a435ee2",
@@ -455,145 +361,6 @@
         "IERC165"
       ]
     },
-    "/Users/dina/squdy-win-spark/contracts/SimpleMockSqudyToken.sol": {
-      "lastModificationDate": 1754236249977,
-      "contentHash": "de586e13e73b2dfa8e720666b30d2e7f",
-      "sourceName": "contracts/SimpleMockSqudyToken.sol",
-      "solcConfig": {
-        "version": "0.8.20",
-        "settings": {
-          "viaIR": true,
-          "optimizer": {
-            "enabled": true,
-            "runs": 200
-          },
-          "evmVersion": "paris",
-          "outputSelection": {
-            "*": {
-              "*": [
-                "abi",
-                "evm.bytecode",
-                "evm.deployedBytecode",
-                "evm.methodIdentifiers",
-                "metadata",
-                "devdoc",
-                "userdoc",
-                "storageLayout",
-                "evm.gasEstimates"
-              ],
-              "": [
-                "ast"
-              ]
-            }
-          },
-          "metadata": {
-            "useLiteralContent": true
-          }
-        }
-      },
-      "imports": [],
-      "versionPragmas": [
-        "^0.8.19"
-      ],
-      "artifacts": [
-        "SimpleMockSqudyToken"
-      ]
-    },
-    "/Users/dina/squdy-win-spark/contracts/SimpleSqudyCampaignManager.sol": {
-      "lastModificationDate": 1754235741206,
-      "contentHash": "7cb921b0fced7516d5343d6687658814",
-      "sourceName": "contracts/SimpleSqudyCampaignManager.sol",
-      "solcConfig": {
-        "version": "0.8.20",
-        "settings": {
-          "viaIR": true,
-          "optimizer": {
-            "enabled": true,
-            "runs": 200
-          },
-          "evmVersion": "paris",
-          "outputSelection": {
-            "*": {
-              "*": [
-                "abi",
-                "evm.bytecode",
-                "evm.deployedBytecode",
-                "evm.methodIdentifiers",
-                "metadata",
-                "devdoc",
-                "userdoc",
-                "storageLayout",
-                "evm.gasEstimates"
-              ],
-              "": [
-                "ast"
-              ]
-            }
-          },
-          "metadata": {
-            "useLiteralContent": true
-          }
-        }
-      },
-      "imports": [],
-      "versionPragmas": [
-        "^0.8.19"
-      ],
-      "artifacts": [
-        "IERC20",
-        "SimpleSqudyCampaignManager"
-      ]
-    },
-    "/Users/dina/squdy-win-spark/contracts/AutomatedSqudyCampaignManager.sol": {
-      "lastModificationDate": 1755043683811,
-      "contentHash": "267ca3ab597f8e79947e00e95a53e70a",
-      "sourceName": "contracts/AutomatedSqudyCampaignManager.sol",
-      "solcConfig": {
-        "version": "0.8.20",
-        "settings": {
-          "optimizer": {
-            "enabled": true,
-            "runs": 200
-          },
-          "viaIR": true,
-          "evmVersion": "paris",
-          "outputSelection": {
-            "*": {
-              "*": [
-                "abi",
-                "evm.bytecode",
-                "evm.deployedBytecode",
-                "evm.methodIdentifiers",
-                "metadata",
-                "devdoc",
-                "userdoc",
-                "storageLayout",
-                "evm.gasEstimates"
-              ],
-              "": [
-                "ast"
-              ]
-            }
-          },
-          "metadata": {
-            "useLiteralContent": true
-          }
-        }
-      },
-      "imports": [
-        "@openzeppelin/contracts/access/AccessControl.sol",
-        "@openzeppelin/contracts/utils/ReentrancyGuard.sol",
-        "@openzeppelin/contracts/utils/Pausable.sol",
-        "@openzeppelin/contracts/token/ERC20/IERC20.sol",
-        "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol"
-      ],
-      "versionPragmas": [
-        "^0.8.20"
-      ],
-      "artifacts": [
-        "AutomatedSqudyCampaignManager"
-      ]
-    },
     "/Users/dina/squdy-win-spark/node_modules/@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol": {
       "lastModificationDate": 1754085888420,
       "contentHash": "513778b30d2750f5d2b9b19bbcf748a5",
@@ -829,8 +596,8 @@
       ]
     },
     "/Users/dina/squdy-win-spark/contracts/SqudyToken.sol": {
-      "lastModificationDate": 1754869037823,
-      "contentHash": "9479988998369ce18421bb0d530fff8f",
+      "lastModificationDate": 1755142257017,
+      "contentHash": "f7ee15b736af8dad6a531dd3a3a58f37",
       "sourceName": "contracts/SqudyToken.sol",
       "solcConfig": {
         "version": "0.8.20",
@@ -866,66 +633,20 @@
       },
       "imports": [
         "@openzeppelin/contracts/token/ERC20/ERC20.sol",
-        "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol",
-        "@openzeppelin/contracts/token/ERC20/IERC20.sol",
-        "@openzeppelin/contracts/access/Ownable.sol",
-        "@openzeppelin/contracts/utils/Pausable.sol"
+        "@openzeppelin/contracts/token/ERC20/extensions/ERC20Permit.sol",
+        "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol",
+        "@openzeppelin/contracts/access/AccessControl.sol",
+        "@openzeppelin/contracts/utils/Pausable.sol",
+        "@openzeppelin/contracts/utils/ReentrancyGuard.sol",
+        "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol",
+        "@uniswap/v2-core/contracts/interfaces/IUniswapV2Factory.sol",
+        "@uniswap/v2-core/contracts/interfaces/IUniswapV2Pair.sol"
       ],
       "versionPragmas": [
         "^0.8.20"
       ],
       "artifacts": [
         "SqudyToken"
-      ]
-    },
-    "/Users/dina/squdy-win-spark/contracts/SqudyTokenV2.sol": {
-      "lastModificationDate": 1754867916867,
-      "contentHash": "1ebb81618ca8744391fd6a8adda262b2",
-      "sourceName": "contracts/SqudyTokenV2.sol",
-      "solcConfig": {
-        "version": "0.8.20",
-        "settings": {
-          "optimizer": {
-            "enabled": true,
-            "runs": 200
-          },
-          "viaIR": true,
-          "evmVersion": "paris",
-          "outputSelection": {
-            "*": {
-              "*": [
-                "abi",
-                "evm.bytecode",
-                "evm.deployedBytecode",
-                "evm.methodIdentifiers",
-                "metadata",
-                "devdoc",
-                "userdoc",
-                "storageLayout",
-                "evm.gasEstimates"
-              ],
-              "": [
-                "ast"
-              ]
-            }
-          },
-          "metadata": {
-            "useLiteralContent": true
-          }
-        }
-      },
-      "imports": [
-        "@openzeppelin/contracts/token/ERC20/ERC20.sol",
-        "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol",
-        "@openzeppelin/contracts/access/AccessControl.sol",
-        "@openzeppelin/contracts/utils/Pausable.sol",
-        "@openzeppelin/contracts/token/ERC20/IERC20.sol"
-      ],
-      "versionPragmas": [
-        "^0.8.20"
-      ],
-      "artifacts": [
-        "SqudyTokenV2"
       ]
     },
     "/Users/dina/squdy-win-spark/node_modules/@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol": {
@@ -1749,61 +1470,6 @@
         "StorageSlot"
       ]
     },
-    "/Users/dina/squdy-win-spark/contracts/SqudyTokenReal.sol": {
-      "lastModificationDate": 1755026945891,
-      "contentHash": "1ca3b9067b1445b11c36a6e3f330f86f",
-      "sourceName": "contracts/SqudyTokenReal.sol",
-      "solcConfig": {
-        "version": "0.8.20",
-        "settings": {
-          "optimizer": {
-            "enabled": true,
-            "runs": 200
-          },
-          "viaIR": true,
-          "evmVersion": "paris",
-          "outputSelection": {
-            "*": {
-              "*": [
-                "abi",
-                "evm.bytecode",
-                "evm.deployedBytecode",
-                "evm.methodIdentifiers",
-                "metadata",
-                "devdoc",
-                "userdoc",
-                "storageLayout",
-                "evm.gasEstimates"
-              ],
-              "": [
-                "ast"
-              ]
-            }
-          },
-          "metadata": {
-            "useLiteralContent": true
-          }
-        }
-      },
-      "imports": [
-        "@openzeppelin/contracts/token/ERC20/ERC20.sol",
-        "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol",
-        "@openzeppelin/contracts/token/ERC20/extensions/ERC20Permit.sol",
-        "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol",
-        "@openzeppelin/contracts/access/AccessControl.sol",
-        "@openzeppelin/contracts/utils/Pausable.sol",
-        "@openzeppelin/contracts/utils/ReentrancyGuard.sol",
-        "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol",
-        "@uniswap/v2-core/contracts/interfaces/IUniswapV2Factory.sol",
-        "@uniswap/v2-core/contracts/interfaces/IUniswapV2Pair.sol"
-      ],
-      "versionPragmas": [
-        "^0.8.20"
-      ],
-      "artifacts": [
-        "SqudyToken"
-      ]
-    },
     "/Users/dina/squdy-win-spark/node_modules/@uniswap/v2-core/contracts/interfaces/IUniswapV2Factory.sol": {
       "lastModificationDate": 1755025732438,
       "contentHash": "ec39b5372f4f4d52101b4da561e2aee6",
@@ -1982,10 +1648,10 @@
         "IUniswapV2Router01"
       ]
     },
-    "/Users/dina/squdy-win-spark/contracts/backup.sol": {
-      "lastModificationDate": 1755025298712,
-      "contentHash": "9e22186da5807a082c586c27df8c629e",
-      "sourceName": "contracts/backup.sol",
+    "/Users/dina/squdy-win-spark/contracts/CampaignManager.sol": {
+      "lastModificationDate": 1755140414997,
+      "contentHash": "6c68c0f8a07e8a27dc0e78ce3bd09d27",
+      "sourceName": "contracts/CampaignManager.sol",
       "solcConfig": {
         "version": "0.8.20",
         "settings": {
@@ -2022,7 +1688,8 @@
         "@openzeppelin/contracts/access/AccessControl.sol",
         "@openzeppelin/contracts/utils/ReentrancyGuard.sol",
         "@openzeppelin/contracts/utils/Pausable.sol",
-        "@openzeppelin/contracts/token/ERC20/IERC20.sol"
+        "@openzeppelin/contracts/token/ERC20/IERC20.sol",
+        "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol"
       ],
       "versionPragmas": [
         "^0.8.20"

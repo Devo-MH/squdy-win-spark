@@ -194,10 +194,33 @@ export const getCampaignStatusBadge = (status: Campaign['status']) => {
   }
 };
 
-export const formatTimeLeft = (endDate: string): string => {
-  const now = new Date();
-  const end = new Date(endDate);
-  const diffMs = end.getTime() - now.getTime();
+export const formatTimeLeft = (endDate: string | number | Date): string => {
+  const now = Date.now();
+  // Normalize endDate to a timestamp in ms
+  let endMs: number;
+  try {
+    if (endDate instanceof Date) {
+      endMs = endDate.getTime();
+    } else if (typeof endDate === 'number') {
+      // Heuristic: values < 1e12 are seconds, otherwise ms
+      endMs = endDate < 1e12 ? endDate * 1000 : endDate;
+    } else if (typeof endDate === 'string') {
+      // Try numeric first
+      const n = Number(endDate);
+      if (Number.isFinite(n)) {
+        endMs = n < 1e12 ? n * 1000 : n;
+      } else {
+        const d = new Date(endDate);
+        endMs = d.getTime();
+      }
+    } else {
+      endMs = new Date(endDate as any).getTime();
+    }
+  } catch {
+    endMs = new Date(endDate as any).getTime();
+  }
+
+  const diffMs = endMs - now;
   
   if (diffMs <= 0) {
     return 'Ended';
