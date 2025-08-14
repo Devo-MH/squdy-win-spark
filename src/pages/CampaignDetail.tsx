@@ -873,7 +873,7 @@ const CampaignDetail = () => {
                           variant="outline" 
                           size="lg"
                           className="border-campaign-primary/30 bg-campaign-primary/10 hover:bg-campaign-primary/20 text-campaign-primary"
-                          onClick={() => window.open('https://pancakeswap.finance/', '_blank')}
+                          onClick={() => window.open('https://pancakeswap.finance/swap?outputCurrency=0xbcac31281cd38f0150ea506c001e6d0ba902669f&chain=bsc', '_blank')}
                         >
                           <ExternalLink className="w-5 h-5 mr-2" />
                           Get SQUDY Tokens

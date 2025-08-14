@@ -51,9 +51,8 @@ const Header = () => {
   };
 
   const handleBuySQUDY = () => {
-    toast.info('Redirecting to exchange...');
-    // In a real implementation, this would redirect to PancakeSwap or CEX
-    window.open('https://pancakeswap.finance/', '_blank');
+    toast.info('Redirecting to PancakeSwap...');
+    window.open('https://pancakeswap.finance/swap?outputCurrency=0xbcac31281cd38f0150ea506c001e6d0ba902669f&chain=bsc', '_blank');
   };
 
   const WalletButton = () => {
@@ -123,7 +122,7 @@ const Header = () => {
           {/* Logo */}
           <Link to="/" className="flex items-center">
             <img 
-              src="/squdy-logo.svg" 
+              src="/squdy-logo.png" 
               alt="Squdy Token"
               className="h-12 w-auto"
               onError={(e) => {

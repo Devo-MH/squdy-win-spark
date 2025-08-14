@@ -36,7 +36,7 @@ const HeroSection = () => {
                 <ArrowRight className="w-5 h-5" />
               </Button>
             </Link>
-            <a href="https://pancakeswap.finance" target="_blank" rel="noopener noreferrer">
+            <a href="https://pancakeswap.finance/swap?outputCurrency=0xbcac31281cd38f0150ea506c001e6d0ba902669f&chain=bsc" target="_blank" rel="noopener noreferrer">
               <Button variant="outline" size="lg" className="text-lg px-8 py-6">
                 <ExternalLink className="w-5 h-5" />
                 Buy SQUDY on PancakeSwap

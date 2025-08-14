@@ -7,15 +7,16 @@ const SqudyTokenArtifact = require('../artifacts/contracts/SqudyToken.sol/SqudyT
 const CampaignManagerArtifact = require('../artifacts/contracts/CampaignManager.sol/AutomatedSqudyCampaignManager.json');
 
 async function main() {
-  console.log("🚀 Raw Ethers.js Sepolia Deployment...");
+  console.log("🚀 Raw Ethers.js Deployment...");
   
   try {
     // Setup provider and wallet (ethers v5 syntax)
-    const provider = new ethers.providers.JsonRpcProvider(process.env.SEPOLIA_RPC_URL || process.env.RPC_URL);
+    const rpcUrl = process.env.RPC_URL || process.env.SEPOLIA_RPC_URL || process.env.ETH_RPC_URL;
+    const provider = new ethers.providers.JsonRpcProvider(rpcUrl);
     const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
     
     console.log("👤 Deployer address:", wallet.address);
-    console.log("🌐 RPC URL:", process.env.SEPOLIA_RPC_URL || process.env.RPC_URL);
+    console.log("🌐 RPC URL:", rpcUrl);
     
     // Check balance
     const balance = await provider.getBalance(wallet.address);
@@ -32,45 +33,63 @@ async function main() {
     const network = await provider.getNetwork();
     console.log("🔗 Connected to network:", network.name, "Chain ID:", network.chainId.toString());
     
-    console.log("\n🪙 Deploying SQUDY Token...");
+    // Helper to normalize any address (strips comments)
+    const extractAddress = (val) => {
+      if (!val) return null;
+      const match = String(val).match(/0x[a-fA-F0-9]{40}/);
+      return match ? match[0] : null;
+    };
     
-    // Deploy SQUDY Token (constructor: router, initialOwner)
-    const router = process.env.ROUTER_ADDRESS || ethers.constants.AddressZero;
-    const initialOwner = process.env.INITIAL_OWNER || wallet.address;
-    const tokenFactory = new ethers.ContractFactory(
-      SqudyTokenArtifact.abi,
-      SqudyTokenArtifact.bytecode,
-      wallet
-    );
+    // If an existing token is provided, skip token deployment
+    const existingToken = extractAddress(process.env.EXISTING_TOKEN_ADDRESS || process.env.SQUDY_TOKEN_ADDRESS);
+    let tokenAddress = null;
+    let tokenReceipt = null;
+    
+    if (existingToken) {
+      tokenAddress = existingToken;
+      console.log("\n🪙 Using existing SQUDY Token:", tokenAddress);
+    } else {
+      console.log("\n🪙 Deploying SQUDY Token...");
+      
+      // Deploy SQUDY Token (constructor: router, initialOwner)
+      const router = extractAddress(process.env.ROUTER_ADDRESS) || ethers.constants.AddressZero;
+      const initialOwner = extractAddress(process.env.INITIAL_OWNER) || wallet.address;
+      const tokenFactory = new ethers.ContractFactory(
+        SqudyTokenArtifact.abi,
+        SqudyTokenArtifact.bytecode,
+        wallet
+      );
     
     // Pre-calc gas and cost to avoid sending tx that will fail due to funds
     const feeData = await provider.getFeeData();
+    const isEip1559 = Boolean(feeData.maxFeePerGas);
+    const legacyGasPrice = feeData.gasPrice || ethers.utils.parseUnits("3", "gwei");
     const maxPriorityFeePerGas = feeData.maxPriorityFeePerGas || ethers.utils.parseUnits("1", "gwei");
-    const maxFeePerGas = feeData.maxFeePerGas || feeData.gasPrice || ethers.utils.parseUnits("20", "gwei");
-    const tokenDeployTx = tokenFactory.getDeployTransaction(router, initialOwner);
-    const estimatedGasToken = await provider.estimateGas({ ...tokenDeployTx, from: wallet.address });
-    const estCostToken = estimatedGasToken.mul(maxFeePerGas);
-    console.log("⛽ Token gas estimate:", estimatedGasToken.toString(), "units");
-    console.log("⛽ maxFeePerGas:", ethers.utils.formatUnits(maxFeePerGas, "gwei"), "gwei");
-    console.log("💵 Estimated token max cost:", ethers.utils.formatEther(estCostToken), "ETH");
-    
-    const requiredWithBuffer = estCostToken.mul(110).div(100);
-    if (balance.lt(requiredWithBuffer)) {
-      console.log("❌ Not enough ETH for token deployment. Need at least ~", ethers.utils.formatEther(requiredWithBuffer), "ETH incl. 10% buffer.");
-      return;
+    const maxFeePerGas = feeData.maxFeePerGas || legacyGasPrice;
+      const tokenDeployTx = tokenFactory.getDeployTransaction(router, initialOwner);
+      const estimatedGasToken = await provider.estimateGas({ ...tokenDeployTx, from: wallet.address });
+      const estCostToken = estimatedGasToken.mul(isEip1559 ? maxFeePerGas : legacyGasPrice);
+      console.log("⛽ Token gas estimate:", estimatedGasToken.toString(), "units");
+      console.log("⛽ maxFeePerGas:", ethers.utils.formatUnits(maxFeePerGas, "gwei"), "gwei");
+      console.log("💵 Estimated token max cost:", ethers.utils.formatEther(estCostToken), "ETH");
+      
+      const requiredWithBuffer = estCostToken.mul(110).div(100);
+      if (balance.lt(requiredWithBuffer)) {
+        console.log("❌ Not enough ETH for token deployment. Need at least ~", ethers.utils.formatEther(requiredWithBuffer), "ETH incl. 10% buffer.");
+        return;
+      }
+      
+      const tokenOverrides = isEip1559
+        ? { maxFeePerGas, maxPriorityFeePerGas, gasLimit: estimatedGasToken.mul(105).div(100) }
+        : { gasPrice: legacyGasPrice, gasLimit: estimatedGasToken.mul(105).div(100) };
+      const squdyToken = await tokenFactory.deploy(router, initialOwner, tokenOverrides);
+      console.log("⏳ Token deployment transaction sent:", squdyToken.deployTransaction.hash);
+      
+      tokenReceipt = await squdyToken.deployTransaction.wait();
+      tokenAddress = squdyToken.address;
+      console.log("✅ SQUDY Token deployed to:", tokenAddress);
+      console.log("📦 Block number:", tokenReceipt.blockNumber);
     }
-    
-    const squdyToken = await tokenFactory.deploy(router, initialOwner, {
-      maxFeePerGas,
-      maxPriorityFeePerGas,
-      gasLimit: estimatedGasToken.mul(105).div(100),
-    });
-    console.log("⏳ Token deployment transaction sent:", squdyToken.deployTransaction.hash);
-    
-    const tokenReceipt = await squdyToken.deployTransaction.wait();
-    const tokenAddress = squdyToken.address;
-    console.log("✅ SQUDY Token deployed to:", tokenAddress);
-    console.log("📦 Block number:", tokenReceipt.blockNumber);
     
     console.log("\n🎯 Deploying Campaign Manager...");
     
@@ -83,8 +102,13 @@ async function main() {
     
     // Estimate manager deployment
     const managerDeployTx = managerFactory.getDeployTransaction(tokenAddress);
+    const feeData2 = await provider.getFeeData();
+    const isEip1559_2 = Boolean(feeData2.maxFeePerGas);
+    const legacyGasPrice2 = feeData2.gasPrice || ethers.utils.parseUnits("3", "gwei");
+    const maxPriorityFeePerGas2 = feeData2.maxPriorityFeePerGas || ethers.utils.parseUnits("1", "gwei");
+    const maxFeePerGas2 = feeData2.maxFeePerGas || legacyGasPrice2;
     const estimatedGasMgr = await provider.estimateGas({ ...managerDeployTx, from: wallet.address });
-    const estCostMgr = estimatedGasMgr.mul(maxFeePerGas);
+    const estCostMgr = estimatedGasMgr.mul(isEip1559_2 ? maxFeePerGas2 : legacyGasPrice2);
     console.log("⛽ Manager gas estimate:", estimatedGasMgr.toString(), "units");
     console.log("💵 Estimated manager max cost:", ethers.utils.formatEther(estCostMgr), "ETH");
     
@@ -96,11 +120,10 @@ async function main() {
       return;
     }
     
-    const campaignManager = await managerFactory.deploy(tokenAddress, {
-      maxFeePerGas,
-      maxPriorityFeePerGas,
-      gasLimit: estimatedGasMgr.mul(105).div(100),
-    });
+    const mgrOverrides = isEip1559_2
+      ? { maxFeePerGas: maxFeePerGas2, maxPriorityFeePerGas: maxPriorityFeePerGas2, gasLimit: estimatedGasMgr.mul(105).div(100) }
+      : { gasPrice: legacyGasPrice2, gasLimit: estimatedGasMgr.mul(105).div(100) };
+    const campaignManager = await managerFactory.deploy(tokenAddress, mgrOverrides);
     console.log("⏳ Manager deployment transaction sent:", campaignManager.deployTransaction.hash);
     
     const managerReceipt = await campaignManager.deployTransaction.wait();
@@ -110,15 +133,15 @@ async function main() {
     
     // Save deployment info
     const deploymentInfo = {
-      network: "sepolia",
-      chainId: 11155111,
+      network: network.name,
+      chainId: Number(network.chainId),
       deployer: wallet.address,
       timestamp: new Date().toISOString(),
       contracts: {
-        SqudyToken: {
+         SqudyToken: {
           address: tokenAddress,
-          txHash: tokenReceipt.transactionHash || tokenReceipt.hash,
-          blockNumber: tokenReceipt.blockNumber
+          txHash: tokenReceipt ? (tokenReceipt.transactionHash || tokenReceipt.hash) : null,
+          blockNumber: tokenReceipt ? tokenReceipt.blockNumber : null
         },
         CampaignManager: {
           address: managerAddress,
@@ -128,20 +151,29 @@ async function main() {
       }
     };
     
-    fs.writeFileSync(
-      'sepolia-deployment.json',
-      JSON.stringify(deploymentInfo, null, 2)
-    );
+    const outFile = `deployment-${deploymentInfo.chainId}.json`;
+    fs.writeFileSync(outFile, JSON.stringify(deploymentInfo, null, 2));
     
     console.log("\n🎉 DEPLOYMENT SUCCESSFUL!");
     console.log("========================");
     console.log("🪙 SQUDY Token:", tokenAddress);
     console.log("🎯 Campaign Manager:", managerAddress);
-    console.log("📄 Deployment saved to: sepolia-deployment.json");
+    console.log("📄 Deployment saved to:", outFile);
     console.log("");
-    console.log("🌐 View on Etherscan:");
-    console.log(`   Token: https://sepolia.etherscan.io/address/${tokenAddress}`);
-    console.log(`   Manager: https://sepolia.etherscan.io/address/${managerAddress}`);
+    const explorer = (() => {
+      switch (Number(network.chainId)) {
+        case 56: return 'https://bscscan.com/address/';
+        case 97: return 'https://testnet.bscscan.com/address/';
+        case 1: return 'https://etherscan.io/address/';
+        case 11155111: return 'https://sepolia.etherscan.io/address/';
+        default: return '';
+      }
+    })();
+    if (explorer) {
+      console.log("🌐 View on Explorer:");
+      console.log(`   Token: ${explorer}${tokenAddress}`);
+      console.log(`   Manager: ${explorer}${managerAddress}`);
+    }
     console.log("");
     console.log("🔗 NEXT STEPS:");
     console.log("1. Grant admin/operator roles where needed");

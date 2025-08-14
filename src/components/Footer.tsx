@@ -35,7 +35,7 @@ const Footer = () => {
                 Admin Panel
               </Link>
               <a 
-                href="https://pancakeswap.finance/" 
+                href="https://pancakeswap.finance/swap?outputCurrency=0xbcac31281cd38f0150ea506c001e6d0ba902669f&chain=bsc" 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="block text-muted-foreground hover:text-primary transition-colors"
@@ -66,32 +66,25 @@ const Footer = () => {
             <h3 className="font-semibold text-foreground">Community</h3>
             <div className="flex space-x-4">
               <a 
-                href="#" 
+                href="https://x.com/SqudyToken" 
                 className="text-muted-foreground hover:text-primary transition-colors"
                 aria-label="Twitter"
               >
                 <Twitter className="w-5 h-5" />
               </a>
               <a 
-                href="#" 
+                href="https://t.me/SqudyToken" 
                 className="text-muted-foreground hover:text-primary transition-colors"
                 aria-label="Telegram"
               >
                 <MessageCircle className="w-5 h-5" />
               </a>
               <a 
-                href="#" 
+                href="https://docs.squdy.fun" 
                 className="text-muted-foreground hover:text-primary transition-colors"
                 aria-label="Medium"
               >
                 <BookOpen className="w-5 h-5" />
-              </a>
-              <a 
-                href="#" 
-                className="text-muted-foreground hover:text-primary transition-colors"
-                aria-label="Discord"
-              >
-                <Github className="w-5 h-5" />
               </a>
             </div>
           </div>
@@ -99,7 +92,7 @@ const Footer = () => {
 
         <div className="border-t border-primary/20 mt-8 pt-8 text-center">
           <p className="text-muted-foreground text-sm">
-            © 2024 Squdy Platform. All rights reserved. Built for the DeFi community.
+            © 2025 Squdy Platform. All rights reserved. Built for the Meme community.
           </p>
         </div>
       </div>

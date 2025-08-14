@@ -1,0 +1,18 @@
+{
+  "network": "bnb",
+  "chainId": 56,
+  "deployer": "0x9d7C3125a54A840776C70cD086bA9bA7ff4cF56b",
+  "timestamp": "2025-08-14T18:43:25.519Z",
+  "contracts": {
+    "SqudyToken": {
+      "address": "0xBcAC31281CD38f0150EA506C001e6d0Ba902669F",
+      "txHash": null,
+      "blockNumber": null
+    },
+    "CampaignManager": {
+      "address": "0xdEa03492585a04E35fc50F2deC17a0DeE4Cd2417",
+      "txHash": "0xc8f23239ed2cbc01091b108779e32e1a8250bd29cece889e8f7ddbccd82c221e",
+      "blockNumber": 57598516
+    }
+  }
+}
