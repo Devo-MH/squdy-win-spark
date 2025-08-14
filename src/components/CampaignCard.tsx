@@ -181,19 +181,21 @@ const CampaignCard = ({ campaign }: CampaignCardProps) => {
       </CardHeader>
 
       <CardContent className="p-6 space-y-6">
-        {/* Progress */}
-        <div className="space-y-2">
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-muted-foreground">Progress</span>
-            <span className="text-foreground font-medium">
-              {Number(localCampaign.currentAmount).toLocaleString()} / {Number(localCampaign.hardCap).toLocaleString()} SQUDY
-            </span>
+        {/* Progress - hidden when finished or burned */}
+        {!(derivedStatus === 'finished' || derivedStatus === 'burned') && (
+          <div className="space-y-2">
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">Progress</span>
+              <span className="text-foreground font-medium">
+                {Number(localCampaign.currentAmount).toLocaleString()} / {Number(localCampaign.hardCap).toLocaleString()} SQUDY
+              </span>
+            </div>
+            <Progress value={progress} className="h-2" />
+            <div className="text-xs text-muted-foreground text-center">
+              {progress.toFixed(1)}% of goal reached
+            </div>
           </div>
-          <Progress value={progress} className="h-2" />
-          <div className="text-xs text-muted-foreground text-center">
-            {progress.toFixed(1)}% of goal reached
-          </div>
-        </div>
+        )}
 
         {/* Stats */}
         <div className="grid grid-cols-2 gap-3 text-sm">
