@@ -490,7 +490,7 @@ const CampaignDetail = () => {
     ? 'pending'
     : (localCampaign?.totalBurned && Number(localCampaign.totalBurned) > 0) || localCampaign?.status === 'burned'
       ? 'burned'
-      : (hasEnded || localCampaign?.status === 'finished')
+      : hasEnded
         ? 'finished'
         : 'active';
   const ticketsFromStake = calculateTickets(stakeAmount);
@@ -626,10 +626,10 @@ const CampaignDetail = () => {
                       return (
                         <li
                           key={idx}
-                          className="group px-4 py-2 rounded-md bg-campaign-success/10 border border-campaign-success/30 hover:border-campaign-success/60 hover:bg-campaign-success/15 transition-all duration-300 shadow-sm backdrop-blur-sm max-w-full"
+                          className="group px-4 py-2 rounded-md bg-campaign-success/10 border border-campaign-success/30 hover:border-campaign-success/60 hover:bg-campaign-success/15 transition-all duration-300 shadow-sm backdrop-blur-sm max-w-full whitespace-nowrap text-center overflow-x-auto"
                           style={{ animationDelay: `${idx * 80}ms` }}
                         >
-                          <button className="text-sm font-medium text-campaign-success hover:text-white/90 transition-colors break-all text-left" onClick={() => copyToClipboard(addr)}>
+                          <button className="text-sm font-medium text-campaign-success hover:text-white/90 transition-colors whitespace-nowrap" onClick={() => copyToClipboard(addr)}>
                             {addr}
                           </button>
                           {w.prizeName ? <span className="ml-2 text-xs text-muted-foreground">({w.prizeName})</span> : null}
@@ -642,10 +642,10 @@ const CampaignDetail = () => {
                     {(localCampaign!.winners as any[]).map((addr: any, idx: number) => (
                       <li
                         key={idx}
-                        className="group px-4 py-2 rounded-md bg-campaign-success/10 border border-campaign-success/30 hover:border-campaign-success/60 hover:bg-campaign-success/15 transition-all duration-300 shadow-sm backdrop-blur-sm max-w-full"
+                        className="group px-4 py-2 rounded-md bg-campaign-success/10 border border-campaign-success/30 hover:border-campaign-success/60 hover:bg-campaign-success/15 transition-all duration-300 shadow-sm backdrop-blur-sm max-w-full whitespace-nowrap text-center overflow-x-auto"
                         style={{ animationDelay: `${idx * 80}ms` }}
                       >
-                        <button className="text-sm font-medium text-campaign-success hover:text-white/90 transition-colors break-all text-left" onClick={() => copyToClipboard(String(addr))}>
+                        <button className="text-sm font-medium text-campaign-success hover:text-white/90 transition-colors whitespace-nowrap" onClick={() => copyToClipboard(String(addr))}>
                           {String(addr)}
                         </button>
                       </li>

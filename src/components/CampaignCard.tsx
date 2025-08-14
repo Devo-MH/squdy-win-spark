@@ -58,21 +58,26 @@ const CampaignCard = ({ campaign }: CampaignCardProps) => {
         };
          const zeroAddress = '0x0000000000000000000000000000000000000000';
          const winners = Array.isArray(r.winners) ? (r.winners as string[]).filter((w: string)=> (w||'').toLowerCase()!==zeroAddress) : (localCampaign as any).winners;
-         setLocalCampaign(prev => ({
+        setLocalCampaign(prev => ({
           ...prev,
           currentAmount: fmt(r.currentAmount ?? prev.currentAmount),
           participantCount: Math.max(0, toNum(r.participantCount ?? prev.participantCount)),
           hardCap: fmt(r.hardCap ?? prev.hardCap),
           softCap: fmt(r.softCap ?? prev.softCap),
-           winners,
+          winners,
+          // Sync end/start time from on-chain to keep cards up to date after admin changes
+          startDate: (() => { try { const n = Number((r as any).startDate?.toString?.() ?? (r as any).startDate ?? 0); return new Date(n < 1e12 ? n * 1000 : n); } catch { return prev.startDate; } })(),
+          endDate: (() => { try { const n = Number((r as any).endDate?.toString?.() ?? (r as any).endDate ?? 0); return new Date(n < 1e12 ? n * 1000 : n); } catch { return prev.endDate; } })(),
           tokensAreBurned: Boolean(r.tokensAreBurned ?? (prev as any).tokensAreBurned),
           totalBurned: fmt(r.totalBurned ?? (prev as any).totalBurned),
         }));
       } catch {}
     };
-    const handle = setInterval(run, 25000);
+    const handle = setInterval(run, 15000);
     run();
-    return () => { stop = true; clearInterval(handle); };
+    const focusListener = () => run();
+    window.addEventListener('focus', focusListener);
+    return () => { stop = true; clearInterval(handle); window.removeEventListener('focus', focusListener); };
   }, [campaign.contractId]);
   
   const progress = formatProgress(localCampaign.currentAmount, localCampaign.hardCap);
@@ -89,7 +94,7 @@ const CampaignCard = ({ campaign }: CampaignCardProps) => {
   const derivedStatus = (() => {
     if (!started) return 'pending';
     if (burnedFlag) return 'burned';
-    if (ended) return winnersExist ? 'finished' : 'ended';
+    if (ended) return 'finished';
     return 'active';
   })();
   const isActive = derivedStatus === 'active';

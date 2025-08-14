@@ -2,8 +2,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import HeroSection from "@/components/HeroSection";
 import CampaignCard from "@/components/CampaignCard";
-import { MockTokenBanner } from "@/components/MockTokenBanner";
-import { DebugPanel } from "@/components/DebugPanel";
+// Removed debug banners in production
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -101,10 +100,7 @@ const HomePage = () => {
       {/* Hero Section - only show on homepage */}
       {!isOnCampaignsPage && <HeroSection />}
 
-      {/* Mock Token Banner */}
-      <div className="container mx-auto px-4 py-4">
-        <MockTokenBanner contractService={contractService} />
-      </div>
+      {/* Mock Token Banner removed */}
 
       {/* Active Campaigns Section */}
       <section id="campaigns-section" className="py-20 bg-background">
@@ -292,7 +288,6 @@ const HomePage = () => {
       )}
 
       <Footer />
-      <DebugPanel />
     </div>
   );
 };
