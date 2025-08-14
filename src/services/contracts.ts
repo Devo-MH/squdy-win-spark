@@ -1114,13 +1114,33 @@ export class ContractService {
   }
 
   private parseParticipantData(participant: any): any {
+    const toNum = (v: any): number => {
+      try {
+        if (v == null) return 0;
+        if (typeof v === 'number') return v;
+        if (typeof v === 'string') return Number(v) || 0;
+        if (typeof v.toNumber === 'function') return v.toNumber();
+        return Number(v) || 0;
+      } catch { return 0; }
+    };
+    const fmt18 = (v: any): string => {
+      try { return ethers.utils.formatUnits(v ?? '0'); } catch { return String(v ?? '0'); }
+    };
+    const toDate = (v: any): Date => {
+      try {
+        if (v == null) return new Date(0);
+        const n = toNum(v);
+        // Treat small numbers as seconds
+        return new Date((n < 1e12 ? n * 1000 : n));
+      } catch { return new Date(0); }
+    };
     return {
-      stakedAmount: ethers.utils.formatUnits(participant.stakedAmount),
-      ticketCount: participant.ticketCount.toNumber(),
-      hasCompletedSocial: participant.hasCompletedSocial,
-      isWinner: participant.isWinner,
-      prizeIndex: participant.prizeIndex.toNumber(),
-      joinedAt: new Date(participant.joinedAt.toNumber() * 1000),
+      stakedAmount: fmt18(participant?.stakedAmount ?? 0),
+      ticketCount: toNum(participant?.ticketCount ?? 0),
+      hasCompletedSocial: Boolean(participant?.hasCompletedSocial),
+      isWinner: Boolean(participant?.isWinner),
+      prizeIndex: toNum(participant?.prizeIndex ?? 0),
+      joinedAt: toDate(participant?.joinedAt ?? 0),
     };
   }
 
