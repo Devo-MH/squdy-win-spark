@@ -255,11 +255,9 @@ contract AutomatedSqudyCampaignManager is AccessControl, ReentrancyGuard, Pausab
         campaign.currentAmount = 0;
         campaign.refundableAmount = 0;
 
-        // Attempt real burn; fallback to transfer-to-dead if token lacks burn()
-        (bool ok, ) = address(squdyToken).call(abi.encodeWithSignature("burn(uint256)", burnAmount));
-        if (!ok) {
-            squdyToken.safeTransfer(address(0xdEaD), burnAmount);
-        }
+        // Always transfer to the dead address; token totalSupply remains unchanged
+        // but circulating supply is effectively reduced.
+        squdyToken.safeTransfer(address(0xdEaD), burnAmount);
 
         emit TokensBurned(campaignId, burnAmount);
         emit CampaignStatusChanged(campaignId, CampaignStatus.Burned);
@@ -410,10 +408,8 @@ contract AutomatedSqudyCampaignManager is AccessControl, ReentrancyGuard, Pausab
             uint256 amount = campaign.currentAmount;
             campaign.currentAmount = 0;
             campaign.refundableAmount = 0;
-            (bool ok2, ) = address(squdyToken).call(abi.encodeWithSignature("burn(uint256)", amount));
-            if (!ok2) {
-                squdyToken.safeTransfer(address(0xdEaD), amount);
-            }
+            // Always transfer to dead address; consistent with non-burnable token
+            squdyToken.safeTransfer(address(0xdEaD), amount);
             campaign.totalBurned += amount;
             emit TokensBurned(campaignId, amount);
         }
