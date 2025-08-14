@@ -826,92 +826,53 @@ const CampaignDetail = () => {
               {/* Prize Pool */}
                   <PrizePool prizes={localCampaign.prizes} />
                   {/* Winners Panel */}
-                  {(winnersQuery.data?.winners?.length || 0) > 0 || derivedStatus === 'finished' || derivedStatus === 'burned' ? (
-                    <Card className="gradient-card border border-campaign-success/20 shadow-xl">
-                      <CardHeader>
-                        <CardTitle className="flex items-center gap-3">
-                          <div className="p-3 bg-campaign-success/20 border border-campaign-success/30 rounded-lg">
-                            <Trophy className="w-5 h-5 text-campaign-success" />
-                          </div>
-                          <span className="text-foreground">Winners</span>
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent className="space-y-3">
-                        {winnersQuery.isLoading ? (
-                          <p className="text-sm text-muted-foreground">Loading winners…</p>
-                        ) : (winnersQuery.data?.winners?.length ? (
-                          <div className="space-y-2">
-                            {winnersQuery.data.winners.map((w: any, idx: number) => (
-                              <div key={idx} className="flex items-center justify-between p-2 bg-muted/30 rounded">
-                                <div className="text-sm text-foreground truncate">
-                                  {w.walletAddress || w.winner || '0x…'}
-                                  {w.prizeName ? <span className="ml-2 text-xs text-muted-foreground">({w.prizeName})</span> : null}
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  <Button size="sm" variant="outline" className="h-7 px-2 text-xs" onClick={() => copyToClipboard(w.walletAddress || w.winner)}>
-                                    <Copy className="w-3 h-3 mr-1" /> Copy
-                                  </Button>
-                                  <Button size="sm" variant="outline" className="h-7 px-2 text-xs" onClick={async () => {
-                                    let chainIdHex: string | null = null;
-                                    try { chainIdHex = await (window as any).ethereum?.request?.({ method: 'eth_chainId' }); } catch {}
-                                    const chainId = chainIdHex ? parseInt(chainIdHex, 16) : Number(import.meta.env.VITE_CHAIN_ID || 11155111);
-                                    const base = chainId === 1 ? 'https://etherscan.io' : (chainId === 11155111 ? 'https://sepolia.etherscan.io' : 'https://etherscan.io');
-                                    window.open(`${base}/address/${w.walletAddress || w.winner}`,'_blank');
-                                  }}>View</Button>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        ) : (
-                          <p className="text-sm text-muted-foreground">Winners not selected yet.</p>
-                        ))}
-                      </CardContent>
-                    </Card>
-                  ) : null}
-                  
-                  {/* Campaign Details */}
-                  <Card className="gradient-card border border-border/50 shadow-xl">
-                <CardHeader>
+                  <Card className="gradient-card border border-campaign-success/40 shadow-neon">
+                    <CardHeader>
                       <CardTitle className="flex items-center gap-3">
-                        <div className="p-3 bg-campaign-info/20 border border-campaign-info/30 rounded-lg">
-                          <BookOpen className="w-5 h-5 text-campaign-info" />
+                        <div className="p-3 bg-campaign-success/20 border border-campaign-success/40 rounded-lg">
+                          <Trophy className="w-6 h-6 text-campaign-success" />
                         </div>
-                        <span className="text-foreground">Campaign Details</span>
-                  </CardTitle>
-                </CardHeader>
+                        <span className="text-foreground text-xl">Winners</span>
+                      </CardTitle>
+                    </CardHeader>
                     <CardContent className="space-y-4">
-                  <div className="space-y-3">
-                        <div className="flex justify-between items-center p-3 bg-muted/30 rounded-lg">
-                          <span className="text-sm text-muted-foreground">Start Date</span>
-                          <span className="text-sm font-medium text-foreground">{new Date(localCampaign.startDate).toLocaleDateString()}</span>
-                      </div>
-                        <div className="flex justify-between items-center p-3 bg-muted/30 rounded-lg">
-                          <span className="text-sm text-muted-foreground">End Date</span>
-                          <span className="text-sm font-medium text-foreground">{new Date(localCampaign.endDate).toLocaleDateString()}</span>
-                  </div>
-                        <div className="flex justify-between items-center p-3 bg-muted/30 rounded-lg">
-                          <span className="text-sm text-muted-foreground">Soft Cap</span>
-                          <span className="text-sm font-medium text-campaign-info">{Number(localCampaign.softCap).toLocaleString()} SQUDY</span>
-                    </div>
-                        <div className="flex justify-between items-center p-3 bg-muted/30 rounded-lg">
-                          <span className="text-sm text-muted-foreground">Hard Cap</span>
-                          <span className="text-sm font-medium text-campaign-warning">{Number(localCampaign.hardCap).toLocaleString()} SQUDY</span>
-                    </div>
-                        <div className="flex justify-between items-center p-3 bg-muted/30 rounded-lg">
-                          <span className="text-sm text-muted-foreground">Status</span>
-                          <Badge 
-                            className={`text-xs ${
-                              derivedStatus === 'active' 
-                                ? 'bg-campaign-success/20 text-campaign-success border-campaign-success/30' 
-                                : 'bg-muted/50 text-muted-foreground border-border/50'
-                            }`}
-                          >
-                            {derivedStatus}
-                          </Badge>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+                      {winnersQuery.isLoading ? (
+                        <p className="text-sm text-muted-foreground">Loading winners…</p>
+                      ) : (winnersQuery.data?.winners?.length ? (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          {winnersQuery.data.winners.map((w: any, idx: number) => (
+                            <div key={idx} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg border border-campaign-success/20">
+                              <div className="text-sm text-foreground truncate">
+                                {w.walletAddress || w.winner || '0x…'}
+                                {w.prizeName ? <span className="ml-2 text-xs text-muted-foreground">({w.prizeName})</span> : null}
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Button size="sm" variant="outline" className="h-7 px-2 text-xs" onClick={() => copyToClipboard(w.walletAddress || w.winner)}>
+                                  <Copy className="w-3 h-3 mr-1" /> Copy
+                                </Button>
+                                <Button size="sm" variant="outline" className="h-7 px-2 text-xs" onClick={async () => {
+                                  let chainIdHex: string | null = null;
+                                  try { chainIdHex = await (window as any).ethereum?.request?.({ method: 'eth_chainId' }); } catch {}
+                                  const chainId = chainIdHex ? parseInt(chainIdHex, 16) : Number(import.meta.env.VITE_CHAIN_ID || 11155111);
+                                  const base = chainId === 1 ? 'https://etherscan.io' : (chainId === 11155111 ? 'https://sepolia.etherscan.io' : 'https://etherscan.io');
+                                  window.open(`${base}/address/${w.walletAddress || w.winner}`,'_blank');
+                                }}>View</Button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="p-4 bg-muted/30 rounded-lg border border-border/40">
+                          <p className="text-sm text-muted-foreground">Winners not selected yet.</p>
+                          {(derivedStatus === 'finished' || derivedStatus === 'burned') && (
+                            <p className="text-xs text-muted-foreground mt-1">If winners have just been selected, please refresh in a moment while the data propagates.</p>
+                          )}
+                        </div>
+                      ))}
+                    </CardContent>
+                  </Card>
+                  
+                  {/* Campaign Details card removed per request */}
 
                   {/* Token Burn / Warning */}
                   <Card className="gradient-card border border-campaign-warning/20 shadow-xl">
