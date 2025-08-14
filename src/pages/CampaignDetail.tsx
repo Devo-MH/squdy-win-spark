@@ -605,51 +605,58 @@ const CampaignDetail = () => {
           {/* Winners banner moved here to top */}
           <div className="mb-8">
             {derivedStatus !== 'active' && ((winnersQuery.data?.winners?.length || 0) > 0 || (Array.isArray(localCampaign?.winners) && (localCampaign!.winners as any[]).length > 0)) ? (
-            <Card className="gradient-card border border-campaign-success/40 shadow-neon animate-in fade-in slide-in-from-top-4 duration-500">
+            <Card className="gradient-card border border-campaign-success/40 shadow-neon animate-in fade-in slide-in-from-top-4 duration-500 max-w-4xl mx-auto text-center">
               <CardHeader>
-                <CardTitle className="flex items-center gap-3">
-                  <div className="p-3 bg-campaign-success/20 border border-campaign-success/40 rounded-lg animate-pulse">
-                    <Trophy className="w-6 h-6 text-campaign-success" />
+                <CardTitle>
+                  <div className="flex items-center justify-center gap-3">
+                    <div className="p-3 bg-campaign-success/20 border border-campaign-success/40 rounded-lg animate-pulse">
+                      <Trophy className="w-6 h-6 text-campaign-success" />
+                    </div>
+                    <span className="text-foreground text-2xl font-bold tracking-wide">Winners</span>
                   </div>
-                  <span className="text-foreground text-xl">Winners</span>
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-5">
                 {winnersQuery.isLoading ? (
                   <p className="text-sm text-muted-foreground">Loading winners…</p>
                 ) : (winnersQuery.data?.winners?.length ? (
-                  <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                    {winnersQuery.data.winners.map((w: any, idx: number) => (
-                      <li key={idx} className="group p-3 rounded-lg bg-muted/30 border border-campaign-success/20 hover:border-campaign-success/40 transition-all duration-300 hover:translate-y-[-2px]">
-                        <div className="flex items-center justify-between">
-                          <div className="text-sm text-foreground truncate">
-                            {w.walletAddress || w.winner || '0x…'}
-                            {w.prizeName ? <span className="ml-2 text-xs text-muted-foreground">({w.prizeName})</span> : null}
-                          </div>
-                          <button className="text-xs opacity-70 hover:opacity-100 transition-opacity" onClick={() => copyToClipboard(w.walletAddress || w.winner)}>Copy</button>
-                        </div>
-                      </li>
-                    ))}
+                  <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 place-items-center">
+                    {winnersQuery.data.winners.map((w: any, idx: number) => {
+                      const addr = w.walletAddress || w.winner || '0x…';
+                      return (
+                        <li
+                          key={idx}
+                          className="group px-4 py-2 rounded-full bg-campaign-success/10 border border-campaign-success/30 hover:border-campaign-success/60 hover:bg-campaign-success/15 transition-all duration-300 shadow-sm backdrop-blur-sm"
+                          style={{ animationDelay: `${idx * 80}ms` }}
+                        >
+                          <button className="text-sm font-medium text-campaign-success hover:text-white/90 transition-colors" onClick={() => copyToClipboard(addr)}>
+                            {addr.slice(0, 6)}...{addr.slice(-4)}
+                          </button>
+                          {w.prizeName ? <span className="ml-2 text-xs text-muted-foreground">({w.prizeName})</span> : null}
+                        </li>
+                      );
+                    })}
                   </ul>
                 ) : (
-                  <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 place-items-center">
                     {(localCampaign!.winners as any[]).map((addr: any, idx: number) => (
-                      <li key={idx} className="group p-3 rounded-lg bg-muted/30 border border-campaign-success/20 hover:border-campaign-success/40 transition-all duration-300 hover:translate-y-[-2px]">
-                        <div className="flex items-center justify-between">
-                          <div className="text-sm text-foreground truncate">{String(addr)}</div>
-                          <button className="text-xs opacity-70 hover:opacity-100 transition-opacity" onClick={() => copyToClipboard(String(addr))}>Copy</button>
-                        </div>
+                      <li
+                        key={idx}
+                        className="group px-4 py-2 rounded-full bg-campaign-success/10 border border-campaign-success/30 hover:border-campaign-success/60 hover:bg-campaign-success/15 transition-all duration-300 shadow-sm backdrop-blur-sm"
+                        style={{ animationDelay: `${idx * 80}ms` }}
+                      >
+                        <button className="text-sm font-medium text-campaign-success hover:text-white/90 transition-colors" onClick={() => copyToClipboard(String(addr))}>
+                          {String(addr).slice(0, 6)}...{String(addr).slice(-4)}
+                        </button>
                       </li>
                     ))}
                   </ul>
                 ))}
                 {/* Celebration confetti */}
-                <div className="pointer-events-none select-none">
-                  <div className="animate-in zoom-in duration-700 origin-center">
-                    <span className="text-3xl">🎉</span>
-                    <span className="text-3xl ml-2">🎊</span>
-                    <span className="text-3xl ml-2">✨</span>
-                  </div>
+                <div className="pointer-events-none select-none flex items-center justify-center gap-3">
+                  <span className="text-3xl animate-bounce">🎉</span>
+                  <span className="text-3xl animate-pulse">🎊</span>
+                  <span className="text-3xl animate-bounce">✨</span>
                 </div>
               </CardContent>
             </Card>
