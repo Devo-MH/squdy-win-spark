@@ -29,8 +29,10 @@ export interface BlockchainCampaign {
 }
 
 export class BlockchainCampaignService {
-  private provider: ethers.providers.Web3Provider | null = null;
+  private provider: ethers.providers.JsonRpcProvider | null = null;
   private contract: ethers.Contract | null = null;
+  private campaignManagerAddress: string | null = null;
+  private rpcUrl: string | null = null;
 
   constructor() {
     this.initializeProvider();
@@ -38,14 +40,35 @@ export class BlockchainCampaignService {
 
   private async initializeProvider() {
     try {
-      if (typeof window !== 'undefined' && (window as any).ethereum) {
-        this.provider = new ethers.providers.Web3Provider((window as any).ethereum);
-        
-        const campaignManagerAddress = (import.meta as any).env?.VITE_CAMPAIGN_MANAGER_ADDRESS;
-        if (campaignManagerAddress) {
-          this.contract = new ethers.Contract(campaignManagerAddress, CAMPAIGN_MANAGER_ABI, this.provider);
-        }
+      // Prefer a dedicated RPC for reads to avoid MetaMask RPC issues
+      const env = (import.meta as any).env || {};
+      this.rpcUrl = env.VITE_RPC_URL || env.VITE_BSC_RPC_URL || 'https://bsc-dataseed.binance.org';
+      this.campaignManagerAddress = env.VITE_CAMPAIGN_MANAGER_ADDRESS || null;
+
+      if (!this.campaignManagerAddress) {
+        console.error('VITE_CAMPAIGN_MANAGER_ADDRESS is not set');
+        return;
       }
+
+      // Normalize and validate address
+      try {
+        this.campaignManagerAddress = ethers.utils.getAddress(this.campaignManagerAddress);
+      } catch (e) {
+        console.error('Invalid VITE_CAMPAIGN_MANAGER_ADDRESS:', this.campaignManagerAddress);
+        return;
+      }
+
+      // Create a stable read-only provider
+      this.provider = new ethers.providers.JsonRpcProvider(this.rpcUrl);
+
+      // Validate that address has code on-chain
+      const code = await this.provider.getCode(this.campaignManagerAddress);
+      if (!code || code === '0x') {
+        console.error('No contract code found at VITE_CAMPAIGN_MANAGER_ADDRESS:', this.campaignManagerAddress);
+        return;
+      }
+
+      this.contract = new ethers.Contract(this.campaignManagerAddress, CAMPAIGN_MANAGER_ABI, this.provider);
     } catch (error) {
       console.warn('Failed to initialize blockchain provider:', error);
     }
@@ -66,10 +89,11 @@ export class BlockchainCampaignService {
   // Format amount from wei to SQUDY
   private formatAmount(amount: any): number {
     try {
-      if (ethers.utils?.formatUnits) {
-        return parseFloat(ethers.utils.formatUnits(amount, 18));
-      } else if (ethers.formatUnits) {
-        return parseFloat(ethers.formatUnits(amount, 18));
+      const anyEthers = ethers as any;
+      if (anyEthers.utils?.formatUnits) {
+        return parseFloat(anyEthers.utils.formatUnits(amount, 18));
+      } else if (typeof anyEthers.formatUnits === 'function') {
+        return parseFloat(anyEthers.formatUnits(amount, 18));
       }
       return Number(amount?.toString?.() ?? amount ?? 0);
     } catch {
@@ -97,7 +121,7 @@ export class BlockchainCampaignService {
       if (!this.contract) {
         await this.initializeProvider();
         if (!this.contract) {
-          throw new Error('Contract not initialized');
+          throw new Error('Contract not initialized. Check VITE_RPC_URL and VITE_CAMPAIGN_MANAGER_ADDRESS');
         }
       }
 
@@ -150,7 +174,11 @@ export class BlockchainCampaignService {
         }
       };
     } catch (error) {
-      console.error('Failed to fetch campaigns from blockchain:', error);
+      console.error('Failed to fetch campaigns from blockchain:', {
+        error,
+        rpcUrl: this.rpcUrl,
+        contract: this.campaignManagerAddress
+      });
       return { campaigns: [], pagination: { page: 1, limit: 0, total: 0, totalPages: 0 } };
     }
   }
@@ -161,7 +189,7 @@ export class BlockchainCampaignService {
       if (!this.contract) {
         await this.initializeProvider();
         if (!this.contract) {
-          throw new Error('Contract not initialized');
+          throw new Error('Contract not initialized. Check VITE_RPC_URL and VITE_CAMPAIGN_MANAGER_ADDRESS');
         }
       }
 
@@ -195,7 +223,11 @@ export class BlockchainCampaignService {
 
       return { campaign };
     } catch (error) {
-      console.error(`Failed to fetch campaign ${id} from blockchain:`, error);
+      console.error(`Failed to fetch campaign ${id} from blockchain:`, {
+        error,
+        rpcUrl: this.rpcUrl,
+        contract: this.campaignManagerAddress
+      });
       throw new Error(`Campaign ${id} not found`);
     }
   }
@@ -212,7 +244,7 @@ export class BlockchainCampaignService {
       if (!this.contract) {
         await this.initializeProvider();
         if (!this.contract) {
-          throw new Error('Contract not initialized');
+          throw new Error('Contract not initialized. Check VITE_RPC_URL and VITE_CAMPAIGN_MANAGER_ADDRESS');
         }
       }
 
