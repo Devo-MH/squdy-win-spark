@@ -22,7 +22,7 @@ module.exports = {
       },
       bscMainnet: {
         chainId: 56,
-        url: process.env.BSC_RPC_URL
+        url: process.env.BSC_RPC_URL || 'https://bsc-dataseed1.binance.org'
       }
     },
     vulnerabilities: {

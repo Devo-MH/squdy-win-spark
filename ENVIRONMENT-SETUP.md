@@ -50,7 +50,7 @@ NETWORK=testnet  # or mainnet
 
 # BSC RPC URLs
 BSC_TESTNET_RPC_URL=https://data-seed-prebsc-1-s1.binance.org:8545/
-BSC_MAINNET_RPC_URL=https://bsc-dataseed.binance.org/
+BSC_MAINNET_RPC_URL=https://bsc-dataseed1.binance.org/
 
 # Contract addresses (will be set after deployment)
 SQUDY_TOKEN_ADDRESS=0x0000000000000000000000000000000000000000

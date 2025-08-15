@@ -131,7 +131,7 @@ MONGO_URI=mongodb://username:password@cluster.mongodb.net/squdy-platform
 REDIS_URL=redis://username:password@redis-host:6379
 
 # Blockchain
-BSC_RPC_URL=https://bsc-dataseed.binance.org/
+BSC_RPC_URL=https://bsc-dataseed1.binance.org/
 NETWORK=mainnet
 SQUDY_TOKEN_ADDRESS=0x...
 CAMPAIGN_MANAGER_ADDRESS=0x...

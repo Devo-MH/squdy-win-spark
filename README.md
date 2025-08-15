@@ -116,7 +116,7 @@ Create a `.env` file in the root directory:
 ```env
 VITE_APP_NAME=Squdy - Burn to Win
 VITE_APP_DESCRIPTION=Revolutionary burn-to-win platform
-VITE_BSC_RPC_URL=https://bsc-dataseed.binance.org/
+VITE_BSC_RPC_URL=https://bsc-dataseed1.binance.org/
 VITE_SQUDY_CONTRACT_ADDRESS=0x1234567890123456789012345678901234567890
 VITE_PANCAKESWAP_URL=https://pancakeswap.finance/swap?outputCurrency=
 ```

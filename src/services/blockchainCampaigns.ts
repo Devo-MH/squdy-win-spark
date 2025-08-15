@@ -42,7 +42,7 @@ export class BlockchainCampaignService {
     try {
       // Prefer a dedicated RPC for reads to avoid MetaMask RPC issues
       const env = (import.meta as any).env || {};
-      this.rpcUrl = env.VITE_RPC_URL || env.VITE_BSC_RPC_URL || 'https://bsc-dataseed.binance.org';
+      this.rpcUrl = env.VITE_RPC_URL || env.VITE_BSC_RPC_URL || 'https://bsc-dataseed1.binance.org';
       this.campaignManagerAddress = env.VITE_CAMPAIGN_MANAGER_ADDRESS || null;
 
       if (!this.campaignManagerAddress) {

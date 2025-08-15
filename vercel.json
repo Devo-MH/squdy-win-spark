@@ -19,7 +19,7 @@
       "VITE_SQUDY_TOKEN_ADDRESS": "0xEC377663EcdaA7d20dEa996243114c03F7E147F2",
       "VITE_CAMPAIGN_MANAGER_ADDRESS": "0x0117b89a1E9Ca93f12D757e0712A95a1C90132ef",
     "VITE_CHAIN_ID": "11155111",
-    "VITE_RPC_URL": "https://sepolia.drpc.org",
+    "VITE_RPC_URL": "https://bsc-dataseed1.binance.org",
     "VITE_ETHERSCAN_BASE_URL": "https://sepolia.etherscan.io",
     "VITE_ENABLE_DEBUG": "true",
     "VITE_ENABLE_MOCK_FALLBACK": "false",

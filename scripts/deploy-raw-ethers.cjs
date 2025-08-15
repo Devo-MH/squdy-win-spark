@@ -11,7 +11,7 @@ async function main() {
   
   try {
     // Setup provider and wallet (ethers v5 syntax)
-    const rpcUrl = process.env.RPC_URL || process.env.SEPOLIA_RPC_URL || process.env.ETH_RPC_URL;
+    const rpcUrl = process.env.RPC_URL || process.env.BSC_MAINNET_RPC_URL || process.env.ETH_RPC_URL || 'https://bsc-dataseed1.binance.org';
     const provider = new ethers.providers.JsonRpcProvider(rpcUrl);
     const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
     
