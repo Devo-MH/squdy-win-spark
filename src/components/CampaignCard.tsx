@@ -17,67 +17,143 @@ interface CampaignCardProps {
 const CampaignCard = ({ campaign }: CampaignCardProps) => {
   const socket = useSocket();
   const [localCampaign, setLocalCampaign] = useState(campaign);
-  // periodic light refresh to keep cards closer to real data when sockets are off
-  useEffect(() => {
-    let cancelled = false;
-    const refresh = async () => {
-      try {
-        const res = await fetch(`/api/campaigns/${campaign.contractId}`);
-        if (!res.ok) return;
-        const data = await res.json();
-        if (cancelled) return;
-        setLocalCampaign((prev) => ({ ...prev, ...(data?.campaign || {}) }));
-      } catch {}
-    };
-    refresh();
-    const id = setInterval(refresh, 15000);
-    return () => { cancelled = true; clearInterval(id); };
-  }, [campaign.contractId]);
+  const [lastOnChainUpdate, setLastOnChainUpdate] = useState<number>(0);
+  const [onChainError, setOnChainError] = useState<string | null>(null);
 
-  // Optional on-chain light refresh for critical stats when wallet/provider exists
+  // Removed API dependency - using only blockchain data
+  // The on-chain refresh below will handle all data updates
+
+  // Enhanced on-chain refresh for critical stats
   useEffect(() => {
     let stop = false;
     const run = async () => {
       try {
         const addr = (import.meta as any).env?.VITE_CAMPAIGN_MANAGER_ADDRESS;
         if (!addr || !(window as any).ethereum) return;
-        const provider = new ethers.providers.Web3Provider((window as any).ethereum as any);
+        
+        // Use modern ethers v6 provider
+        let provider;
+        try {
+          if (ethers.providers?.Web3Provider) {
+            // ethers v5
+            provider = new ethers.providers.Web3Provider((window as any).ethereum);
+          } else {
+            // ethers v6
+            provider = new ethers.BrowserProvider((window as any).ethereum);
+          }
+        } catch (error) {
+          console.warn('Failed to create provider:', error);
+          return;
+        }
+
         const abi = [
           'function getCampaign(uint256) view returns (tuple(uint256 id, string name, string description, string imageUrl, uint256 softCap, uint256 hardCap, uint256 ticketAmount, uint256 currentAmount, uint256 refundableAmount, uint256 startDate, uint256 endDate, uint256 participantCount, string[] prizes, address[] winners, uint8 status, bool tokensAreBurned, uint256 totalBurned, uint256 winnerSelectionBlock))',
           'function campaigns(uint256) view returns (uint256 id, string name, string description, string imageUrl, uint256 softCap, uint256 hardCap, uint256 ticketAmount, uint256 currentAmount, uint256 refundableAmount, uint256 startDate, uint256 endDate, uint256 participantCount, string[] prizes, address[] winners, uint8 status, bool tokensAreBurned, uint256 totalBurned, uint256 winnerSelectionBlock)'
         ];
-        const c = new ethers.Contract(addr, abi, provider);
-        let r: any = null;
-        try { r = await c.getCampaign(campaign.contractId); } catch { try { r = await c.campaigns(campaign.contractId); } catch {} }
-        if (!r || stop) return;
-        const fmt = (v: any) => {
-          try { return parseFloat(ethers.utils.formatUnits(v, 18)); } catch { return Number(v?.toString?.() ?? v ?? 0); }
+        
+        const contract = new ethers.Contract(addr, abi, provider);
+        let result: any = null;
+        
+        // Try getCampaign first, then fallback to campaigns
+        try { 
+          result = await contract.getCampaign(campaign.contractId); 
+        } catch { 
+          try { 
+            result = await contract.campaigns(campaign.contractId); 
+          } catch (error) {
+            console.warn(`Failed to fetch campaign ${campaign.contractId} from blockchain:`, error);
+            return;
+          } 
+        }
+        
+        if (!result || stop) return;
+
+        // Enhanced data parsing with better error handling
+        const formatAmount = (value: any): number => {
+          try {
+            if (ethers.utils?.formatUnits) {
+              // ethers v5
+              return parseFloat(ethers.utils.formatUnits(value, 18));
+            } else if (ethers.formatUnits) {
+              // ethers v6
+              return parseFloat(ethers.formatUnits(value, 18));
+            } else {
+              return Number(value?.toString?.() ?? value ?? 0);
+            }
+          } catch {
+            return Number(value?.toString?.() ?? value ?? 0);
+          }
         };
-        const toNum = (v: any) => {
-          try { return Number(v?.toString?.() ?? v ?? 0); } catch { return 0; }
+
+        const toNumber = (value: any): number => {
+          try {
+            const num = Number(value?.toString?.() ?? value ?? 0);
+            return Number.isFinite(num) ? num : 0;
+          } catch {
+            return 0;
+          }
         };
-         const zeroAddress = '0x0000000000000000000000000000000000000000';
-         const winners = Array.isArray(r.winners) ? (r.winners as string[]).filter((w: string)=> (w||'').toLowerCase()!==zeroAddress) : (localCampaign as any).winners;
-        setLocalCampaign(prev => ({
-          ...prev,
-          currentAmount: fmt(r.currentAmount ?? prev.currentAmount),
-          participantCount: Math.max(0, toNum(r.participantCount ?? prev.participantCount)),
-          hardCap: fmt(r.hardCap ?? prev.hardCap),
-          softCap: fmt(r.softCap ?? prev.softCap),
+
+        const parseTimestamp = (timestamp: any): Date => {
+          try {
+            const num = Number(timestamp?.toString?.() ?? timestamp ?? 0);
+            // Handle both seconds and milliseconds
+            if (num < 1e12) {
+              return new Date(num * 1000); // seconds to milliseconds
+            } else {
+              return new Date(num); // already milliseconds
+            }
+          } catch {
+            return new Date();
+          }
+        };
+
+        const zeroAddress = '0x0000000000000000000000000000000000000000';
+        const winners = Array.isArray(result.winners) 
+          ? (result.winners as string[]).filter((w: string) => (w || '').toLowerCase() !== zeroAddress) 
+          : (localCampaign as any).winners || [];
+
+        const updatedCampaign = {
+          ...localCampaign,
+          currentAmount: formatAmount(result.currentAmount ?? localCampaign.currentAmount),
+          participantCount: Math.max(0, toNumber(result.participantCount ?? localCampaign.participantCount)),
+          hardCap: formatAmount(result.hardCap ?? localCampaign.hardCap),
+          softCap: formatAmount(result.softCap ?? localCampaign.softCap),
           winners,
-          // Sync end/start time from on-chain to keep cards up to date after admin changes
-          startDate: (() => { try { const n = Number((r as any).startDate?.toString?.() ?? (r as any).startDate ?? 0); return new Date(n < 1e12 ? n * 1000 : n); } catch { return prev.startDate; } })(),
-          endDate: (() => { try { const n = Number((r as any).endDate?.toString?.() ?? (r as any).endDate ?? 0); return new Date(n < 1e12 ? n * 1000 : n); } catch { return prev.endDate; } })(),
-          tokensAreBurned: Boolean(r.tokensAreBurned ?? (prev as any).tokensAreBurned),
-          totalBurned: fmt(r.totalBurned ?? (prev as any).totalBurned),
-        }));
-      } catch {}
+          startDate: parseTimestamp(result.startDate ?? localCampaign.startDate),
+          endDate: parseTimestamp(result.endDate ?? localCampaign.endDate),
+          tokensAreBurned: Boolean(result.tokensAreBurned ?? (localCampaign as any).tokensAreBurned),
+          totalBurned: formatAmount(result.totalBurned ?? (localCampaign as any).totalBurned),
+        };
+
+        setLocalCampaign(updatedCampaign);
+        setLastOnChainUpdate(Date.now());
+        setOnChainError(null);
+        
+        console.log(`✅ Campaign ${campaign.contractId} on-chain data updated:`, {
+          currentAmount: updatedCampaign.currentAmount,
+          participantCount: updatedCampaign.participantCount,
+          winners: updatedCampaign.winners.length,
+          tokensAreBurned: updatedCampaign.tokensAreBurned
+        });
+
+      } catch (error) {
+        console.error(`❌ Failed to update campaign ${campaign.contractId} from blockchain:`, error);
+        setOnChainError(error instanceof Error ? error.message : 'Unknown error');
+      }
     };
+
     const handle = setInterval(run, 15000);
-    run();
+    run(); // Run immediately
+    
     const focusListener = () => run();
     window.addEventListener('focus', focusListener);
-    return () => { stop = true; clearInterval(handle); window.removeEventListener('focus', focusListener); };
+    
+    return () => { 
+      stop = true; 
+      clearInterval(handle); 
+      window.removeEventListener('focus', focusListener); 
+    };
   }, [campaign.contractId]);
   
   const progress = formatProgress(localCampaign.currentAmount, localCampaign.hardCap);

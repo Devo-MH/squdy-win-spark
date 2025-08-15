@@ -8,20 +8,17 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowRight, ExternalLink, TrendingUp, Users, Flame, Trophy, AlertCircle, DollarSign, RefreshCw } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
-import { useCampaigns } from "@/hooks/useCampaigns";
 import { useSocket } from "@/services/socket";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { tokenInfo, campaignStats } from "@/services/mockData";
 import { useWeb3 } from "@/contexts/Web3Context";
 import { useContracts } from "@/services/contracts";
-import { useQueryClient } from "@tanstack/react-query";
-import { campaignKeys } from "@/hooks/useCampaigns";
+import { blockchainCampaignService, BlockchainCampaign } from "@/services/blockchainCampaigns";
 
 const HomePage = () => {
   const socket = useSocket();
   const location = useLocation();
-  const queryClient = useQueryClient();
   const { provider, signer } = useWeb3();
   const contractService = useContracts(provider, signer);
   
@@ -29,22 +26,73 @@ const HomePage = () => {
   const isOnCampaignsPage = location.pathname === '/campaigns';
   const campaignLimit = isOnCampaignsPage ? 20 : 6;
   
-  const { 
-    data: campaignsData, 
-    isLoading, 
-    error,
-    refetch 
-  } = useCampaigns({ limit: campaignLimit });
+  // Use blockchain data instead of failing API
+  const [campaigns, setCampaigns] = useState<BlockchainCampaign[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Force refresh campaigns cache
-  const forceRefreshCampaigns = () => {
-    console.log('🔄 Force refreshing campaigns cache...');
-    queryClient.invalidateQueries({ queryKey: campaignKeys.all });
-    refetch();
-    toast.success("Refreshing campaigns...");
+  // Load campaigns from blockchain
+  const loadCampaigns = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const data = await blockchainCampaignService.getCampaigns();
+      setCampaigns(data.campaigns);
+      console.log('✅ Campaigns loaded from blockchain:', data.campaigns.length);
+      
+      // Enhanced debug logging for each campaign
+      data.campaigns.forEach((campaign, index) => {
+        const now = Date.now();
+        const startMs = new Date(campaign.startDate).getTime();
+        const endMs = new Date(campaign.endDate).getTime();
+        const started = Number.isFinite(startMs) && startMs <= now;
+        const ended = Number.isFinite(endMs) && endMs <= now;
+        const burnedFlag = Boolean((campaign as any).tokensAreBurned) || Number((campaign as any).totalBurned || 0) > 0;
+        
+        let derivedStatus = 'pending';
+        if (burnedFlag) derivedStatus = 'burned';
+        else if (ended) derivedStatus = 'finished';
+        else if (started) derivedStatus = 'active';
+        
+        console.log(`📊 Campaign ${index + 1} [${campaign.id}]:`, {
+          name: campaign.name,
+          originalStatus: campaign.status,
+          derivedStatus,
+          startDate: campaign.startDate,
+          endDate: campaign.endDate,
+          started,
+          ended,
+          tokensAreBurned: (campaign as any).tokensAreBurned,
+          totalBurned: campaign.totalBurned,
+          participantCount: campaign.participantCount,
+          currentAmount: campaign.currentAmount
+        });
+      });
+    } catch (error) {
+      console.error('❌ Failed to load campaigns from blockchain:', error);
+      setError('Failed to load campaigns');
+      setCampaigns([]);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const campaigns = campaignsData?.campaigns || [];
+  // Initial load and periodic refresh
+  useEffect(() => {
+    loadCampaigns();
+    
+    // Refresh every 15 seconds to keep data synced with blockchain
+    const interval = setInterval(loadCampaigns, 15000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Force refresh campaigns from blockchain
+  const forceRefreshCampaigns = async () => {
+    console.log('🔄 Force refreshing campaigns from blockchain...');
+    await loadCampaigns();
+    toast.success("Campaigns refreshed from blockchain!");
+  };
+
   const activeCampaigns = campaigns.filter(c => c.status === "active");
   const finishedCampaigns = campaigns.filter(c => c.status === "finished");
 
@@ -76,7 +124,7 @@ const HomePage = () => {
     return () => {
       socket.off('campaign:created', handleCampaignCreated);
     };
-  }, [socket, queryClient]);
+  }, [socket]);
 
   // Campaign cards loading skeleton
   const CampaignSkeleton = () => (
@@ -141,7 +189,7 @@ const HomePage = () => {
                 <AlertCircle className="w-12 h-12 text-destructive mx-auto mb-4" />
                 <h3 className="text-lg font-semibold text-foreground mb-2">Failed to load campaigns</h3>
                 <p className="text-muted-foreground mb-4">There was an error loading the campaign data.</p>
-                <Button onClick={() => refetch()} variant="outline">
+                <Button onClick={() => loadCampaigns()} variant="outline">
                   Try Again
                 </Button>
               </div>
