@@ -77,7 +77,7 @@ const CampaignDetail = () => {
   }, [id, isValidId, navigate]);
   
   // Web3 and Auth hooks
-  const { account, isConnected, provider, signer } = useWeb3();
+  const { account, isConnected, provider, signer, isCorrectNetwork, networkName } = useWeb3();
   const { isAuthenticated, requireAuth } = useAuth();
   
   // Contract integration
@@ -158,7 +158,7 @@ const CampaignDetail = () => {
 
   // On-chain refresh to reflect real-time amounts/participants/winners/burn and end time changes
   useEffect(() => {
-    if (!contractService || !localCampaign?.contractId) return;
+    if (!contractService || !localCampaign?.contractId || !isCorrectNetwork) return;
     let cancelled = false;
     const zeroAddress = '0x0000000000000000000000000000000000000000';
     const refresh = async () => {
@@ -187,7 +187,7 @@ const CampaignDetail = () => {
     refresh();
     const id = setInterval(refresh, 15000);
     return () => { cancelled = true; clearInterval(id); };
-  }, [contractService, localCampaign?.contractId]);
+  }, [contractService, localCampaign?.contractId, isCorrectNetwork]);
 
   // Read-only on-chain refresh for progress panel even when wallet not connected
   useEffect(() => {
@@ -199,9 +199,8 @@ const CampaignDetail = () => {
         const managerAddr = (import.meta as any).env?.VITE_CAMPAIGN_MANAGER_ADDRESS;
         const rpcUrl = (import.meta as any).env?.VITE_RPC_URL;
         if (!managerAddr) return;
-        const provider = (window as any).ethereum
-          ? new ethers.providers.Web3Provider((window as any).ethereum as any)
-          : (rpcUrl ? new ethers.providers.JsonRpcProvider(rpcUrl) : null);
+        // Always use the configured RPC here to avoid wrong-network wallet providers during read-only refresh
+        const provider = rpcUrl ? new ethers.providers.JsonRpcProvider(rpcUrl) : null;
         if (!provider) return;
         const abi = [
           'function getCampaign(uint256) view returns (tuple(uint256 id, string name, string description, string imageUrl, uint256 softCap, uint256 hardCap, uint256 ticketAmount, uint256 currentAmount, uint256 refundableAmount, uint256 startDate, uint256 endDate, uint256 participantCount, string[] prizes, address[] winners, uint8 status, bool tokensAreBurned, uint256 totalBurned, uint256 winnerSelectionBlock))',
@@ -246,7 +245,7 @@ const CampaignDetail = () => {
   // Load user balance and allowance when account changes
   useEffect(() => {
     const loadWalletData = async () => {
-      if (!account || !contractService) return;
+      if (!account || !contractService || !isCorrectNetwork) return;
       
       try {
         const [balance, tokenAllowance] = await Promise.all([
@@ -262,7 +261,7 @@ const CampaignDetail = () => {
     };
 
     loadWalletData();
-  }, [account, contractService]);
+  }, [account, contractService, isCorrectNetwork]);
 
   // Real-time updates
   useEffect(() => {
