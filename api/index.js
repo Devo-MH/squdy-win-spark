@@ -26,17 +26,38 @@ async function syncCampaignFromBlockchain(campaignId) {
     
     const result = await contract.getCampaign(campaignId);
     
+    // Map status number to string
+    const mapStatus = (s) => {
+      const n = Number(s);
+      if (n === 0) return 'pending';
+      if (n === 1) return 'active';
+      if (n === 2) return 'paused';
+      if (n === 3) return 'finished';
+      if (n === 4) return 'burned';
+      return 'unknown';
+    };
+
     // Parse the result struct: (id, name, description, imageUrl, softCap, hardCap, ticketAmount, currentAmount, refundableAmount, startDate, endDate, participantCount, prizes, winners, status, tokensAreBurned, totalBurned, winnerSelectionBlock)
     return {
-      startDate: new Date(Number(result[9]) * 1000).toISOString(),
-      endDate: new Date(Number(result[10]) * 1000).toISOString(),
+      id: Number(result[0] ?? campaignId),
+      contractId: Number(result[0] ?? campaignId),
+      name: String(result[1] || ''),
+      description: String(result[2] || ''),
+      imageUrl: String(result[3] || ''),
       softCap: Number(result[4]),
       hardCap: Number(result[5]),
+      ticketAmount: Number(result[6]),
       currentAmount: Number(result[7]),
+      refundableAmount: Number(result[8] || 0),
+      startDate: new Date(Number(result[9]) * 1000).toISOString(),
+      endDate: new Date(Number(result[10]) * 1000).toISOString(),
       participantCount: Number(result[11]),
-      tokensAreBurned: Boolean(result[14]),
-      totalBurned: Number(result[15]),
-      winners: result[13] || []
+      prizes: Array.isArray(result[12]) ? result[12] : [],
+      winners: Array.isArray(result[13]) ? result[13] : [],
+      status: mapStatus(result[14]),
+      tokensAreBurned: Boolean(result[15]),
+      totalBurned: Number(result[16]),
+      winnerSelectionBlock: Number(result[17] || 0),
     };
   } catch (error) {
     console.error('Blockchain sync failed for campaign', campaignId, ':', error.message);
@@ -299,6 +320,42 @@ export default async function handler(req, res) {
           const base = getBaseCampaigns();
           const asNumber = Number(idParam);
           campaign = base.find(c => c.id === idParam || (!Number.isNaN(asNumber) && c.contractId === asNumber)) || null;
+        }
+
+        // Last-resort: fetch directly from blockchain when DB/base missing
+        if (!campaign) {
+          const asNumber = Number(idParam);
+          if (!Number.isNaN(asNumber)) {
+            const chain = await syncCampaignFromBlockchain(asNumber);
+            if (chain) {
+              // Construct a response-compatible campaign object
+              const nowIso = new Date().toISOString();
+              campaign = {
+                id: String(chain.contractId),
+                contractId: chain.contractId,
+                name: chain.name || `Campaign ${chain.contractId}`,
+                description: chain.description || '',
+                imageUrl: chain.imageUrl || 'https://images.unsplash.com/photo-1640340434855-6084b1f4901c?w=800&h=400&fit=crop',
+                status: chain.status || 'active',
+                currentAmount: chain.currentAmount || 0,
+                hardCap: chain.hardCap || 0,
+                participantCount: chain.participantCount || 0,
+                softCap: chain.softCap || 0,
+                ticketAmount: chain.ticketAmount || 0,
+                totalValue: chain.hardCap || 0,
+                progressPercentage: 0,
+                daysRemaining: 7,
+                startDate: chain.startDate || nowIso,
+                endDate: chain.endDate || nowIso,
+                prizes: Array.isArray(chain.prizes) ? chain.prizes.map((p, i) => ({ name: String(p || `Prize ${i+1}`), description: '', value: 0, currency: 'USD', quantity: 1 })) : [],
+                winners: Array.isArray(chain.winners) ? chain.winners : [],
+                tokensAreBurned: Boolean(chain.tokensAreBurned),
+                totalBurned: chain.totalBurned || 0,
+                createdAt: nowIso,
+                updatedAt: nowIso,
+              };
+            }
+          }
         }
 
         if (!campaign) {

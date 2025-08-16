@@ -1,4 +1,5 @@
 import axios, { AxiosInstance, AxiosResponse } from 'axios';
+import { blockchainCampaignService } from '@/services/blockchainCampaigns';
 import { toast } from 'sonner';
 import { Task } from '@/components/offchain-verifier/types';
 
@@ -25,7 +26,20 @@ apiClient.interceptors.response.use(
   (error) => {
     console.log('🚨 API Error:', error.code, error.message, error.response?.status);
     
-    // Handle network errors and provide fallback data
+    // If campaign detail not found, fallback to blockchain fetch (even in production)
+    try {
+      const url = String(error.config?.url || '');
+      const detailMatch = url.match(/\/campaigns\/(\d+)$/);
+      if (error.response?.status === 404 && detailMatch) {
+        const requestedId = parseInt(detailMatch[1]);
+        if (Number.isFinite(requestedId) && requestedId > 0) {
+          const chain = await blockchainCampaignService.getCampaignById(requestedId);
+          return Promise.resolve({ data: chain, status: 200 } as any);
+        }
+      }
+    } catch (_) {}
+
+    // Handle network errors and provide fallback data (mock mode)
     if (ENABLE_MOCK_FALLBACK && (
         error.code === 'ERR_NETWORK' || 
         error.code === 'ECONNREFUSED' || 
