@@ -24,12 +24,16 @@ const apiClient: AxiosInstance = axios.create({
 apiClient.interceptors.response.use(
   (response) => response,
   async (error) => {
-    console.log('🚨 API Error:', error.code, error.message, error.response?.status);
+    const url = String(error.config?.url || '');
+    const detailMatch = url.match(/\/campaigns\/(\d+)$/);
+    const isHandled404 = error.response?.status === 404 && Boolean(detailMatch);
+    if (!isHandled404) {
+      console.log('🚨 API Error:', error.code, error.message, error.response?.status);
+    }
     
     // If campaign detail not found, fallback to blockchain fetch (even in production)
     try {
-      const url = String(error.config?.url || '');
-      const detailMatch = url.match(/\/campaigns\/(\d+)$/);
+      // detailMatch already computed
       if (error.response?.status === 404 && detailMatch) {
         const requestedId = parseInt(detailMatch[1]);
         if (Number.isFinite(requestedId) && requestedId > 0) {

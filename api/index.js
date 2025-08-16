@@ -11,14 +11,14 @@ async function syncCampaignFromBlockchain(campaignId) {
     const ethers = ethersMod;
     const rpc = process.env.RPC_URL || process.env.VITE_RPC_URL;
     const manager = process.env.VITE_CAMPAIGN_MANAGER_ADDRESS || process.env.CAMPAIGN_MANAGER_ADDRESS;
-    const chainId = Number(process.env.CHAIN_ID || process.env.VITE_CHAIN_ID || 11155111);
     
     if (!rpc || !manager) {
       console.warn('Missing RPC or manager address for blockchain sync');
       return null;
     }
     
-    const provider = new ethers.providers.JsonRpcProvider(rpc, { chainId });
+    // Auto-detect network from RPC to avoid chainId mismatches across envs
+    const provider = new ethers.providers.JsonRpcProvider(rpc);
     const abi = [
       'function getCampaign(uint256) view returns (tuple(uint256 id, string name, string description, string imageUrl, uint256 softCap, uint256 hardCap, uint256 ticketAmount, uint256 currentAmount, uint256 refundableAmount, uint256 startDate, uint256 endDate, uint256 participantCount, string[] prizes, address[] winners, uint8 status, bool tokensAreBurned, uint256 totalBurned, uint256 winnerSelectionBlock))'
     ];
