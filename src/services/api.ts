@@ -23,7 +23,7 @@ const apiClient: AxiosInstance = axios.create({
 // Add response interceptor to handle backend connection issues
 apiClient.interceptors.response.use(
   (response) => response,
-  (error) => {
+  async (error) => {
     console.log('🚨 API Error:', error.code, error.message, error.response?.status);
     
     // If campaign detail not found, fallback to blockchain fetch (even in production)
