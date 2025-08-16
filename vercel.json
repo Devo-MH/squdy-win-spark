@@ -25,7 +25,5 @@
     "VITE_ENABLE_MOCK_FALLBACK": "false",
     "VITE_ALLOW_TOKENLESS_SOCIAL": "true",
     "VITE_USE_AUTOMATED_MANAGER": "true"
-    ,
-    "VITE_CHAIN_FALLBACK_ON_404": "true"
   }
 }
