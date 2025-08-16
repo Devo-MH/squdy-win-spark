@@ -29,17 +29,17 @@ const CampaignCard = ({ campaign }: CampaignCardProps) => {
     const run = async () => {
       try {
         const addr = (import.meta as any).env?.VITE_CAMPAIGN_MANAGER_ADDRESS;
-        if (!addr || !(window as any).ethereum) return;
+        const rpcUrl = (import.meta as any).env?.VITE_RPC_URL;
+        if (!addr) return;
         
-        // Use modern ethers v6 provider
-        let provider;
+        // Prefer a fixed read-only RPC to avoid wrong-network wallet providers
+        let provider: any = null;
         try {
-          if (ethers.providers?.Web3Provider) {
-            // ethers v5
+          if (rpcUrl && ethers.providers?.JsonRpcProvider) {
+            provider = new ethers.providers.JsonRpcProvider(rpcUrl);
+          } else if ((window as any).ethereum) {
+            // Fallback to wallet provider if no RPC configured
             provider = new ethers.providers.Web3Provider((window as any).ethereum);
-          } else {
-            // ethers v6
-            provider = new ethers.BrowserProvider((window as any).ethereum);
           }
         } catch (error) {
           console.warn('Failed to create provider:', error);
