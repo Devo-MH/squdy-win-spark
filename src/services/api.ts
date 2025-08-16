@@ -5,6 +5,7 @@ import { Task } from '@/components/offchain-verifier/types';
 
 // API Configuration
 const ENABLE_MOCK_FALLBACK = String(import.meta.env.VITE_ENABLE_MOCK_FALLBACK || '').toLowerCase() === 'true';
+const ENABLE_CHAIN_FALLBACK_ON_404 = String(import.meta.env.VITE_CHAIN_FALLBACK_ON_404 || '').toLowerCase() === 'true';
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 
   (import.meta.env.PROD 
     ? '/api'  // Production: Use relative path for Vercel
@@ -23,14 +24,14 @@ const apiClient: AxiosInstance = axios.create({
 // Add response interceptor to handle backend connection issues
 apiClient.interceptors.response.use(
   (response) => response,
-  (error) => {
+  async (error) => {
     console.log('🚨 API Error:', error.code, error.message, error.response?.status);
     
     // If campaign detail not found, fallback to blockchain fetch (even in production)
     try {
       const url = String(error.config?.url || '');
       const detailMatch = url.match(/\/campaigns\/(\d+)$/);
-      if (error.response?.status === 404 && detailMatch) {
+      if (ENABLE_CHAIN_FALLBACK_ON_404 && error.response?.status === 404 && detailMatch) {
         const requestedId = parseInt(detailMatch[1]);
         if (Number.isFinite(requestedId) && requestedId > 0) {
           const chain = await blockchainCampaignService.getCampaignById(requestedId);
