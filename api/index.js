@@ -539,7 +539,7 @@ export default async function handler(req, res) {
           const pk = process.env.RELAYER_PRIVATE_KEY;
           const rpc = process.env.RPC_URL || process.env.VITE_RPC_URL;
 const manager = process.env.VITE_CAMPAIGN_MANAGER_ADDRESS || process.env.CAMPAIGN_MANAGER_ADDRESS || '0x0117b89a1E9Ca93f12D757e0712A95a1C90132ef';
-          const chainId = Number(process.env.CHAIN_ID || process.env.VITE_CHAIN_ID || 11155111);
+          const chainId = Number(process.env.CHAIN_ID || process.env.VITE_CHAIN_ID || 56);
           const campaignId = Number(body?.campaignId || body?.task?.campaignId);
           const user = String(body?.userAddress || body?.task?.userAddress || '').trim();
 
@@ -580,7 +580,7 @@ const manager = process.env.VITE_CAMPAIGN_MANAGER_ADDRESS || process.env.CAMPAIG
     return res.json({
       stats: {
         platform: { totalCampaigns: 2, activeCampaigns: 2, totalParticipants: 67, totalRaised: 23000, status: 'operational' },
-        blockchain: { network: 'sepolia', chainId: '11155111', connected: true },
+        blockchain: { network: process.env.VITE_NETWORK || 'bsc', chainId: String(process.env.VITE_CHAIN_ID || 56), connected: true },
         database: { status: 'connected', lastCheck: new Date().toISOString() },
       }
     });

@@ -36,6 +36,17 @@ export const SUPPORTED_CHAINS = {
       decimals: 18,
     },
   },
+  BSC: {
+    chainId: 56,
+    name: 'BNB Smart Chain',
+    rpcUrl: 'https://bsc-dataseed1.binance.org',
+    blockExplorer: 'https://bscscan.com',
+    nativeCurrency: {
+      name: 'BNB',
+      symbol: 'BNB',
+      decimals: 18,
+    },
+  },
   MAINNET: {
     chainId: 1,
     name: 'Ethereum Mainnet',
@@ -50,10 +61,10 @@ export const SUPPORTED_CHAINS = {
 };
 
 // Get target chain based on environment variables (prefer explicit VITE_CHAIN_ID)
-const ENV_CHAIN_ID = Number(import.meta.env.VITE_CHAIN_ID || 11155111);
+const ENV_CHAIN_ID = Number(import.meta.env.VITE_CHAIN_ID || 56);
 const TARGET_CHAIN = ENV_CHAIN_ID === SUPPORTED_CHAINS.MAINNET.chainId
   ? SUPPORTED_CHAINS.MAINNET
-  : SUPPORTED_CHAINS.SEPOLIA;
+  : (ENV_CHAIN_ID === SUPPORTED_CHAINS.BSC.chainId ? SUPPORTED_CHAINS.BSC : SUPPORTED_CHAINS.SEPOLIA);
 
 const Web3Context = createContext<Web3ContextType | null>(null);
 

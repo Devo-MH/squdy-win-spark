@@ -234,7 +234,7 @@ const AdminPanel = () => {
             // @ts-ignore
             const net = await provider.getNetwork();
             const chainId = Number((net.chainId || (net as any)._chainId || 0).toString());
-            const EXPECTED = Number(import.meta.env.VITE_CHAIN_ID || 11155111); // default Sepolia
+            const EXPECTED = Number(import.meta.env.VITE_CHAIN_ID || 56);
             if (chainId && EXPECTED && chainId !== EXPECTED) {
               next.push(`Wrong network. Expected chainId ${EXPECTED}, got ${chainId}. Use Switch Network.`);
             }
@@ -1562,7 +1562,7 @@ const AdminPanel = () => {
                           toast.error(e?.message || 'Failed to switch network');
                         }
                       }}
-                    >Switch to Sepolia</Button>
+                    >Switch Network</Button>
                   </div>
                 </div>
               )}
@@ -1619,8 +1619,8 @@ const AdminPanel = () => {
                               if (!addr) return;
                               let chainIdHex: string | null = null;
                               try { chainIdHex = await (window as any).ethereum?.request?.({ method: 'eth_chainId' }); } catch {}
-                              const chainId = chainIdHex ? parseInt(chainIdHex, 16) : Number(import.meta.env.VITE_CHAIN_ID || 11155111);
-                              const base = chainId === 1 ? 'https://etherscan.io' : (chainId === 11155111 ? 'https://sepolia.etherscan.io' : 'https://etherscan.io');
+                              const chainId = chainIdHex ? parseInt(chainIdHex, 16) : Number(import.meta.env.VITE_CHAIN_ID || 56);
+                              const base = chainId === 56 ? 'https://bscscan.com' : (chainId === 1 ? 'https://etherscan.io' : 'https://sepolia.etherscan.io');
                               window.open(`${base}/address/${addr}`, '_blank');
                             }}
                           >View</Button>
@@ -1647,8 +1647,8 @@ const AdminPanel = () => {
                               if (!addr) return;
                               let chainIdHex: string | null = null;
                               try { chainIdHex = await (window as any).ethereum?.request?.({ method: 'eth_chainId' }); } catch {}
-                              const chainId = chainIdHex ? parseInt(chainIdHex, 16) : Number(import.meta.env.VITE_CHAIN_ID || 11155111);
-                              const base = chainId === 1 ? 'https://etherscan.io' : (chainId === 11155111 ? 'https://sepolia.etherscan.io' : 'https://etherscan.io');
+                              const chainId = chainIdHex ? parseInt(chainIdHex, 16) : Number(import.meta.env.VITE_CHAIN_ID || 56);
+                              const base = chainId === 56 ? 'https://bscscan.com' : (chainId === 1 ? 'https://etherscan.io' : 'https://sepolia.etherscan.io');
                               window.open(`${base}/token/${addr}`, '_blank');
                             }}
                           >View</Button>

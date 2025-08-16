@@ -43,7 +43,7 @@ const Header = () => {
 
   const handleSwitchNetwork = async () => {
     try {
-      const targetChainId = import.meta.env.MODE === 'production' ? 1 : 11155111; // Ethereum Mainnet : Sepolia
+      const targetChainId = Number(import.meta.env.VITE_CHAIN_ID || 56);
       await switchToChain(targetChainId);
     } catch (error) {
       console.error('Failed to switch network:', error);
@@ -101,9 +101,9 @@ const Header = () => {
             </div>
           </div>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={() => window.open(`https://sepolia.etherscan.io/address/${account}`, '_blank')}>
+          <DropdownMenuItem onClick={() => window.open(`${import.meta.env.VITE_ETHERSCAN_BASE_URL || 'https://bscscan.com'}/address/${account}`, '_blank')}>
             <ExternalLink className="w-4 h-4 mr-2" />
-            View on Etherscan
+            View on Explorer
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={disconnect} className="text-red-600">

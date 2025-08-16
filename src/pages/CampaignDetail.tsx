@@ -636,8 +636,8 @@ const CampaignDetail = () => {
                             <Button size="sm" variant="outline" className="h-7 px-2 text-xs" onClick={async () => {
                               let chainIdHex: string | null = null;
                               try { chainIdHex = await (window as any).ethereum?.request?.({ method: 'eth_chainId' }); } catch {}
-                              const chainId = chainIdHex ? parseInt(chainIdHex, 16) : Number(import.meta.env.VITE_CHAIN_ID || 11155111);
-                              const base = chainId === 1 ? 'https://etherscan.io' : (chainId === 56 ? 'https://bscscan.com' : (chainId === 11155111 ? 'https://sepolia.etherscan.io' : 'https://etherscan.io'));
+                              const chainId = chainIdHex ? parseInt(chainIdHex, 16) : Number(import.meta.env.VITE_CHAIN_ID || 56);
+                              const base = chainId === 56 ? 'https://bscscan.com' : (chainId === 1 ? 'https://etherscan.io' : 'https://sepolia.etherscan.io');
                               window.open(`${base}/address/${addr}`,'_blank');
                             }}>
                               <ExternalLink className="w-3 h-3 mr-1" /> View
@@ -664,8 +664,8 @@ const CampaignDetail = () => {
                           <Button size="sm" variant="outline" className="h-7 px-2 text-xs" onClick={async () => {
                             let chainIdHex: string | null = null;
                             try { chainIdHex = await (window as any).ethereum?.request?.({ method: 'eth_chainId' }); } catch {}
-                            const chainId = chainIdHex ? parseInt(chainIdHex, 16) : Number(import.meta.env.VITE_CHAIN_ID || 11155111);
-                            const base = chainId === 1 ? 'https://etherscan.io' : (chainId === 56 ? 'https://bscscan.com' : (chainId === 11155111 ? 'https://sepolia.etherscan.io' : 'https://etherscan.io'));
+                            const chainId = chainIdHex ? parseInt(chainIdHex, 16) : Number(import.meta.env.VITE_CHAIN_ID || 56);
+                            const base = chainId === 56 ? 'https://bscscan.com' : (chainId === 1 ? 'https://etherscan.io' : 'https://sepolia.etherscan.io');
                             window.open(`${base}/address/${String(addr)}`,'_blank');
                           }}>
                             <ExternalLink className="w-3 h-3 mr-1" /> View
