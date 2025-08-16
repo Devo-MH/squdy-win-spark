@@ -50,7 +50,7 @@ const Footer = () => {
             <h3 className="font-semibold text-foreground">Legal</h3>
             <div className="space-y-2 text-sm">
             <Link to="https://docs.squdy.fun" className="block text-muted-foreground hover:text-primary transition-colors">
-                Docs
+                Documentation
               </Link>
               <Link to="/terms" className="block text-muted-foreground hover:text-primary transition-colors">
                 Terms of Service
@@ -95,7 +95,7 @@ const Footer = () => {
 
         <div className="border-t border-primary/20 mt-8 pt-8 text-center">
           <p className="text-muted-foreground text-sm">
-            © 2025 Squdy Platform. All rights reserved. Built for the Meme community.
+            © 2025 Squdy Token. All rights reserved. Built for the Meme community.
           </p>
         </div>
       </div>
