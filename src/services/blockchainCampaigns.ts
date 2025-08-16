@@ -131,7 +131,13 @@ export class BlockchainCampaignService {
       // Fetch campaigns from blockchain
       for (let i = 1; i <= totalCampaigns; i++) {
         try {
-          const campaignData = await this.contract.getCampaign(i);
+          // Try primary getter, then fallback to public mapping accessor
+          let campaignData: any = null;
+          try {
+            campaignData = await (this.contract as any).getCampaign(i);
+          } catch (_) {
+            try { campaignData = await (this.contract as any).campaigns(i); } catch (e) { throw e; }
+          }
           
           const campaign: BlockchainCampaign = {
             id: i,
@@ -194,7 +200,12 @@ export class BlockchainCampaignService {
       }
 
       const campaignId = Number(id);
-      const campaignData = await this.contract.getCampaign(campaignId);
+      let campaignData: any = null;
+      try {
+        campaignData = await (this.contract as any).getCampaign(campaignId);
+      } catch (_) {
+        campaignData = await (this.contract as any).campaigns(campaignId);
+      }
       
       const campaign: BlockchainCampaign = {
         id: campaignId,
@@ -248,7 +259,8 @@ export class BlockchainCampaignService {
         }
       }
 
-      const campaignData = await this.contract.getCampaign(id);
+      let campaignData: any = null;
+      try { campaignData = await (this.contract as any).getCampaign(id); } catch { campaignData = await (this.contract as any).campaigns(id); }
       const winners = campaignData.winners?.filter((w: string) => w !== '0x0000000000000000000000000000000000000000') || [];
       
       return { winners };
