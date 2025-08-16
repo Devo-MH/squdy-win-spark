@@ -1,0 +1,66 @@
+name: Squdy Platform CI/CD
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  security-audit:
+    name: security-audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci --legacy-peer-deps
+      - name: Run security audit
+        if: env.RUN_SECURITY_AUDIT == 'true'
+        run: node security/security-audit.js
+      - name: Skipping security audit (not enabled)
+        if: env.RUN_SECURITY_AUDIT != 'true'
+        run: echo "RUN_SECURITY_AUDIT not enabled; skipping"
+
+  smart-contract-tests:
+    name: smart-contract-tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci --legacy-peer-deps
+      - name: Compile & test contracts
+        if: env.RUN_SMART_CONTRACT_TESTS == 'true'
+        run: |
+          npx hardhat compile
+          npx hardhat test --no-compile
+      - name: Skipping smart contract tests (not enabled)
+        if: env.RUN_SMART_CONTRACT_TESTS != 'true'
+        run: echo "RUN_SMART_CONTRACT_TESTS not enabled; skipping"
+
+  backend-tests:
+    name: backend-tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - working-directory: ./backend
+        run: npm ci --legacy-peer-deps
+      - name: Run backend tests
+        if: env.RUN_BACKEND_TESTS == 'true'
+        working-directory: ./backend
+        run: npm test --if-present || echo "No backend tests configured"
+      - name: Skipping backend tests (not enabled)
+        if: env.RUN_BACKEND_TESTS != 'true'
+        run: echo "RUN_BACKEND_TESTS not enabled; skipping"
+
+

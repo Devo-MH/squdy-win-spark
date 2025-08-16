@@ -1,3 +1,55 @@
+name: Deploy
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy-vercel:
+    name: Deploy to Vercel
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy (skip if no token)
+        if: env.VERCEL_TOKEN && env.VERCEL_PROJECT_ID && env.VERCEL_ORG_ID
+        run: |
+          npm i -g vercel@latest
+          vercel pull --yes --token ${{ env.VERCEL_TOKEN }} --environment=production
+          vercel build --prod --token ${{ env.VERCEL_TOKEN }}
+          vercel deploy --prebuilt --prod --token ${{ env.VERCEL_TOKEN }}
+      - name: Skipping Vercel deploy (missing secrets)
+        if: ${{ ! (env.VERCEL_TOKEN && env.VERCEL_PROJECT_ID && env.VERCEL_ORG_ID) }}
+        run: echo "Vercel secrets not set; skipping deploy"
+
+  deploy-railway:
+    name: Deploy to Railway
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy (skip if no token)
+        if: env.RAILWAY_TOKEN
+        run: |
+          curl -fsSL https://railway.app/install.sh | sh
+          railway up --service squdy --ci
+      - name: Skipping Railway deploy (missing token)
+        if: ${{ ! env.RAILWAY_TOKEN }}
+        run: echo "RAILWAY_TOKEN not set; skipping deploy"
+
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Production deploy step (gated)
+        if: env.RUN_PRODUCTION_DEPLOY == 'true'
+        run: echo "Run your prod deploy here (gated by RUN_PRODUCTION_DEPLOY)"
+      - name: Skipping production deploy
+        if: env.RUN_PRODUCTION_DEPLOY != 'true'
+        run: echo "RUN_PRODUCTION_DEPLOY not enabled; skipping"
+
 name: Deploy to Production
 
 on:
