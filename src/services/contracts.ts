@@ -341,10 +341,21 @@ export class ContractService {
 
   async getParticipant(campaignId: number, userAddress: string): Promise<any> {
     try {
-      const participant = await this.campaignManagerContract.getParticipant(campaignId, userAddress);
+      let participant: any = null;
+      try {
+        participant = await (this.campaignManagerContract as any).getParticipant(campaignId, userAddress);
+      } catch (_) {
+        // Fallback to public mapping accessor if function not present
+        try {
+          participant = await (this.campaignManagerContract as any).participants(campaignId, userAddress);
+        } catch (err) {
+          console.warn('getParticipant and participants() both failed:', err);
+          throw err;
+        }
+      }
       return this.parseParticipantData(participant);
     } catch (error) {
-      console.error('Error getting participant:', error);
+      console.warn('Error getting participant:', error);
       throw error;
     }
   }
