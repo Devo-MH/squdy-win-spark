@@ -49,6 +49,9 @@ const Footer = () => {
           <div className="space-y-4">
             <h3 className="font-semibold text-foreground">Legal</h3>
             <div className="space-y-2 text-sm">
+            <Link to="https://docs.squdy.fun" className="block text-muted-foreground hover:text-primary transition-colors">
+                Documentation
+              </Link>
               <Link to="/terms" className="block text-muted-foreground hover:text-primary transition-colors">
                 Terms of Service
               </Link>
