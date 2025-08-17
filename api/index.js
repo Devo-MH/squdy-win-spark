@@ -792,6 +792,20 @@ const manager = process.env.VITE_CAMPAIGN_MANAGER_ADDRESS || process.env.CAMPAIG
       }
 
       const nowIso = new Date().toISOString();
+
+      // Basic validation
+      const startDateObj = body?.startDate ? new Date(body.startDate) : new Date(nowIso);
+      const endDateObj = body?.endDate ? new Date(body.endDate) : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+      if (Number.isNaN(startDateObj.getTime()) || Number.isNaN(endDateObj.getTime())) {
+        return res.status(400).json({ error: { message: 'Invalid start or end date' } });
+      }
+      if (endDateObj <= startDateObj) {
+        return res.status(400).json({ error: { message: 'End date must be after start date' } });
+      }
+      if (!Number.isFinite(Number(body?.contractId))) {
+        return res.status(400).json({ error: { message: 'Missing or invalid contractId from on-chain create' } });
+      }
+
       const newCampaign = {
         id: `created_${Date.now()}`,
         contractId: Number.isFinite(Number(body?.contractId)) ? Number(body.contractId) : Math.floor(Math.random() * 1e9),
@@ -807,8 +821,8 @@ const manager = process.env.VITE_CAMPAIGN_MANAGER_ADDRESS || process.env.CAMPAIG
         totalValue: Number(body?.hardCap || 0),
         progressPercentage: 0,
         daysRemaining: 7,
-        startDate: body?.startDate || nowIso,
-        endDate: body?.endDate || new Date(Date.now() + 7*24*60*60*1000).toISOString(),
+        startDate: startDateObj.toISOString(),
+        endDate: endDateObj.toISOString(),
         prizes: Array.isArray(body?.prizes) ? body.prizes : [],
         offchainTasks: Array.isArray(body?.offchainTasks) ? body.offchainTasks : [],
         createdAt: nowIso,
@@ -822,8 +836,8 @@ const manager = process.env.VITE_CAMPAIGN_MANAGER_ADDRESS || process.env.CAMPAIG
       res.setHeader('Cache-Control', 'no-store');
       return res.status(201).json({ message: 'Campaign created', campaign: { _id: result.insertedId, ...newCampaign } });
     } catch (err) {
-      console.error('POST /campaigns error:', err);
-      return res.status(500).json({ error: 'Internal Server Error' });
+      console.error('POST /campaigns error:', err?.message || err);
+      return res.status(500).json({ error: { message: 'Failed to create campaign', details: err?.message || String(err) } });
     }
   }
   
