@@ -121,8 +121,8 @@ const HomePage = () => {
   useEffect(() => {
     loadCampaigns();
     
-    // Refresh every 15 seconds to keep data synced with blockchain
-    const interval = setInterval(loadCampaigns, 15000);
+    // Refresh every 60 seconds to keep data synced with blockchain
+    const interval = setInterval(loadCampaigns, 60000);
     return () => clearInterval(interval);
   }, []);
 

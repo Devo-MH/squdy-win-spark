@@ -51,7 +51,7 @@ const HeroSection = () => {
                 <div className="p-3 bg-campaign-primary/20 rounded-lg w-fit mx-auto mb-3">
                   <Target className="w-8 h-8 text-campaign-primary" />
                 </div>
-                <div className="text-2xl font-bold text-foreground">12</div>
+                <div className="text-2xl font-bold text-foreground">2</div>
                 <div className="text-sm text-muted-foreground">Active Campaigns</div>
               </CardContent>
             </Card>
@@ -61,7 +61,7 @@ const HeroSection = () => {
                 <div className="p-3 bg-campaign-info/20 rounded-lg w-fit mx-auto mb-3">
                   <Users className="w-8 h-8 text-campaign-info" />
                 </div>
-                <div className="text-2xl font-bold text-foreground">2.5K+</div>
+                <div className="text-2xl font-bold text-foreground">1K+</div>
                 <div className="text-sm text-muted-foreground">Participants</div>
               </CardContent>
             </Card>
@@ -71,8 +71,8 @@ const HeroSection = () => {
                 <div className="p-3 bg-campaign-warning/20 rounded-lg w-fit mx-auto mb-3">
                   <Flame className="w-8 h-8 text-campaign-warning" />
                 </div>
-                <div className="text-2xl font-bold text-foreground">15M+</div>
-                <div className="text-sm text-muted-foreground">SQUDY Burned</div>
+                <div className="text-2xl font-bold text-foreground">200B+</div>
+                <div className="text-sm text-muted-foreground">SQUDY to be Burned</div>
               </CardContent>
             </Card>
             
@@ -81,8 +81,8 @@ const HeroSection = () => {
                 <div className="p-3 bg-campaign-success/20 rounded-lg w-fit mx-auto mb-3">
                   <Trophy className="w-8 h-8 text-campaign-success" />
                 </div>
-                <div className="text-2xl font-bold text-foreground">$50K+</div>
-                <div className="text-sm text-muted-foreground">Prizes Awarded</div>
+                <div className="text-2xl font-bold text-foreground">$5M+</div>
+                <div className="text-sm text-muted-foreground">Prizes to beAwarded</div>
               </CardContent>
             </Card>
           </div>
