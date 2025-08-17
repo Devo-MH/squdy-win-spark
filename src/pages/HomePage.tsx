@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import { tokenInfo, campaignStats } from "@/services/mockData";
 import { useWeb3 } from "@/contexts/Web3Context";
 import { useContracts } from "@/services/contracts";
+import { campaignAPI } from "@/services/api";
 import { blockchainCampaignService, BlockchainCampaign } from "@/services/blockchainCampaigns";
 
 const HomePage = () => {
@@ -26,22 +27,49 @@ const HomePage = () => {
   const isOnCampaignsPage = location.pathname === '/campaigns';
   const campaignLimit = isOnCampaignsPage ? 20 : 6;
   
-  // Use blockchain data instead of failing API
+  // DB-first list, with optional on-chain overlay
   const [campaigns, setCampaigns] = useState<BlockchainCampaign[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Load campaigns from blockchain
+  // Load campaigns from DB first, then overlay on-chain fields in background
   const loadCampaigns = async () => {
     try {
       setIsLoading(true);
       setError(null);
-      const data = await blockchainCampaignService.getCampaigns();
-      setCampaigns(data.campaigns);
-      console.log('✅ Campaigns loaded from blockchain:', data.campaigns.length);
+      // 1) DB list (admin-controlled)
+      const dbData = await campaignAPI.getCampaigns({ limit: campaignLimit });
+      const dbCampaigns = Array.isArray(dbData?.campaigns) ? dbData.campaigns : [];
+      setCampaigns(dbCampaigns as any);
+      console.log('✅ Campaigns loaded from DB:', dbCampaigns.length);
+
+      // 2) Overlay from blockchain asynchronously (do not block UI)
+      try {
+        const chainData = await blockchainCampaignService.getCampaigns();
+        const mapById = new Map(chainData.campaigns.map(c => [Number((c as any).contractId || c.id), c]));
+        setCampaigns(prev => prev.map((p: any) => {
+          const key = Number(p.contractId || p.id);
+          const onChain = mapById.get(key);
+          if (!onChain) return p;
+          return {
+            ...p,
+            currentAmount: onChain.currentAmount ?? p.currentAmount,
+            participantCount: onChain.participantCount ?? p.participantCount,
+            softCap: onChain.softCap ?? p.softCap,
+            hardCap: onChain.hardCap ?? p.hardCap,
+            ticketAmount: onChain.ticketAmount ?? p.ticketAmount,
+            totalBurned: onChain.totalBurned ?? p.totalBurned,
+            winners: onChain.winners?.length ? onChain.winners : (p.winners || []),
+            status: onChain.status || p.status,
+          } as any;
+        }) as any);
+        console.log('🔄 Overlay from blockchain applied');
+      } catch (overlayErr) {
+        console.warn('Overlay from blockchain failed:', overlayErr);
+      }
       
       // Enhanced debug logging for each campaign
-      data.campaigns.forEach((campaign, index) => {
+      campaigns.forEach((campaign, index) => {
         const now = Date.now();
         const startMs = new Date(campaign.startDate).getTime();
         const endMs = new Date(campaign.endDate).getTime();
