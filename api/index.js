@@ -154,7 +154,7 @@ export default async function handler(req, res) {
       const results = await collection.find({}).sort({ createdAt: -1 }).toArray();
 
       // Overlay participant counts from participations collection
-      let campaigns = (results && results.length > 0) ? results : getBaseCampaigns();
+      let campaigns = Array.isArray(results) ? results : [];
       try {
         const participations = db.collection('participations');
         const counts = await participations.aggregate([
@@ -208,8 +208,8 @@ export default async function handler(req, res) {
       });
     } catch (err) {
       console.error('GET /campaigns error:', err);
-      // Fail-open: return base campaigns to avoid frontend 500s if DB is unavailable
-      const campaigns = getBaseCampaigns();
+      // Fail-open: return an empty list if DB is unavailable
+      const campaigns = [];
       res.setHeader('Cache-Control', 'no-store');
       return res.json({
         campaigns,
