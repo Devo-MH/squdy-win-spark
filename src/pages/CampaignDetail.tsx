@@ -175,6 +175,7 @@ const CampaignDetail = () => {
           participantCount: Math.max(0, toNum(c.participantCount ?? prev.participantCount)),
           softCap: toNum(c.softCap ?? prev.softCap),
           hardCap: toNum(c.hardCap ?? prev.hardCap),
+          ticketAmount: toNum((c as any).ticketAmount ?? prev.ticketAmount),
           winners: winnersClean.length ? winnersClean : (prev.winners || []),
           totalBurned: toNum(c.totalBurned ?? prev.totalBurned),
           // c.endDate is already a Date from ContractService.parseCampaignData
@@ -223,6 +224,7 @@ const CampaignDetail = () => {
           participantCount: Math.max(0, toNum(r.participantCount ?? prev.participantCount)),
           softCap: fmt(r.softCap ?? prev.softCap),
           hardCap: fmt(r.hardCap ?? prev.hardCap),
+          ticketAmount: fmt(r.ticketAmount ?? prev.ticketAmount),
           winners: winnersClean.length ? winnersClean : (prev.winners || []),
           tokensAreBurned: Boolean(r.tokensAreBurned ?? (prev as any).tokensAreBurned),
           totalBurned: fmt(r.totalBurned ?? (prev as any).totalBurned),
