@@ -463,6 +463,7 @@ const CampaignDetail = () => {
 
   // Derived values - only calculate if localCampaign exists
   const progress = localCampaign ? formatProgress(localCampaign.currentAmount, localCampaign.hardCap) : 0;
+  const totalStakedDisplay = localCampaign ? Number(localCampaign.currentAmount || 0) : 0;
   const nowTs = Date.now();
   const toMs = (v: any): number => {
     try {
@@ -922,7 +923,25 @@ const CampaignDetail = () => {
               {/* Prize Pool */}
                   <PrizePool prizes={localCampaign.prizes} />
                   {/* Winners Panel */}
-                  {/* Winners card removed per request; top banner now serves as the primary winners display */}
+                  {(Array.isArray(localCampaign?.winners) && (localCampaign!.winners as any[]).length > 0) || (winnersQuery.data?.winners?.length || 0) > 0 ? (
+                    <Card className="gradient-card border border-campaign-success/30">
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <Trophy className="w-5 h-5 text-campaign-success" />
+                          Winners
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                          {(winnersQuery.data?.winners?.length ? winnersQuery.data.winners : (localCampaign!.winners as any[]) || []).map((addr: string, i: number) => (
+                            <div key={addr + i} className="px-3 py-2 rounded bg-campaign-success/10 text-campaign-success break-all">
+                              {addr}
+                            </div>
+                          ))}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ) : null}
                   
                   {/* Campaign Details card removed per request */}
 
