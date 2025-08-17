@@ -169,6 +169,7 @@ const CampaignDetail = () => {
           try { return Number(v?.toString?.() ?? v ?? 0); } catch { return 0; }
         };
         const winnersClean = Array.isArray(c.winners) ? (c.winners as string[]).filter((w) => (w || '').toLowerCase() !== zeroAddress) : [];
+        const winnersMapped = winnersClean.map((addr: string) => ({ walletAddress: addr, prizeIndex: -1, prizeName: '' }));
         setLocalCampaign(prev => prev ? ({
           ...prev,
           currentAmount: toNum(c.currentAmount ?? prev.currentAmount),
@@ -176,10 +177,13 @@ const CampaignDetail = () => {
           softCap: toNum(c.softCap ?? prev.softCap),
           hardCap: toNum(c.hardCap ?? prev.hardCap),
           ticketAmount: toNum((c as any).ticketAmount ?? prev.ticketAmount),
-          winners: winnersClean.length ? winnersClean : (prev.winners || []),
+          winners: winnersMapped.length ? winnersMapped : (prev.winners || []),
           totalBurned: toNum(c.totalBurned ?? prev.totalBurned),
           // c.endDate is already a Date from ContractService.parseCampaignData
-          endDate: (c as any).endDate instanceof Date ? (c as any).endDate : (c.endDate ? new Date(Number((c as any).endDate) * 1000) : prev.endDate),
+          endDate: (() => {
+            const end = (c as any).endDate instanceof Date ? (c as any).endDate : (c.endDate ? new Date(Number((c as any).endDate) * 1000) : null);
+            return end ? end.toISOString() : prev.endDate;
+          })(),
           startDate: (c as any).startDate instanceof Date ? (c as any).startDate : prev.startDate,
           status: typeof (c as any).status === 'string' ? (c as any).status : prev.status,
         }) : prev);
@@ -218,6 +222,7 @@ const CampaignDetail = () => {
           try { return Number(v?.toString?.() ?? v ?? 0); } catch { return 0; }
         };
         const winnersClean = Array.isArray(r.winners) ? (r.winners as string[]).filter((w) => (w || '').toLowerCase() !== zeroAddress) : [];
+        const winnersMapped = winnersClean.map((addr: string) => ({ walletAddress: addr, prizeIndex: -1, prizeName: '' }));
         setLocalCampaign(prev => prev ? ({
           ...prev,
           currentAmount: fmt(r.currentAmount ?? prev.currentAmount),
@@ -225,10 +230,10 @@ const CampaignDetail = () => {
           softCap: fmt(r.softCap ?? prev.softCap),
           hardCap: fmt(r.hardCap ?? prev.hardCap),
           ticketAmount: fmt(r.ticketAmount ?? prev.ticketAmount),
-          winners: winnersClean.length ? winnersClean : (prev.winners || []),
+          winners: winnersMapped.length ? winnersMapped : (prev.winners || []),
           tokensAreBurned: Boolean(r.tokensAreBurned ?? (prev as any).tokensAreBurned),
           totalBurned: fmt(r.totalBurned ?? (prev as any).totalBurned),
-          endDate: r.endDate ? new Date(Number((r as any).endDate) * 1000) : prev.endDate,
+          endDate: r.endDate ? new Date(Number((r as any).endDate) * 1000).toISOString() : prev.endDate,
         }) : prev);
       } catch {}
     };
@@ -422,14 +427,7 @@ const CampaignDetail = () => {
         campaignId: localCampaign.contractId,
         stakeAmount: 0, // Already staked
         stakeTxHash: 'staked', // Placeholder since already staked
-        socialTasks: completedTasks.reduce((acc, taskId) => {
-          const task = campaignTasks.find(t => t.id === taskId);
-          if (task) {
-            acc[taskId] = { completed: true, type: task.type };
-          }
-          return acc;
-        }, {} as Record<string, any>),
-      });
+      } as any);
       
       // Immediately update local state to reflect participation
       setHasJoinedLocally(true);
@@ -811,7 +809,7 @@ const CampaignDetail = () => {
                         completedTasks={completedTasks}
                         onTaskChange={handleTaskChange}
                         campaignName={localCampaign.name}
-                        campaignId={localCampaign.id?.toString()}
+                        campaignId={String(localCampaign.contractId)}
                         enableSimulation={String(import.meta.env.VITE_ENABLE_MOCK_FALLBACK || '').toLowerCase() === 'true'}
                         highlightFirstIncompleteTask={true}
                       />
