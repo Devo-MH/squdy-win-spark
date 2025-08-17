@@ -18,6 +18,7 @@ const CampaignCard = ({ campaign }: CampaignCardProps) => {
   const socket = useSocket();
   const [localCampaign, setLocalCampaign] = useState(campaign);
   const [lastOnChainUpdate, setLastOnChainUpdate] = useState<number>(0);
+  const [lastDbUpdate, setLastDbUpdate] = useState<number>(0);
   const [onChainError, setOnChainError] = useState<string | null>(null);
 
   // Removed API dependency - using only blockchain data
@@ -200,7 +201,7 @@ const CampaignCard = ({ campaign }: CampaignCardProps) => {
     };
   }, [socket, localCampaign.contractId]);
 
-  // Update local state when campaign prop changes
+  // Update local state when campaign prop changes; prefer fresher on-chain overlay
   useEffect(() => {
     // sanitize incoming data (winners, participantCount)
     const safeParticipants = (() => {
@@ -210,12 +211,20 @@ const CampaignCard = ({ campaign }: CampaignCardProps) => {
     const safeWinners = Array.isArray((campaign as any).winners)
       ? ((campaign as any).winners as string[]).filter((w) => (w || '').toLowerCase() !== zeroAddress)
       : (campaign as any).winners;
+    const dbUpdatedAt = (() => {
+      try { return new Date((campaign as any).updatedAt || 0).getTime(); } catch { return 0; }
+    })();
+    // Only accept DB update if it is newer than our last on-chain update
+    if (dbUpdatedAt && lastOnChainUpdate && dbUpdatedAt <= lastOnChainUpdate) {
+      return;
+    }
     setLocalCampaign({
       ...campaign,
       participantCount: safeParticipants,
       winners: safeWinners,
     } as any);
-  }, [campaign]);
+    if (dbUpdatedAt) setLastDbUpdate(dbUpdatedAt);
+  }, [campaign, lastOnChainUpdate]);
 
   return (
     <Card className="bg-muted/50 border-border/50 hover:bg-muted/70 hover:scale-105 transition-all duration-300 hover:shadow-neon group rounded-lg">
