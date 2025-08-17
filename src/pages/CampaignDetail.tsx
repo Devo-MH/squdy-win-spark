@@ -935,17 +935,22 @@ const CampaignDetail = () => {
                             All staked SQUDY tokens are burned after the campaign. This creates scarcity and 
                             adds value to the ecosystem.
                           </p>
-                          {localCampaign.status === 'burned' && (
-                            <div className="mt-3 p-3 bg-campaign-warning/5 border border-campaign-warning/20 rounded-lg">
-                              <p className="text-sm text-foreground">Total Burned: <span className="font-semibold text-campaign-warning">{Number(localCampaign.totalBurned || 0).toLocaleString()} SQUDY</span></p>
-                            </div>
-                          )}
                           <div className="mt-3 p-3 bg-campaign-warning/5 border border-campaign-warning/20 rounded-lg">
                             <p className="text-xs text-campaign-warning/70">
                               💡 <strong>Why Burn?</strong> Token burning reduces supply, potentially increasing 
                               value for remaining token holders while funding amazing prizes.
                             </p>
                           </div>
+                          {(localCampaign.status === 'burned' || Number(localCampaign.totalBurned || 0) > 0) && (
+                            <div className="mt-3">
+                              <div className="flex items-center gap-2 text-sm bg-red-500/10 p-3 rounded border border-red-500/20">
+                                <Flame className="w-4 h-4 text-red-500" />
+                                <span className="text-red-400 font-medium">
+                                  {Number(localCampaign.totalBurned || 0).toLocaleString()} SQUDY burned
+                                </span>
+                              </div>
+                            </div>
+                          )}
                     </div>
                   </div>
                 </CardContent>
