@@ -10,11 +10,19 @@ interface Prize {
   quantity: number;
 }
 
-interface PrizePoolProps {
-  prizes: Prize[];
+interface WinnerInfo {
+  walletAddress?: string;
+  winner?: string;
+  prizeName?: string;
 }
 
-export function PrizePool({ prizes }: PrizePoolProps) {
+interface PrizePoolProps {
+  prizes: Prize[];
+  winners?: WinnerInfo[];
+  showWinners?: boolean;
+}
+
+export function PrizePool({ prizes, winners = [], showWinners = false }: PrizePoolProps) {
   const totalPrizePool = prizes.reduce((total, prize) => total + (prize.value * prize.quantity), 0);
 
   const getPrizeIcon = (index: number) => {
@@ -108,6 +116,19 @@ export function PrizePool({ prizes }: PrizePoolProps) {
           {prizes.map((prize, index) => {
             const Icon = getPrizeIcon(index);
             const colors = getPrizeColors(index);
+            const prizeNameLower = (prize.name || '').toLowerCase();
+            const winnersForPrize = showWinners
+              ? winners.filter(w => (w.prizeName || '').toLowerCase().includes(prizeNameLower))
+              : [];
+            const shorten = (addr?: string) => {
+              const a = addr || '';
+              if (!a || a.length < 10) return a || '—';
+              return `${a.slice(0, 6)}...${a.slice(-4)}`;
+            };
+            const explorer = (address: string) => {
+              const base = (import.meta as any).env?.VITE_ETHERSCAN_BASE_URL || 'https://bscscan.com';
+              return `${base}/address/${address}`;
+            };
             
             return (
               <div
@@ -164,6 +185,31 @@ export function PrizePool({ prizes }: PrizePoolProps) {
                 <div className="absolute top-2 right-2 opacity-10">
                   <Icon className="w-12 h-12" />
                 </div>
+
+                {showWinners && winnersForPrize.length > 0 && (
+                  <div className="mt-4">
+                    <div className="text-sm font-medium text-campaign-success mb-2 flex items-center gap-2">
+                      <Trophy className="w-4 h-4 text-campaign-success" />
+                      Winners
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {winnersForPrize.map((w, i) => {
+                        const addr = w.walletAddress || w.winner || '';
+                        return (
+                          <a
+                            key={`${addr}-${i}`}
+                            href={explorer(addr)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-3 py-1 rounded-full border border-white/10 text-xs text-muted-foreground hover:text-foreground hover:border-white/20 transition break-all"
+                          >
+                            {shorten(addr)}
+                          </a>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
             );
           })}

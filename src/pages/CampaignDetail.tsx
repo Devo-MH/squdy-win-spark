@@ -917,7 +917,11 @@ const CampaignDetail = () => {
                 {/* Right Column - Prize Pool & Campaign Info */}
             <div className="space-y-6">
               {/* Prize Pool */}
-                  <PrizePool prizes={localCampaign.prizes} />
+                  <PrizePool 
+                    prizes={localCampaign.prizes} 
+                    winners={(winnersQuery.data?.winners?.length ? winnersQuery.data.winners : (localCampaign!.winners as any[]) || []) as any}
+                    showWinners={derivedStatus !== 'active'}
+                  />
                   {/* Winners Panel removed as requested */}
                   
                   {/* Campaign Details card removed per request */}
