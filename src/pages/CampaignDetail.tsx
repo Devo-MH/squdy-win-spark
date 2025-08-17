@@ -676,6 +676,7 @@ const CampaignDetail = () => {
                         <ul className="flex flex-col sm:flex-row flex-wrap justify-center items-center gap-3">
                           {winnersQuery.data.winners.map((w: any, idx: number) => {
                             const addr = w.walletAddress || w.winner || '0x…';
+                            const prize = w.prizeName || (typeof w.prizeIndex === 'number' ? `Prize #${w.prizeIndex + 1}` : '');
                             return (
                               <li
                                 key={idx}
@@ -684,6 +685,7 @@ const CampaignDetail = () => {
                               >
                                 <div className="flex items-center justify-center gap-3">
                                   <span className="font-mono text-sm text-campaign-success break-all">{addr}</span>
+                                  {prize && <span className="text-xs text-muted-foreground">— {prize}</span>}
                                   <Button size="sm" variant="outline" className="h-7 px-2 text-xs" onClick={() => copyToClipboard(addr)}>
                                     <Copy className="w-3 h-3 mr-1" /> Copy
                                   </Button>
@@ -697,7 +699,6 @@ const CampaignDetail = () => {
                                     <ExternalLink className="w-3 h-3 mr-1" /> View
                                   </Button>
                                 </div>
-                                {w.prizeName ? <div className="mt-1 text-xs text-muted-foreground">{w.prizeName}</div> : null}
                               </li>
                             );
                           })}
