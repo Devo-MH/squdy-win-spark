@@ -604,90 +604,7 @@ const CampaignDetail = () => {
       
       <div className="pt-24 pb-20">
         <div className="container mx-auto px-4 max-w-7xl">
-          {/* Winners banner moved here to top */}
-          <div className="mb-8">
-            {derivedStatus !== 'active' && ((winnersQuery.data?.winners?.length || 0) > 0 || (Array.isArray(localCampaign?.winners) && (localCampaign!.winners as any[]).length > 0)) ? (
-            <Card className="gradient-card border border-campaign-success/40 shadow-neon animate-in fade-in slide-in-from-top-4 duration-500 max-w-4xl mx-auto text-center">
-              <CardHeader>
-                <CardTitle>
-                  <div className="flex items-center justify-center gap-3">
-                    <div className="p-3 bg-campaign-success/20 border border-campaign-success/40 rounded-lg animate-pulse">
-                      <Trophy className="w-6 h-6 text-campaign-success" />
-                    </div>
-                    <span className="text-foreground text-2xl font-bold tracking-wide">Winners</span>
-                  </div>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-5">
-                {winnersQuery.isLoading ? (
-                  <p className="text-sm text-muted-foreground">Loading winners…</p>
-                ) : (winnersQuery.data?.winners?.length ? (
-                  <ul className="flex flex-col sm:flex-row flex-wrap justify-center items-center gap-3">
-                    {winnersQuery.data.winners.map((w: any, idx: number) => {
-                      const addr = w.walletAddress || w.winner || '0x…';
-                      return (
-                        <li
-                          key={idx}
-                          className="group inline-flex items-center justify-center px-6 py-3 rounded-md bg-campaign-success/10 border border-campaign-success/30 hover:border-campaign-success/60 hover:bg-campaign-success/15 transition-all duration-300 shadow-sm backdrop-blur-sm whitespace-nowrap text-center"
-                          style={{ animationDelay: `${idx * 80}ms` }}
-                        >
-                          <div className="flex items-center justify-center gap-3">
-                            <span className="font-mono text-sm text-campaign-success">{addr}</span>
-                            <Button size="sm" variant="outline" className="h-7 px-2 text-xs" onClick={() => copyToClipboard(addr)}>
-                              <Copy className="w-3 h-3 mr-1" /> Copy
-                            </Button>
-                            <Button size="sm" variant="outline" className="h-7 px-2 text-xs" onClick={async () => {
-                              let chainIdHex: string | null = null;
-                              try { chainIdHex = await (window as any).ethereum?.request?.({ method: 'eth_chainId' }); } catch {}
-                              const chainId = chainIdHex ? parseInt(chainIdHex, 16) : Number(import.meta.env.VITE_CHAIN_ID || 56);
-                              const base = chainId === 56 ? 'https://bscscan.com' : (chainId === 1 ? 'https://etherscan.io' : 'https://sepolia.etherscan.io');
-                              window.open(`${base}/address/${addr}`,'_blank');
-                            }}>
-                              <ExternalLink className="w-3 h-3 mr-1" /> View
-                            </Button>
-                          </div>
-                          {w.prizeName ? <div className="mt-1 text-xs text-muted-foreground">{w.prizeName}</div> : null}
-                        </li>
-                      );
-                    })}
-                  </ul>
-                ) : (
-                  <ul className="flex flex-col sm:flex-row flex-wrap justify-center items-center gap-3">
-                    {(localCampaign!.winners as any[]).map((addr: any, idx: number) => (
-                      <li
-                        key={idx}
-                        className="group inline-flex items-center justify-center px-6 py-3 rounded-md bg-campaign-success/10 border border-campaign-success/30 hover:border-campaign-success/60 hover:bg-campaign-success/15 transition-all duration-300 shadow-sm backdrop-blur-sm whitespace-nowrap text-center"
-                        style={{ animationDelay: `${idx * 80}ms` }}
-                      >
-                        <div className="flex items-center justify-center gap-3">
-                          <span className="font-mono text-sm text-campaign-success">{String(addr)}</span>
-                          <Button size="sm" variant="outline" className="h-7 px-2 text-xs" onClick={() => copyToClipboard(String(addr))}>
-                            <Copy className="w-3 h-3 mr-1" /> Copy
-                          </Button>
-                          <Button size="sm" variant="outline" className="h-7 px-2 text-xs" onClick={async () => {
-                            let chainIdHex: string | null = null;
-                            try { chainIdHex = await (window as any).ethereum?.request?.({ method: 'eth_chainId' }); } catch {}
-                            const chainId = chainIdHex ? parseInt(chainIdHex, 16) : Number(import.meta.env.VITE_CHAIN_ID || 56);
-                            const base = chainId === 56 ? 'https://bscscan.com' : (chainId === 1 ? 'https://etherscan.io' : 'https://sepolia.etherscan.io');
-                            window.open(`${base}/address/${String(addr)}`,'_blank');
-                          }}>
-                            <ExternalLink className="w-3 h-3 mr-1" /> View
-                          </Button>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                ))}
-                {/* Celebration confetti */}
-                <div className="pointer-events-none select-none flex items-center justify-center gap-3">
-                  <span className="text-3xl animate-bounce">🎉</span>
-                  <span className="text-3xl animate-pulse">🎊</span>
-                  <span className="text-3xl animate-bounce">✨</span>
-                </div>
-              </CardContent>
-            </Card>
-            ) : null}
-          </div>
+          {/* Winners block will render after the campaign header */}
 
           {/* Loading State */}
           {(isCampaignLoading || !localCampaign) && (
@@ -737,6 +654,85 @@ const CampaignDetail = () => {
                   imageUrl={localCampaign.imageUrl || 'https://images.unsplash.com/photo-1639762681485-074b7f938ba0?w=800&h=600&fit=crop&crop=center'}
                 />
               </div>
+
+              {/* Winners block under header */}
+              {derivedStatus !== 'active' && ((winnersQuery.data?.winners?.length || 0) > 0 || (Array.isArray(localCampaign?.winners) && (localCampaign!.winners as any[]).length > 0)) ? (
+                <div className="mb-10">
+                  <Card className="gradient-card border border-campaign-success/40 shadow-neon max-w-5xl mx-auto text-center">
+                    <CardHeader>
+                      <CardTitle>
+                        <div className="flex items-center justify-center gap-3">
+                          <div className="p-3 bg-campaign-success/20 border border-campaign-success/40 rounded-lg">
+                            <Trophy className="w-6 h-6 text-campaign-success" />
+                          </div>
+                          <span className="text-foreground text-2xl font-bold tracking-wide">Winners</span>
+                        </div>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-5">
+                      {winnersQuery.isLoading ? (
+                        <p className="text-sm text-muted-foreground">Loading winners…</p>
+                      ) : (winnersQuery.data?.winners?.length ? (
+                        <ul className="flex flex-col sm:flex-row flex-wrap justify-center items-center gap-3">
+                          {winnersQuery.data.winners.map((w: any, idx: number) => {
+                            const addr = w.walletAddress || w.winner || '0x…';
+                            return (
+                              <li
+                                key={idx}
+                                className="group inline-flex items-center justify-center px-6 py-3 rounded-md bg-campaign-success/10 border border-campaign-success/30 hover:border-campaign-success/60 hover:bg-campaign-success/15 transition-all duration-300 shadow-sm backdrop-blur-sm text-center"
+                                style={{ animationDelay: `${idx * 80}ms` }}
+                              >
+                                <div className="flex items-center justify-center gap-3">
+                                  <span className="font-mono text-sm text-campaign-success break-all">{addr}</span>
+                                  <Button size="sm" variant="outline" className="h-7 px-2 text-xs" onClick={() => copyToClipboard(addr)}>
+                                    <Copy className="w-3 h-3 mr-1" /> Copy
+                                  </Button>
+                                  <Button size="sm" variant="outline" className="h-7 px-2 text-xs" onClick={async () => {
+                                    let chainIdHex: string | null = null;
+                                    try { chainIdHex = await (window as any).ethereum?.request?.({ method: 'eth_chainId' }); } catch {}
+                                    const chainId = chainIdHex ? parseInt(chainIdHex, 16) : Number(import.meta.env.VITE_CHAIN_ID || 56);
+                                    const base = chainId === 56 ? 'https://bscscan.com' : (chainId === 1 ? 'https://etherscan.io' : 'https://sepolia.etherscan.io');
+                                    window.open(`${base}/address/${addr}`,'_blank');
+                                  }}>
+                                    <ExternalLink className="w-3 h-3 mr-1" /> View
+                                  </Button>
+                                </div>
+                                {w.prizeName ? <div className="mt-1 text-xs text-muted-foreground">{w.prizeName}</div> : null}
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      ) : (
+                        <ul className="flex flex-col sm:flex-row flex-wrap justify-center items-center gap-3">
+                          {(localCampaign!.winners as any[]).map((addr: any, idx: number) => (
+                            <li
+                              key={idx}
+                              className="group inline-flex items-center justify-center px-6 py-3 rounded-md bg-campaign-success/10 border border-campaign-success/30 hover:border-campaign-success/60 hover:bg-campaign-success/15 transition-all duration-300 shadow-sm backdrop-blur-sm text-center"
+                              style={{ animationDelay: `${idx * 80}ms` }}
+                            >
+                              <div className="flex items-center justify-center gap-3">
+                                <span className="font-mono text-sm text-campaign-success break-all">{String(addr)}</span>
+                                <Button size="sm" variant="outline" className="h-7 px-2 text-xs" onClick={() => copyToClipboard(String(addr))}>
+                                  <Copy className="w-3 h-3 mr-1" /> Copy
+                                </Button>
+                                <Button size="sm" variant="outline" className="h-7 px-2 text-xs" onClick={async () => {
+                                  let chainIdHex: string | null = null;
+                                  try { chainIdHex = await (window as any).ethereum?.request?.({ method: 'eth_chainId' }); } catch {}
+                                  const chainId = chainIdHex ? parseInt(chainIdHex, 16) : Number(import.meta.env.VITE_CHAIN_ID || 56);
+                                  const base = chainId === 56 ? 'https://bscscan.com' : (chainId === 1 ? 'https://etherscan.io' : 'https://sepolia.etherscan.io');
+                                  window.open(`${base}/address/${String(addr)}`,'_blank');
+                                }}>
+                                  <ExternalLink className="w-3 h-3 mr-1" /> View
+                                </Button>
+                              </div>
+                            </li>
+                          ))}
+                        </ul>
+                      ))}
+                    </CardContent>
+                  </Card>
+                </div>
+              ) : null}
 
               {/* Campaign Statistics */}
               <div className="mb-12">
@@ -922,26 +918,7 @@ const CampaignDetail = () => {
             <div className="space-y-6">
               {/* Prize Pool */}
                   <PrizePool prizes={localCampaign.prizes} />
-                  {/* Winners Panel */}
-                  {(Array.isArray(localCampaign?.winners) && (localCampaign!.winners as any[]).length > 0) || (winnersQuery.data?.winners?.length || 0) > 0 ? (
-                    <Card className="gradient-card border border-campaign-success/30">
-                      <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                          <Trophy className="w-5 h-5 text-campaign-success" />
-                          Winners
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                          {(winnersQuery.data?.winners?.length ? winnersQuery.data.winners : (localCampaign!.winners as any[]) || []).map((addr: string, i: number) => (
-                            <div key={addr + i} className="px-3 py-2 rounded bg-campaign-success/10 text-campaign-success break-all">
-                              {addr}
-                            </div>
-                          ))}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ) : null}
+                  {/* Winners Panel removed as requested */}
                   
                   {/* Campaign Details card removed per request */}
 
