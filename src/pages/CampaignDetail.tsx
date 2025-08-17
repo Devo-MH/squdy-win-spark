@@ -137,7 +137,7 @@ const CampaignDetail = () => {
   // Helper: refresh my on-chain participation
   const refreshMyParticipation = async () => {
     try {
-      if (!contractService || !localCampaign?.contractId || !account) return;
+      if (!contractService || !localCampaign?.contractId || !account || !isCorrectNetwork) return;
       const p = await (contractService as any).getParticipant?.(Number(localCampaign.contractId), account);
       if (p) {
         if (typeof p.ticketCount === 'number') setMyTickets(p.ticketCount);
@@ -154,7 +154,7 @@ const CampaignDetail = () => {
       timer = setInterval(refreshMyParticipation, 15000);
     })();
     return () => { if (timer) clearInterval(timer); };
-  }, [account, contractService, localCampaign?.contractId]);
+  }, [account, contractService, localCampaign?.contractId, isCorrectNetwork]);
 
   // On-chain refresh to reflect real-time amounts/participants/winners/burn and end time changes
   useEffect(() => {
