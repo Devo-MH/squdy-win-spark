@@ -157,8 +157,10 @@ export class BlockchainCampaignService {
             endDate: this.parseTimestamp(campaignData.endDate),
             prizes: campaignData.prizes?.map((prize: string, index: number) => ({
               name: prize || `Prize ${index + 1}`,
+              description: '',
               value: 1000, // Default value
-              currency: 'USD'
+              currency: 'USD',
+              quantity: 1,
             })) || [],
             winners: campaignData.winners?.filter((w: string) => w !== '0x0000000000000000000000000000000000000000') || [],
             totalBurned: this.formatAmount(campaignData.totalBurned),
@@ -227,8 +229,10 @@ export class BlockchainCampaignService {
         endDate: this.parseTimestamp(campaignData.endDate),
         prizes: campaignData.prizes?.map((prize: string, index: number) => ({
           name: prize || `Prize ${index + 1}`,
+          description: '',
           value: 1000, // Default value
-          currency: 'USD'
+          currency: 'USD',
+          quantity: 1,
         })) || [],
         winners: campaignData.winners?.filter((w: string) => w !== '0x0000000000000000000000000000000000000000') || [],
         totalBurned: this.formatAmount(campaignData.totalBurned),
