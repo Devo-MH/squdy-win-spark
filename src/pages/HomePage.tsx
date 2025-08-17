@@ -51,7 +51,7 @@ const HomePage = () => {
           const key = Number(p.contractId || p.id);
           const onChain = mapById.get(key);
           if (!onChain) return p;
-          return {
+          const merged = {
             ...p,
             currentAmount: onChain.currentAmount ?? p.currentAmount,
             participantCount: onChain.participantCount ?? p.participantCount,
@@ -62,6 +62,18 @@ const HomePage = () => {
             winners: onChain.winners?.length ? onChain.winners : (p.winners || []),
             status: onChain.status || p.status,
           } as any;
+          // Derive status more accurately based on time and burn flag
+          const now = Date.now();
+          const startMs = new Date(merged.startDate).getTime();
+          const endMs = new Date(merged.endDate).getTime();
+          const started = Number.isFinite(startMs) && startMs <= now;
+          const ended = Number.isFinite(endMs) && endMs <= now;
+          const burnedFlag = Boolean((merged as any).tokensAreBurned) || Number((merged as any).totalBurned || 0) > 0;
+          if (burnedFlag) merged.status = 'burned';
+          else if (ended) merged.status = 'finished';
+          else if (started) merged.status = 'active';
+          else merged.status = 'pending';
+          return merged;
         }) as any);
         console.log('🔄 Overlay from blockchain applied');
       } catch (overlayErr) {
@@ -121,8 +133,23 @@ const HomePage = () => {
     toast.success("Campaigns refreshed from blockchain!");
   };
 
-  const activeCampaigns = campaigns.filter(c => c.status === "active");
-  const finishedCampaigns = campaigns.filter(c => c.status === "finished");
+  const derive = (c: any) => {
+    const now = Date.now();
+    const startMs = new Date(c.startDate).getTime();
+    const endMs = new Date(c.endDate).getTime();
+    const started = Number.isFinite(startMs) && startMs <= now;
+    const ended = Number.isFinite(endMs) && endMs <= now;
+    const burnedFlag = Boolean(c?.tokensAreBurned) || Number(c?.totalBurned || 0) > 0;
+    if (burnedFlag) return 'burned';
+    if (ended) return 'finished';
+    if (started) return 'active';
+    return 'pending';
+  };
+  const activeCampaigns = campaigns.filter(c => derive(c) === 'active');
+  const finishedCampaigns = campaigns.filter(c => {
+    const s = derive(c);
+    return s === 'finished' || s === 'burned';
+  });
 
   // Auto-scroll to campaigns section if on /campaigns route
   useEffect(() => {
