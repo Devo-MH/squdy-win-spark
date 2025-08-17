@@ -577,13 +577,50 @@ const manager = process.env.VITE_CAMPAIGN_MANAGER_ADDRESS || process.env.CAMPAIG
   
   // Admin stats
   if (url.includes('/admin/stats')) {
-    return res.json({
-      stats: {
-        platform: { totalCampaigns: 2, activeCampaigns: 2, totalParticipants: 67, totalRaised: 23000, status: 'operational' },
-        blockchain: { network: process.env.VITE_NETWORK || 'bsc', chainId: String(process.env.VITE_CHAIN_ID || 56), connected: true },
-        database: { status: 'connected', lastCheck: new Date().toISOString() },
-      }
-    });
+    try {
+      const db = await getDb();
+      const campaignsCol = db.collection('campaigns');
+      const partsCol = db.collection('participations');
+
+      const campaigns = await campaignsCol.find({}).toArray();
+      const totalCampaigns = Array.isArray(campaigns) ? campaigns.length : 0;
+      const activeCampaigns = Array.isArray(campaigns) ? campaigns.filter((c) => String(c.status || '').toLowerCase() === 'active').length : 0;
+      const totalStaked = Array.isArray(campaigns) ? campaigns.reduce((sum, c) => sum + (Number(c.currentAmount || 0) || 0), 0) : 0;
+      const totalBurned = Array.isArray(campaigns) ? campaigns.reduce((sum, c) => sum + (Number(c.totalBurned || 0) || 0), 0) : 0;
+
+      let totalParticipants = 0;
+      try {
+        const distinct = await partsCol.distinct('walletAddress');
+        totalParticipants = Array.isArray(distinct) ? distinct.length : 0;
+      } catch (_) {}
+
+      return res.json({
+        stats: {
+          totalCampaigns,
+          activeCampaigns,
+          totalParticipants,
+          totalStaked,
+          totalBurned,
+          platform: { status: 'operational' },
+          blockchain: { network: process.env.VITE_NETWORK || 'bsc', chainId: String(process.env.VITE_CHAIN_ID || 56), connected: true },
+          database: { status: 'connected', lastCheck: new Date().toISOString() },
+        }
+      });
+    } catch (e) {
+      console.warn('Admin stats aggregation failed:', e?.message || e);
+      return res.json({
+        stats: {
+          totalCampaigns: 0,
+          activeCampaigns: 0,
+          totalParticipants: 0,
+          totalStaked: 0,
+          totalBurned: 0,
+          platform: { status: 'degraded' },
+          blockchain: { network: process.env.VITE_NETWORK || 'bsc', chainId: String(process.env.VITE_CHAIN_ID || 56), connected: true },
+          database: { status: 'unknown', lastCheck: new Date().toISOString() },
+        }
+      });
+    }
   }
 
   // Admin: campaign state/actions (exact endpoints) BEFORE create route
