@@ -73,15 +73,15 @@ const CampaignCard = ({ campaign }: CampaignCardProps) => {
         // Enhanced data parsing with better error handling
         const formatAmount = (value: any): number => {
           try {
-            if (ethers.utils?.formatUnits) {
+            const anyEthers = ethers as any;
+            if (anyEthers.utils?.formatUnits) {
               // ethers v5
-              return parseFloat(ethers.utils.formatUnits(value, 18));
-            } else if (ethers.formatUnits) {
+              return parseFloat(anyEthers.utils.formatUnits(value, 18));
+            } else if (typeof anyEthers.formatUnits === 'function') {
               // ethers v6
-              return parseFloat(ethers.formatUnits(value, 18));
-            } else {
-              return Number(value?.toString?.() ?? value ?? 0);
+              return parseFloat(anyEthers.formatUnits(value, 18));
             }
+            return Number(value?.toString?.() ?? value ?? 0);
           } catch {
             return Number(value?.toString?.() ?? value ?? 0);
           }
@@ -240,7 +240,7 @@ const CampaignCard = ({ campaign }: CampaignCardProps) => {
               target.src = "https://images.unsplash.com/photo-1640340434855-6084b1f4901c?w=400&h=300&fit=crop";
             }}
           />
-          {(() => { const badgeStatus = (derivedStatus === 'ended' ? 'finished' : derivedStatus) as any; return (
+          {(() => { const badgeStatus = (derivedStatus) as any; return (
           <Badge 
             variant={getCampaignStatusBadge(badgeStatus)}
             className="absolute top-2 right-2 capitalize animate-pulse-glow"
