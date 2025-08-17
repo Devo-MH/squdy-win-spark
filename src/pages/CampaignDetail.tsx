@@ -673,8 +673,18 @@ const CampaignDetail = () => {
                       ) : (winnersQuery.data?.winners?.length ? (
                         <ul className="flex flex-col sm:flex-row flex-wrap justify-center items-center gap-3">
                           {winnersQuery.data.winners.map((w: any, idx: number) => {
-                            const addr = w.walletAddress || w.winner || '0x…';
+                            const extractAddr = (val: any): string => {
+                              if (typeof val === 'string') return val;
+                              const cand = val?.walletAddress || val?.winner || val?.address || val?.account || '';
+                              if (typeof cand === 'string') return cand;
+                              try {
+                                const m = JSON.stringify(val).match(/0x[a-fA-F0-9]{40}/);
+                                return m ? m[0] : '0x…';
+                              } catch { return '0x…'; }
+                            };
+                            const addr = extractAddr(w);
                             const prize = w.prizeName || (typeof w.prizeIndex === 'number' ? `Prize #${w.prizeIndex + 1}` : '');
+                            const short = addr && addr.length > 10 ? `${addr.slice(0, 6)}...${addr.slice(-4)}` : addr;
                             return (
                               <li
                                 key={idx}
@@ -682,7 +692,7 @@ const CampaignDetail = () => {
                                 style={{ animationDelay: `${idx * 80}ms` }}
                               >
                                 <div className="flex items-center justify-center gap-3">
-                                  <span className="font-mono text-sm text-campaign-success break-all">{addr}</span>
+                                  <span className="font-mono text-sm text-campaign-success break-all">{short}</span>
                                   {prize && <span className="text-xs text-muted-foreground">— {prize}</span>}
                                   <Button size="sm" variant="outline" className="h-7 px-2 text-xs" onClick={() => copyToClipboard(addr)}>
                                     <Copy className="w-3 h-3 mr-1" /> Copy
@@ -703,14 +713,26 @@ const CampaignDetail = () => {
                         </ul>
                       ) : (
                         <ul className="flex flex-col sm:flex-row flex-wrap justify-center items-center gap-3">
-                          {(localCampaign!.winners as any[]).map((addr: any, idx: number) => (
+                          {(localCampaign!.winners as any[]).map((w: any, idx: number) => {
+                            const extractAddr = (val: any): string => {
+                              if (typeof val === 'string') return val;
+                              const cand = val?.walletAddress || val?.winner || val?.address || val?.account || '';
+                              if (typeof cand === 'string') return cand;
+                              try {
+                                const m = JSON.stringify(val).match(/0x[a-fA-F0-9]{40}/);
+                                return m ? m[0] : '0x…';
+                              } catch { return '0x…'; }
+                            };
+                            const addr = extractAddr(w);
+                            const short = addr && addr.length > 10 ? `${addr.slice(0, 6)}...${addr.slice(-4)}` : addr;
+                            return (
                             <li
                               key={idx}
                               className="group inline-flex items-center justify-center px-6 py-3 rounded-md bg-campaign-success/10 border border-campaign-success/30 hover:border-campaign-success/60 hover:bg-campaign-success/15 transition-all duration-300 shadow-sm backdrop-blur-sm text-center"
                               style={{ animationDelay: `${idx * 80}ms` }}
                             >
                               <div className="flex items-center justify-center gap-3">
-                                <span className="font-mono text-sm text-campaign-success break-all">{String(addr)}</span>
+                                <span className="font-mono text-sm text-campaign-success break-all">{short}</span>
                                 <Button size="sm" variant="outline" className="h-7 px-2 text-xs" onClick={() => copyToClipboard(String(addr))}>
                                   <Copy className="w-3 h-3 mr-1" /> Copy
                                 </Button>
@@ -725,7 +747,7 @@ const CampaignDetail = () => {
                                 </Button>
                               </div>
                             </li>
-                          ))}
+                          )})}
                         </ul>
                       ))}
                     </CardContent>
