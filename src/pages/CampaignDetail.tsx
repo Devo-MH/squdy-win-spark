@@ -47,7 +47,7 @@ import {
 import { useContracts, CONTRACT_ADDRESSES } from "@/services/contracts";
 import { useSocket } from "@/services/socket";
 import { TaskChecklist } from "@/components/offchain-verifier";
-import { Task } from "@/components/offchain-verifier/types";
+import type { Task } from "@/components/offchain-verifier/src/types";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { CampaignHeader } from "@/components/campaign/CampaignHeader";
