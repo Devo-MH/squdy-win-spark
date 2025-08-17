@@ -5,18 +5,19 @@ import { Progress } from "@/components/ui/progress";
 import { Calendar, Users, Target, Flame, Trophy, Clock, ExternalLink } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Campaign } from "@/services/api";
+import { BlockchainCampaign } from "@/services/blockchainCampaigns";
 import { getCampaignStatusBadge, formatTimeLeft, formatProgress } from "@/hooks/useCampaigns";
 import { useEffect, useState } from "react";
 import { ethers } from "ethers";
 import { useSocket } from "@/services/socket";
 
 interface CampaignCardProps {
-  campaign: Campaign;
+  campaign: Campaign | BlockchainCampaign;
 }
 
 const CampaignCard = ({ campaign }: CampaignCardProps) => {
   const socket = useSocket();
-  const [localCampaign, setLocalCampaign] = useState(campaign);
+  const [localCampaign, setLocalCampaign] = useState<any>(campaign as any);
   const [lastOnChainUpdate, setLastOnChainUpdate] = useState<number>(0);
   const [lastDbUpdate, setLastDbUpdate] = useState<number>(0);
   const [onChainError, setOnChainError] = useState<string | null>(null);

@@ -24,6 +24,7 @@ export interface BlockchainCampaign {
   prizes: Array<{ name: string; value: number; currency: string }>;
   winners: string[];
   totalBurned: number;
+  bscScanUrl?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -139,6 +140,7 @@ export class BlockchainCampaignService {
             try { campaignData = await (this.contract as any).campaigns(i); } catch (e) { throw e; }
           }
           
+          const explorerBase = ((import.meta as any).env?.VITE_ETHERSCAN_BASE_URL) || 'https://bscscan.com';
           const campaign: BlockchainCampaign = {
             id: i,
             contractId: i,
@@ -161,6 +163,7 @@ export class BlockchainCampaignService {
             winners: campaignData.winners?.filter((w: string) => w !== '0x0000000000000000000000000000000000000000') || [],
             totalBurned: this.formatAmount(campaignData.totalBurned),
             createdAt: this.parseTimestamp(campaignData.startDate),
+            bscScanUrl: `${explorerBase}/address/${this.campaignManagerAddress}`,
             updatedAt: new Date().toISOString()
           };
 
@@ -207,6 +210,7 @@ export class BlockchainCampaignService {
         campaignData = await (this.contract as any).campaigns(campaignId);
       }
       
+      const explorerBase = ((import.meta as any).env?.VITE_ETHERSCAN_BASE_URL) || 'https://bscscan.com';
       const campaign: BlockchainCampaign = {
         id: campaignId,
         contractId: campaignId,
@@ -229,6 +233,7 @@ export class BlockchainCampaignService {
         winners: campaignData.winners?.filter((w: string) => w !== '0x0000000000000000000000000000000000000000') || [],
         totalBurned: this.formatAmount(campaignData.totalBurned),
         createdAt: this.parseTimestamp(campaignData.startDate),
+        bscScanUrl: `${explorerBase}/address/${this.campaignManagerAddress}`,
         updatedAt: new Date().toISOString()
       };
 
