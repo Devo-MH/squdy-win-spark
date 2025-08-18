@@ -49,7 +49,7 @@ const Footer = () => {
           <div className="space-y-4">
             <h3 className="font-semibold text-foreground">Legal</h3>
             <div className="space-y-2 text-sm">
-            <Link to="https://docs.squdy.fun" className="block text-muted-foreground hover:text-primary transition-colors">
+            <Link to="https://docs.squdy.fun" target="_blank" className="block text-muted-foreground hover:text-primary transition-colors">
                 Documentation
               </Link>
               <Link to="/terms" className="block text-muted-foreground hover:text-primary transition-colors">
@@ -69,21 +69,21 @@ const Footer = () => {
             <h3 className="font-semibold text-foreground">Community</h3>
             <div className="flex space-x-4">
               <a 
-                href="https://x.com/SqudyToken" 
+                href="https://x.com/SqudyToken" target="_blank"
                 className="text-muted-foreground hover:text-primary transition-colors"
                 aria-label="Twitter"
               >
                 <Twitter className="w-5 h-5" />
               </a>
               <a 
-                href="https://t.me/SqudyToken" 
+                href="https://t.me/SqudyToken" target="_blank"
                 className="text-muted-foreground hover:text-primary transition-colors"
                 aria-label="Telegram"
               >
                 <MessageCircle className="w-5 h-5" />
               </a>
               <a 
-                href="https://docs.squdy.fun" 
+                href="https://docs.squdy.fun" target="_blank"
                 className="text-muted-foreground hover:text-primary transition-colors"
                 aria-label="Medium"
               >

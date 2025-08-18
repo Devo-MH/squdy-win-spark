@@ -186,8 +186,7 @@ const TermsPage = () => {
               </CardHeader>
               <CardContent className="space-y-4 text-muted-foreground">
                 <p>
-                  These terms are governed by the laws of [Jurisdiction]. Any disputes will be resolved 
-                  through binding arbitration. The platform operates as entertainment software and 
+                  The platform operates as entertainment software and 
                   makes no investment promises or guarantees.
                 </p>
                 <p>
