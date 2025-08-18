@@ -18,7 +18,7 @@ const TermsPage = () => {
               Please read these terms carefully before using the Squdy platform
             </p>
             <p className="text-sm text-muted-foreground mt-2">
-              Last updated: January 2024
+              Last updated: August 2025
             </p>
           </div>
 
